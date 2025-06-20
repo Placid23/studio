@@ -15,8 +15,9 @@ export function MovieCard({ movie }: MovieCardProps) {
           src={movie.posterUrl}
           alt={movie.title}
           fill
-          objectFit="cover"
+          style={{objectFit: "cover"}}
           className="transition-opacity duration-300 group-hover:opacity-70"
+          sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
           data-ai-hint="movie poster"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

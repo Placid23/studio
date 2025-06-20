@@ -1,16 +1,34 @@
 import { MovieCarousel } from '@/components/movies/MovieCarousel';
-import { MOVIES } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { PlayCircle, Info } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
 
-export default function Home() {
-  const trendingMovies = MOVIES.slice(0, 10);
-  const actionMovies = MOVIES.filter(m => m.genres.includes('Action')).slice(0, 10);
-  const comedyMovies = MOVIES.filter(m => m.genres.includes('Comedy')).slice(0, 10);
-  const scifiMovies = MOVIES.filter(m => m.genres.includes('Sci-Fi')).slice(0, 10);
-  const heroMovie = MOVIES[0];
+const GENRE_IDS = {
+  Action: '28',
+  Comedy: '35',
+  SciFi: '8788',
+};
+
+export default async function Home() {
+  // Fetch all movie data in parallel
+  const [trendingMovies, actionMovies, comedyMovies, scifiMovies] = await Promise.all([
+    getTrendingMovies(),
+    getMoviesByGenre(GENRE_IDS.Action),
+    getMoviesByGenre(GENRE_IDS.Comedy),
+    getMoviesByGenre(GENRE_IDS.SciFi),
+  ]);
+  
+  const heroMovie = trendingMovies[0];
+
+  if (!heroMovie) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <h1 className="text-2xl font-bold">Failed to load movies. Please try again later.</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
@@ -19,7 +37,7 @@ export default function Home() {
           src={heroMovie.backdropUrl}
           alt={heroMovie.title}
           fill
-          objectFit="cover"
+          style={{objectFit: "cover"}}
           className="absolute inset-0"
           priority
           data-ai-hint="movie backdrop"
@@ -50,7 +68,7 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col gap-8 md:gap-12 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
-        <MovieCarousel title="Trending Now" movies={trendingMovies} />
+        <MovieCarousel title="Trending Now" movies={trendingMovies.slice(1)} />
         <MovieCarousel title="Action & Adventure" movies={actionMovies} />
         <MovieCarousel title="Comedy" movies={comedyMovies} />
         <MovieCarousel title="Sci-Fi" movies={scifiMovies} />

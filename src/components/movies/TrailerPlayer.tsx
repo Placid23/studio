@@ -12,8 +12,9 @@ export function TrailerPlayer({ posterUrl }: TrailerPlayerProps) {
         src={posterUrl}
         alt="Trailer thumbnail"
         fill
-        objectFit="cover"
+        style={{objectFit: "cover"}}
         className="transition-transform duration-300 group-hover:scale-105"
+        sizes="100vw"
         data-ai-hint="movie backdrop"
       />
       <div className="absolute inset-0 bg-black/40" />

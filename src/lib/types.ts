@@ -2,12 +2,12 @@ export interface Movie {
   id: string;
   title: string;
   year: number;
-  duration: number; // in minutes
+  duration?: number; // in minutes
   genres: string[];
   rating: number;
   synopsis: string;
-  cast: string[];
-  director: string;
+  cast?: string[];
+  director?: string;
   posterUrl: string;
   backdropUrl:string;
 }

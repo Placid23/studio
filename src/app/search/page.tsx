@@ -1,50 +1,73 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { MOVIES } from '@/lib/data';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import type { Movie } from '@/lib/types';
 import { MovieCard } from '@/components/movies/MovieCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
-import { Search, Film } from 'lucide-react';
+import { Search, Film, Loader2 } from 'lucide-react';
+import { getGenres, findMovies } from './actions';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
-const allGenres = [...new Set(MOVIES.flatMap(m => m.genres))];
-const allYears = [...new Set(MOVIES.map(m => m.year))].sort((a, b) => b - a);
+const allYears = Array.from({ length: 50 }, (_, i) => String(new Date().getFullYear() - i));
 
 export default function SearchPage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [genre, setGenre] = useState('all');
-  const [rating, setRating] = useState('all');
-  const [year, setYear] = useState('all');
-  const [filteredMovies, setFilteredMovies] = useState<Movie[]>(MOVIES);
-
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  useEffect(() => {
-    const filterMovies = () => {
-      let movies = MOVIES;
-
-      if (debouncedSearchTerm) {
-        movies = movies.filter(m =>
-          m.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        );
-      }
-      if (genre !== 'all') {
-        movies = movies.filter(m => m.genres.includes(genre));
-      }
-      if (rating !== 'all') {
-        movies = movies.filter(m => m.rating >= Number(rating));
-      }
-      if (year !== 'all') {
-        movies = movies.filter(m => m.year === Number(year));
-      }
-      setFilteredMovies(movies);
-    };
-
-    filterMovies();
-  }, [debouncedSearchTerm, genre, rating, year]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   
+  const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [isPending, startTransition] = useTransition();
+
+  // State for filters, initialized from URL params for shareable links
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('query') || '');
+  const [genre, setGenre] = useState(searchParams.get('genre') || 'all');
+  const [rating, setRating] = useState(searchParams.get('rating') || 'all');
+  const [year, setYear] = useState(searchParams.get('year') || 'all');
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+  // Function to create/update URL search params.
+  const createQueryString = useCallback(
+    (params: Record<string, string>) => {
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(params)) {
+        if (value && value !== 'all') {
+          newSearchParams.set(key, value);
+        } else {
+          newSearchParams.delete(key);
+        }
+      }
+      return newSearchParams.toString();
+    },
+    [searchParams]
+  );
+  
+  // Fetch genres on component mount.
+  useEffect(() => {
+    getGenres().then(setGenres);
+  }, []);
+
+  // Effect to fetch movies when filters change.
+  useEffect(() => {
+    startTransition(async () => {
+      const results = await findMovies(debouncedSearchTerm, { genre, rating, year });
+      setMovies(results);
+    });
+
+    // Update the URL with the new search params.
+    const queryString = createQueryString({
+      query: debouncedSearchTerm,
+      genre,
+      rating,
+      year
+    });
+    router.push(`${pathname}?${queryString}`);
+
+  }, [debouncedSearchTerm, genre, rating, year, createQueryString, pathname, router]);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 space-y-4">
@@ -66,7 +89,7 @@ export default function SearchPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Genres</SelectItem>
-              {allGenres.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+              {genres.map(g => <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={rating} onValueChange={setRating}>
@@ -87,15 +110,20 @@ export default function SearchPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Years</SelectItem>
-              {allYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              {allYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {filteredMovies.length > 0 ? (
+      {isPending ? (
+         <div className="flex flex-col items-center justify-center text-center py-20">
+          <Loader2 className="w-24 h-24 text-primary animate-spin" />
+          <h2 className="mt-6 text-2xl font-bold">Searching...</h2>
+        </div>
+      ) : movies.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {filteredMovies.map((movie) => (
+          {movies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}
         </div>

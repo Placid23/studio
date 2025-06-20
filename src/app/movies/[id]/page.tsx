@@ -1,4 +1,3 @@
-import { MOVIES } from '@/lib/data';
 import type { Movie } from '@/lib/types';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
@@ -10,15 +9,10 @@ import SimilarMovies from '@/components/movies/SimilarMovies';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BackButton } from '@/components/layout/BackButton';
+import { getMovieDetails } from '@/lib/tmdb';
 
-export async function generateStaticParams() {
-  return MOVIES.map((movie) => ({
-    id: movie.id,
-  }));
-}
-
-export default function MovieDetailPage({ params }: { params: { id: string } }) {
-  const movie = MOVIES.find((m) => m.id === params.id);
+export default async function MovieDetailPage({ params }: { params: { id: string } }) {
+  const movie = await getMovieDetails(params.id);
 
   if (!movie) {
     notFound();
@@ -31,7 +25,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
           src={movie.backdropUrl}
           alt={`Backdrop for ${movie.title}`}
           fill
-          objectFit="cover"
+          style={{objectFit: "cover"}}
           className="opacity-50"
           priority
           data-ai-hint="movie backdrop"
@@ -59,14 +53,18 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                 <Star className="w-5 h-5 text-yellow-400" />
                 <span className="font-bold text-lg text-foreground">{movie.rating.toFixed(1)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
-                <span>{movie.duration} min</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                <span>{movie.year}</span>
-              </div>
+              {movie.duration && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  <span>{movie.duration} min</span>
+                </div>
+              )}
+              {movie.year > 0 && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>{movie.year}</span>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {movie.genres.map((genre) => (
@@ -91,16 +89,20 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
           <div>
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Cast & Crew</h2>
             <div className="space-y-4">
-              <div>
-                <p className="font-semibold text-muted-foreground">Director</p>
-                <p className="text-lg text-foreground/90">{movie.director}</p>
-              </div>
-              <div>
-                <p className="font-semibold text-muted-foreground">Cast</p>
-                <div className="flex flex-col gap-1 mt-1">
-                  {movie.cast.map((actor) => <span key={actor} className="text-lg text-foreground/90">{actor}</span>)}
+              {movie.director && (
+                <div>
+                  <p className="font-semibold text-muted-foreground">Director</p>
+                  <p className="text-lg text-foreground/90">{movie.director}</p>
                 </div>
-              </div>
+              )}
+              {movie.cast && movie.cast.length > 0 && (
+                <div>
+                  <p className="font-semibold text-muted-foreground">Cast</p>
+                  <div className="flex flex-col gap-1 mt-1">
+                    {movie.cast.map((actor) => <span key={actor} className="text-lg text-foreground/90">{actor}</span>)}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
