@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useCallback } from 'react';
+import { Suspense, useState, useEffect, useTransition, useCallback } from 'react';
 import type { Movie } from '@/lib/types';
 import { MovieCard } from '@/components/movies/MovieCard';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 const allYears = Array.from({ length: 50 }, (_, i) => String(new Date().getFullYear() - i));
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -137,4 +137,12 @@ export default function SearchPage() {
       )}
     </div>
   );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense>
+      <SearchContent />
+    </Suspense>
+  )
 }
