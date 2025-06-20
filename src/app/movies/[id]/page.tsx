@@ -9,6 +9,7 @@ import { TrailerPlayer } from '@/components/movies/TrailerPlayer';
 import SimilarMovies from '@/components/movies/SimilarMovies';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/layout/BackButton';
 
 export async function generateStaticParams() {
   return MOVIES.map((movie) => ({
@@ -39,6 +40,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
       </div>
 
       <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
+        <BackButton />
         <div className="flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-1/3 lg:w-1/4">
             <Image
