@@ -1,6 +1,6 @@
 import { MovieCarousel } from '@/components/movies/MovieCarousel';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info } from 'lucide-react';
+import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
@@ -12,20 +12,49 @@ const GENRE_IDS = {
 };
 
 export default async function Home() {
-  // Fetch all movie data in parallel
-  const [trendingMovies, actionMovies, comedyMovies, scifiMovies] = await Promise.all([
-    getTrendingMovies(),
-    getMoviesByGenre(GENRE_IDS.Action),
-    getMoviesByGenre(GENRE_IDS.Comedy),
-    getMoviesByGenre(GENRE_IDS.SciFi),
-  ]);
+  let trendingMovies, actionMovies, comedyMovies, scifiMovies;
+  let error: string | null = null;
+
+  try {
+    // Fetch all movie data in parallel
+    [trendingMovies, actionMovies, comedyMovies, scifiMovies] = await Promise.all([
+      getTrendingMovies(),
+      getMoviesByGenre(GENRE_IDS.Action),
+      getMoviesByGenre(GENRE_IDS.Comedy),
+      getMoviesByGenre(GENRE_IDS.SciFi),
+    ]);
+  } catch (e: any) {
+    if (e.message.includes('API key') || e.message.includes('TMDB_API_KEY')) {
+      error = 'TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
+    } else {
+      error = 'Failed to load movies. Please try again later.';
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">Error Loading Movies</h1>
+          <p className="mt-2 text-destructive/80">{error}</p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Get your free API key from{' '}
+            <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+              The Movie Database website
+            </a>.
+          </p>
+        </div>
+      </div>
+    );
+  }
   
-  const heroMovie = trendingMovies[0];
+  const heroMovie = trendingMovies?.[0];
 
   if (!heroMovie) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold">Failed to load movies. Please try again later.</h1>
+        <h1 className="text-2xl font-bold">No trending movies found.</h1>
       </div>
     );
   }
@@ -68,10 +97,10 @@ export default async function Home() {
       </div>
 
       <div className="flex flex-col gap-8 md:gap-12 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
-        <MovieCarousel title="Trending Now" movies={trendingMovies.slice(1)} />
-        <MovieCarousel title="Action & Adventure" movies={actionMovies} />
-        <MovieCarousel title="Comedy" movies={comedyMovies} />
-        <MovieCarousel title="Sci-Fi" movies={scifiMovies} />
+        <MovieCarousel title="Trending Now" movies={trendingMovies?.slice(1) || []} />
+        <MovieCarousel title="Action & Adventure" movies={actionMovies || []} />
+        <MovieCarousel title="Comedy" movies={comedyMovies || []} />
+        <MovieCarousel title="Sci-Fi" movies={scifiMovies || []} />
       </div>
     </div>
   );
