@@ -1,0 +1,25 @@
+import Image from 'next/image';
+import { PlayCircle } from 'lucide-react';
+
+interface TrailerPlayerProps {
+  posterUrl: string;
+}
+
+export function TrailerPlayer({ posterUrl }: TrailerPlayerProps) {
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-xl cursor-pointer group">
+      <Image
+        src={posterUrl}
+        alt="Trailer thumbnail"
+        layout="fill"
+        objectFit="cover"
+        className="transition-transform duration-300 group-hover:scale-105"
+        data-ai-hint="movie backdrop"
+      />
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <PlayCircle className="h-20 w-20 text-white/80 transition-transform duration-300 group-hover:scale-110" />
+      </div>
+    </div>
+  );
+}
