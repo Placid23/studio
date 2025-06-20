@@ -26,8 +26,8 @@ async function SimilarMovies({ movie }: SimilarMoviesProps) {
     synopsis: s.synopsis,
     cast: s.cast.split(',').map(c => c.trim()),
     director: s.director,
-    posterUrl: `https://placehold.co/500x750/0f0f0f/e50914?text=${encodeURIComponent(s.title.replace(/\s/g, '+'))}`,
-    backdropUrl: `https://placehold.co/1920x1080/0f0f0f/e50914?text=${encodeURIComponent(s.title.replace(/\s/g, '+'))}`,
+    posterUrl: `https://placehold.co/500x750.png`,
+    backdropUrl: `https://placehold.co/1920x1080.png`,
   }));
 
   return (

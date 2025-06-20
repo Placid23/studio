@@ -18,7 +18,7 @@ export default function Home() {
         <Image
           src={heroMovie.backdropUrl}
           alt={heroMovie.title}
-          layout="fill"
+          fill
           objectFit="cover"
           className="absolute inset-0"
           priority
@@ -26,10 +26,10 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-16 text-white">
-          <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary shadow-lg">
+          <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_4px_8px_rgba(0,0,0,0.8)]">
             {heroMovie.title}
           </h1>
-          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium text-foreground">
+          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium text-foreground [text-shadow:0_2px_4px_rgba(0,0,0,0.7)]">
             {heroMovie.synopsis}
           </p>
           <div className="flex gap-4 mt-4">
@@ -40,7 +40,7 @@ export default function Home() {
               </Button>
             </Link>
             <Link href={`/movies/${heroMovie.id}`} passHref>
-               <Button size="lg" variant="secondary">
+               <Button size="lg" variant="outline" className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
                 <Info className="mr-2 h-6 w-6" />
                 More Info
               </Button>

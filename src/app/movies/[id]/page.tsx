@@ -29,13 +29,13 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
         <Image
           src={movie.backdropUrl}
           alt={`Backdrop for ${movie.title}`}
-          layout="fill"
+          fill
           objectFit="cover"
-          className="opacity-40"
+          className="opacity-50"
           priority
           data-ai-hint="movie backdrop"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
       </div>
 
       <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
@@ -71,7 +71,7 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
                 <Badge key={genre} variant="secondary">{genre}</Badge>
               ))}
             </div>
-            <p className="mt-6 max-w-3xl text-lg">{movie.synopsis}</p>
+            <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8">
               <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground">
                 <PlusCircle className="mr-2 h-6 w-6" />
@@ -88,16 +88,16 @@ export default function MovieDetailPage({ params }: { params: { id: string } }) 
           </div>
           <div>
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Cast & Crew</h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <p className="font-semibold text-muted-foreground">Director</p>
-                <p className="text-lg">{movie.director}</p>
+                <p className="text-lg text-foreground/90">{movie.director}</p>
               </div>
               <div>
                 <p className="font-semibold text-muted-foreground">Cast</p>
-                <ul className="list-disc list-inside">
-                  {movie.cast.map((actor) => <li key={actor} className="text-lg">{actor}</li>)}
-                </ul>
+                <div className="flex flex-col gap-1 mt-1">
+                  {movie.cast.map((actor) => <span key={actor} className="text-lg text-foreground/90">{actor}</span>)}
+                </div>
               </div>
             </div>
           </div>

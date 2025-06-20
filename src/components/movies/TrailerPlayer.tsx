@@ -11,7 +11,7 @@ export function TrailerPlayer({ posterUrl }: TrailerPlayerProps) {
       <Image
         src={posterUrl}
         alt="Trailer thumbnail"
-        layout="fill"
+        fill
         objectFit="cover"
         className="transition-transform duration-300 group-hover:scale-105"
         data-ai-hint="movie backdrop"
