@@ -8,7 +8,7 @@ import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
 const GENRE_IDS = {
   Action: '28',
   Comedy: '35',
-  SciFi: '8788',
+  SciFi: '878',
 };
 
 export default async function Home() {
@@ -24,8 +24,8 @@ export default async function Home() {
       getMoviesByGenre(GENRE_IDS.SciFi),
     ]);
   } catch (e: any) {
-    if (e.message.includes('API key') || e.message.includes('TMDB_API_KEY')) {
-      error = 'TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
+    if (e.message.includes('API key') || e.message.includes('NEXT_PUBLIC_TMDB_API_KEY')) {
+      error = 'NEXT_PUBLIC_TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
     } else {
       error = 'Failed to load movies. Please try again later.';
     }
