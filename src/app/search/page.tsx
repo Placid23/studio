@@ -117,9 +117,10 @@ export default function SearchPage() {
       </div>
 
       {isPending ? (
-         <div className="flex flex-col items-center justify-center text-center py-20">
-          <Loader2 className="w-24 h-24 text-primary animate-spin" />
-          <h2 className="mt-6 text-2xl font-bold">Searching...</h2>
+         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
+          <Loader2 className="w-16 h-16 text-primary animate-spin" />
+          <h2 className="mt-6 text-2xl font-bold">Finding your next favorite movie...</h2>
+          <p className="mt-2 text-muted-foreground">Please wait a moment</p>
         </div>
       ) : movies.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -128,10 +129,10 @@ export default function SearchPage() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center text-center py-20">
-          <Film className="w-24 h-24 text-muted-foreground/50" />
+        <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
+          <Film className="w-16 h-16 text-muted-foreground/50" />
           <h2 className="mt-6 text-2xl font-bold">No movies found</h2>
-          <p className="mt-2 text-muted-foreground">Try adjusting your search or filters.</p>
+          <p className="mt-2 text-muted-foreground">Try a different search term or adjust the filters.</p>
         </div>
       )}
     </div>

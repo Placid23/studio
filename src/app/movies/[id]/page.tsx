@@ -20,13 +20,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
 
   return (
     <div className="animate-in fade-in-50 duration-500">
-      <div className="relative h-[40vh] md:h-[60vh] w-full">
+      <div className="relative h-[45vh] md:h-[65vh] w-full">
         <Image
           src={movie.backdropUrl}
           alt={`Backdrop for ${movie.title}`}
           fill
           style={{objectFit: "cover"}}
-          className="opacity-50"
+          className="opacity-30"
           priority
           data-ai-hint="movie backdrop"
         />
@@ -54,16 +54,22 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                 <span className="font-bold text-lg text-foreground">{movie.rating.toFixed(1)}</span>
               </div>
               {movie.duration && (
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
-                  <span>{movie.duration} min</span>
-                </div>
+                <>
+                  <span className="text-muted-foreground/50">|</span>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    <span>{movie.duration} min</span>
+                  </div>
+                </>
               )}
               {movie.year > 0 && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  <span>{movie.year}</span>
-                </div>
+                <>
+                  <span className="text-muted-foreground/50">|</span>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    <span>{movie.year}</span>
+                  </div>
+                </>
               )}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
@@ -81,28 +87,30 @@ export default async function MovieDetailPage({ params }: { params: { id: string
           </div>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="md:col-span-2">
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <div className="lg:col-span-2">
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
             <TrailerPlayer posterUrl={movie.backdropUrl} />
           </div>
           <div>
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Cast & Crew</h2>
-            <div className="space-y-4">
-              {movie.director && (
-                <div>
-                  <p className="font-semibold text-muted-foreground">Director</p>
-                  <p className="text-lg text-foreground/90">{movie.director}</p>
-                </div>
-              )}
-              {movie.cast && movie.cast.length > 0 && (
-                <div>
-                  <p className="font-semibold text-muted-foreground">Cast</p>
-                  <div className="flex flex-col gap-1 mt-1">
-                    {movie.cast.map((actor) => <span key={actor} className="text-lg text-foreground/90">{actor}</span>)}
+            <div className="bg-white/5 rounded-lg p-6 border border-white/10 h-full">
+              <div className="space-y-6">
+                {movie.director && (
+                  <div>
+                    <p className="font-semibold text-muted-foreground tracking-widest text-sm uppercase">Director</p>
+                    <p className="text-lg text-foreground/90 mt-1">{movie.director}</p>
                   </div>
-                </div>
-              )}
+                )}
+                {movie.cast && movie.cast.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-muted-foreground tracking-widest text-sm uppercase">Cast</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-2">
+                      {movie.cast.map((actor) => <span key={actor} className="text-foreground/90 truncate">{actor}</span>)}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

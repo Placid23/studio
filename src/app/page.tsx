@@ -73,10 +73,10 @@ export default async function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-16 text-white">
-          <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_4px_8px_rgba(0,0,0,0.8)]">
+          <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_5px_15px_rgba(0,0,0,0.7)]">
             {heroMovie.title}
           </h1>
-          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium text-foreground [text-shadow:0_2px_4px_rgba(0,0,0,0.7)]">
+          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium text-foreground [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
             {heroMovie.synopsis}
           </p>
           <div className="flex gap-4 mt-4">
@@ -87,7 +87,7 @@ export default async function Home() {
               </Button>
             </Link>
             <Link href={`/movies/${heroMovie.id}`} passHref>
-               <Button size="lg" variant="outline" className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+               <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
                 <Info className="mr-2 h-6 w-6" />
                 More Info
               </Button>
@@ -96,7 +96,7 @@ export default async function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 md:gap-12 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
+      <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
         <MovieCarousel title="Trending Now" movies={trendingMovies?.slice(1) || []} />
         <MovieCarousel title="Action & Adventure" movies={actionMovies || []} />
         <MovieCarousel title="Comedy" movies={comedyMovies || []} />

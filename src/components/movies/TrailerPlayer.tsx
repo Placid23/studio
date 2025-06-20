@@ -17,9 +17,9 @@ export function TrailerPlayer({ posterUrl }: TrailerPlayerProps) {
         sizes="100vw"
         data-ai-hint="movie backdrop"
       />
-      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/40 transition-colors group-hover:bg-black/60" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <PlayCircle className="h-20 w-20 text-white/80 transition-transform duration-300 group-hover:scale-110" />
+        <PlayCircle className="h-20 w-20 text-white/80 drop-shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
       </div>
     </div>
   );

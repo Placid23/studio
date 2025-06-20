@@ -29,7 +29,7 @@ export function MovieCarousel({ title, movies }: MovieCarouselProps) {
 
   return (
     <div className="w-full">
-      <h2 className="mb-4 text-xl font-bold uppercase tracking-wider text-foreground md:text-2xl">
+      <h2 className="mb-4 text-xl font-bold uppercase tracking-wider text-foreground/80 md:text-2xl lg:text-3xl">
         {title}
       </h2>
       <div className="relative group">
@@ -44,13 +44,13 @@ export function MovieCarousel({ title, movies }: MovieCarouselProps) {
           ))}
         </div>
         
-        <div className="absolute top-0 left-0 h-full w-12 bg-gradient-to-r from-background to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none md:block hidden" />
-        <div className="absolute top-0 right-0 h-full w-12 bg-gradient-to-l from-background to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none md:block hidden" />
+        <div className="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-background to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none md:block hidden" />
+        <div className="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-background to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none md:block hidden" />
 
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-20 w-12 rounded-r-lg rounded-l-none bg-black/40 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20 md:flex items-center justify-center hidden"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-r-lg rounded-l-none bg-background/50 hover:bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity z-20 md:flex items-center justify-center hidden"
           onClick={() => scroll('left')}
         >
           <ChevronLeft className="h-8 w-8" />
@@ -58,7 +58,7 @@ export function MovieCarousel({ title, movies }: MovieCarouselProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute right-0 top-1/2 -translate-y-1/2 h-20 w-12 rounded-l-lg rounded-r-none bg-black/40 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity z-20 md:flex items-center justify-center hidden"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-l-lg rounded-r-none bg-background/50 hover:bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity z-20 md:flex items-center justify-center hidden"
           onClick={() => scroll('right')}
         >
           <ChevronRight className="h-8 w-8" />
