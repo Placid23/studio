@@ -20,11 +20,8 @@ export async function GET(
   }
 
   try {
-    // Step 1: Get the file path from Telegram
     const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
     const fileInfoResponse = await fetch(getFileUrl);
-
-    // Call .json() only ONCE to consume the response body
     const fileInfo = await fileInfoResponse.json();
 
     if (!fileInfoResponse.ok || !fileInfo.ok) {
@@ -38,11 +35,8 @@ export async function GET(
     }
 
     const filePath = fileInfo.result.file_path;
-
-    // Step 2: Construct the actual file download URL
     const fileDownloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
     
-    // Step 3: Fetch the file and stream it back
     const videoResponse = await fetch(fileDownloadUrl);
 
     if (!videoResponse.ok) {
@@ -56,10 +50,12 @@ export async function GET(
       return new NextResponse('Failed to download file from Telegram: Empty response', { status: 500 });
     }
     
-    const stream = videoResponse.body;
+    // Using TransformStream to ensure a clean, readable stream for the response.
+    // This can help with compatibility and edge cases in stream handling.
+    const { readable, writable } = new TransformStream();
+    videoResponse.body.pipeTo(writable);
 
-    // Return the stream with appropriate headers
-    return new NextResponse(stream, {
+    return new NextResponse(readable, {
       status: 200,
       headers: {
         'Content-Type': videoResponse.headers.get('Content-Type') || 'video/mp4',
