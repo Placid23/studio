@@ -11,6 +11,7 @@ import { BackButton } from '@/components/layout/BackButton';
 import { getMovieDetails } from '@/lib/tmdb';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
+import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   // Prevent API calls for non-numeric IDs.
@@ -122,6 +123,10 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             </div>
           </div>
         </div>
+
+        <Suspense fallback={<StreamingProvidersSkeleton />}>
+          <StreamingProviders media={movie} />
+        </Suspense>
         
         <div className="mt-16">
           <Suspense fallback={<SimilarMedia.Skeleton />}>

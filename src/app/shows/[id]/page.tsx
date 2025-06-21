@@ -8,6 +8,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
+import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
+import { Suspense } from 'react';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -99,6 +101,10 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
           <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
           <TrailerPlayer posterUrl={show.backdropUrl} trailerUrl={show.trailerUrl} />
         </div>
+        
+        <Suspense fallback={<StreamingProvidersSkeleton />}>
+          <StreamingProviders media={show} />
+        </Suspense>
 
         {show.episodes && show.episodes.length > 0 && (
           <div className="mt-16">
