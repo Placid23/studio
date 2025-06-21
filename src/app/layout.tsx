@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { SplashScreen } from '@/components/layout/SplashScreen';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 
 export default function RootLayout({
   children,
@@ -24,7 +25,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <title>NovaStream</title>
         <meta name="description" content="Your next-gen streaming experience." />
@@ -33,16 +34,21 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background">
-        <AnimatePresence>
-          {isLoading && <SplashScreen />}
-        </AnimatePresence>
-        
-        <div className="relative flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
-        <Toaster />
+        <ThemeProvider
+          defaultTheme="dark"
+          storageKey="novastream-theme"
+        >
+          <AnimatePresence>
+            {isLoading && <SplashScreen />}
+          </AnimatePresence>
+          
+          <div className="relative flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
