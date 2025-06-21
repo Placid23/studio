@@ -7,6 +7,7 @@ import { getShowDetails } from '@/lib/tvmaze';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
+import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -92,6 +93,11 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
           </div>
+        </div>
+        
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
+          <TrailerPlayer posterUrl={show.backdropUrl} trailerUrl={show.trailerUrl} />
         </div>
 
         {show.episodes && show.episodes.length > 0 && (

@@ -2,6 +2,7 @@
 
 import type { Show, Episode } from './types';
 import { stripHtml } from 'string-strip-html';
+import { getTvShowTrailer } from './tmdb';
 
 const API_BASE_URL = 'https://api.tvmaze.com';
 
@@ -15,6 +16,9 @@ interface TVMazeShow {
   image: { medium: string; original: string } | null;
   _embedded?: {
     episodes: TVMazeEpisode[];
+  };
+  externals: {
+    imdb: string | null;
   };
 }
 
@@ -88,8 +92,14 @@ export async function getPopularShows(): Promise<Show[]> {
 
 export async function getShowDetails(id: string): Promise<Show | null> {
     try {
-        const show = await fetchFromTVMaze<TVMazeShow>(`shows/${id}?embed=episodes`);
-        return mapTVMazeShowToShow(show);
+        const showData = await fetchFromTVMaze<TVMazeShow>(`shows/${id}?embed=episodes`);
+        const show = mapTVMazeShowToShow(showData);
+
+        if (showData.externals.imdb) {
+          show.trailerUrl = await getTvShowTrailer(showData.externals.imdb);
+        }
+
+        return show;
     } catch (error) {
         console.error(`Error fetching details for show ${id}:`, error);
         return null;

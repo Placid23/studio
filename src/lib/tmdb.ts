@@ -118,6 +118,10 @@ export async function getMoviesByGenre(genreId: string): Promise<Movie[]> {
 }
 
 export async function getMovieDetails(id: string): Promise<Movie | null> {
+  // Prevent API calls for non-numeric IDs.
+  if (isNaN(Number(id))) {
+    return null;
+  }
   try {
     const genres = await getGenreMap();
     const movie = await fetchFromTMDb<TMDbMovie>(`movie/${id}`, { append_to_response: 'credits,videos' });
@@ -149,6 +153,40 @@ export async function discoverMovies(filters: { genre?: string, year?: string, r
 
   const data = await fetchFromTMDb<{ results: TMDbMovie[] }>('discover/movie', params);
   return data.results.map(movie => mapTMDbMovieToMovie(movie, genres));
+}
+
+export async function getTvShowTrailer(imdbId: string): Promise<string | undefined> {
+  if (!imdbId) return undefined;
+  
+  try {
+    const findResponse = await fetchFromTMDb<{ tv_results: { id: number }[] }>(
+      `find/${imdbId}`,
+      { external_source: 'imdb_id' }
+    );
+
+    const tmdbId = findResponse.tv_results?.[0]?.id;
+    if (!tmdbId) {
+      return undefined;
+    }
+
+    const videosResponse = await fetchFromTMDb<{ 
+      results: { key: string; site: string; type: string; official: boolean }[] 
+    }>(`tv/${tmdbId}/videos`);
+
+    const officialTrailer = videosResponse.results.find(
+      video => video.site === 'YouTube' && video.type === 'Trailer' && video.official
+    );
+    const anyTrailer = videosResponse.results.find(
+      video => video.site === 'YouTube' && video.type === 'Trailer'
+    );
+    const trailerKey = officialTrailer?.key || anyTrailer?.key;
+
+    return trailerKey ? `https://www.youtube.com/embed/${trailerKey}` : undefined;
+
+  } catch (error) {
+    console.error(`Could not fetch trailer for IMDb ID ${imdbId}:`, error);
+    return undefined;
+  }
 }
 
 export async function getGenres(): Promise<Genre[]> {

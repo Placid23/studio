@@ -36,4 +36,5 @@ export interface Show {
   posterUrl: string;
   backdropUrl: string;
   episodes?: Episode[];
+  trailerUrl?: string;
 }
