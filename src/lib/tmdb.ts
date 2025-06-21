@@ -19,6 +19,14 @@ interface TMDbMovie {
     cast: { name: string }[];
     crew: { job: string; name: string }[];
   };
+  videos?: {
+    results: {
+      key: string;
+      site: string;
+      type: string;
+      official: boolean;
+    }[];
+  };
 }
 
 interface Genre {
@@ -51,6 +59,14 @@ function mapTMDbMovieToMovie(movie: TMDbMovie, genres: Map<number, string>): Mov
     ? movie.genre_ids.map(id => genres.get(id)).filter(Boolean) as string[]
     : movie.genres?.map(g => g.name) || [];
 
+  const officialTrailer = movie.videos?.results.find(
+    video => video.site === 'YouTube' && video.type === 'Trailer' && video.official
+  );
+  const anyTrailer = movie.videos?.results.find(
+    video => video.site === 'YouTube' && video.type === 'Trailer'
+  );
+  const trailerKey = officialTrailer?.key || anyTrailer?.key;
+
   return {
     type: 'movie',
     id: String(movie.id),
@@ -68,6 +84,7 @@ function mapTMDbMovieToMovie(movie: TMDbMovie, genres: Map<number, string>): Mov
     backdropUrl: movie.backdrop_path
       ? `${IMAGE_BASE_URL}/w1280${movie.backdrop_path}`
       : `https://placehold.co/1920x1080.png`,
+    trailerUrl: trailerKey ? `https://www.youtube.com/embed/${trailerKey}` : undefined,
   };
 }
 
@@ -102,7 +119,7 @@ export async function getMoviesByGenre(genreId: string): Promise<Movie[]> {
 export async function getMovieDetails(id: string): Promise<Movie | null> {
   try {
     const genres = await getGenreMap();
-    const movie = await fetchFromTMDb<TMDbMovie>(`movie/${id}`, { append_to_response: 'credits' });
+    const movie = await fetchFromTMDb<TMDbMovie>(`movie/${id}`, { append_to_response: 'credits,videos' });
     return mapTMDbMovieToMovie(movie, genres);
   } catch (error) {
     console.error(`Error fetching details for movie ${id}:`, error);

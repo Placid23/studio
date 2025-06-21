@@ -22,13 +22,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
   return (
     <div className="animate-in fade-in-50 duration-500">
       <WatchHistoryTracker media={movie} />
-      <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
+      <div className="relative h-[45vh] md:h-[65vh] w-full">
         <ImageLoader
           src={movie.backdropUrl}
           alt={`Backdrop for ${movie.title}`}
           fill
           style={{objectFit: "cover"}}
-          className=""
+          className="opacity-50"
           priority
           data-ai-hint="movie backdrop"
         />
@@ -93,7 +93,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2">
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
-            <TrailerPlayer posterUrl={movie.backdropUrl} />
+            <TrailerPlayer posterUrl={movie.backdropUrl} trailerUrl={movie.trailerUrl} />
           </div>
           <div>
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Cast & Crew</h2>

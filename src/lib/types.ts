@@ -11,6 +11,7 @@ export interface Movie {
   director?: string;
   posterUrl: string;
   backdropUrl:string;
+  trailerUrl?: string;
 }
 
 export interface Episode {
