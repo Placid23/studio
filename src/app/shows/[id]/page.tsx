@@ -97,9 +97,23 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
           </div>
         </div>
         
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
-          <TrailerPlayer posterUrl={show.backdropUrl} trailerUrl={show.trailerUrl} />
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <div className="lg:col-span-2">
+            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
+            <TrailerPlayer posterUrl={show.backdropUrl} trailerUrl={show.trailerUrl} />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Cast</h2>
+             <div className="bg-white/5 rounded-lg p-6 border border-white/10 h-full max-h-[420px] overflow-y-auto">
+                {show.cast && show.cast.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                    {show.cast.map((actor) => <span key={actor} className="text-foreground/90 truncate">{actor}</span>)}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Cast information not available.</p>
+                )}
+             </div>
+          </div>
         </div>
         
         <Suspense fallback={<StreamingProvidersSkeleton />}>

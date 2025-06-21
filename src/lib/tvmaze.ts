@@ -16,6 +16,7 @@ interface TVMazeShow {
   image: { medium: string; original: string } | null;
   _embedded?: {
     episodes: TVMazeEpisode[];
+    cast: TVMazeCastCharacter[];
   };
   externals: {
     imdb: string | null;
@@ -30,6 +31,12 @@ interface TVMazeEpisode {
     runtime: number;
     summary: string | null;
     image: { medium: string; original: string } | null;
+}
+
+interface TVMazeCastCharacter {
+  person: {
+    name: string;
+  };
 }
 
 interface TVMazeSearchResult {
@@ -64,7 +71,8 @@ function mapTVMazeShowToShow(show: TVMazeShow): Show {
     synopsis: show.summary ? stripHtml(show.summary).result : 'No synopsis available.',
     posterUrl: show.image?.medium.replace('http://', 'https://') || 'https://placehold.co/210x295.png',
     backdropUrl: show.image?.original.replace('http://', 'https://') || 'https://placehold.co/1920x1080.png',
-    episodes: show._embedded?.episodes.map(mapTVMazeEpisodeToEpisode)
+    episodes: show._embedded?.episodes.map(mapTVMazeEpisodeToEpisode),
+    cast: show._embedded?.cast?.map(c => c.person.name).slice(0, 10),
   };
 }
 
@@ -109,7 +117,7 @@ export async function getShowsByQuery(query: string): Promise<Show[]> {
 
 export async function getShowDetails(id: string): Promise<Show | null> {
     try {
-        const showData = await fetchFromTVMaze<TVMazeShow>(`shows/${id}?embed=episodes`);
+        const showData = await fetchFromTVMaze<TVMazeShow>(`shows/${id}?embed[]=episodes&embed[]=cast`);
         const show = mapTVMazeShowToShow(showData);
 
         if (showData.externals.imdb) {
