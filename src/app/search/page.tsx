@@ -28,7 +28,7 @@ function SearchContent() {
   const [rating, setRating] = useState('all');
   const [year, setYear] = useState('all');
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Function to create/update URL search params.
   const createQueryString = useCallback(
