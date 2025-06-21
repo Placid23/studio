@@ -9,9 +9,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface MediaCarouselProps {
   title: string;
   media: (Movie | Show)[];
+  onRemoveItem?: (id: string) => void;
 }
 
-export function MediaCarousel({ title, media }: MediaCarouselProps) {
+export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps) {
   if (!media || media.length === 0) return null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,7 +40,7 @@ export function MediaCarousel({ title, media }: MediaCarouselProps) {
         >
           {media.map((item) => (
             <div key={item.id} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
-              <MediaCard media={item} />
+              <MediaCard media={item} onRemove={onRemoveItem} />
             </div>
           ))}
         </div>
@@ -50,7 +51,7 @@ export function MediaCarousel({ title, media }: MediaCarouselProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-r-lg rounded-l-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center hidden"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-r-lg rounded-l-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center"
           onClick={() => scroll('left')}
         >
           <ChevronLeft className="h-8 w-8" />
@@ -58,7 +59,7 @@ export function MediaCarousel({ title, media }: MediaCarouselProps) {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute right-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-l-lg rounded-r-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center hidden"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-l-lg rounded-r-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center"
           onClick={() => scroll('right')}
         >
           <ChevronRight className="h-8 w-8" />

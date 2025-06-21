@@ -1,19 +1,40 @@
 import Link from 'next/link';
 import type { Movie, Show } from '@/lib/types';
-import { Star, PlayCircle } from 'lucide-react';
+import { Star, PlayCircle, X } from 'lucide-react';
 import { ImageLoader } from './ImageLoader';
+import { Button } from '@/components/ui/button';
 
 interface MediaCardProps {
   media: Movie | Show;
+  onRemove?: (id: string) => void;
 }
 
-export function MediaCard({ media }: MediaCardProps) {
+export function MediaCard({ media, onRemove }: MediaCardProps) {
   const href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
   const hint = media.type === 'movie' ? "movie poster" : "tv show poster";
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onRemove) {
+      onRemove(media.id);
+    }
+  };
 
   return (
     <Link href={href} className="group relative block w-full flex-shrink-0">
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg border-2 border-transparent shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl img-container">
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 z-20 h-7 w-7 rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/75 hover:text-white"
+            onClick={handleRemove}
+            aria-label="Remove from list"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
         <ImageLoader
           src={media.posterUrl}
           alt={media.title}

@@ -5,7 +5,7 @@ import { MediaCarousel } from './MediaCarousel';
 import { useWatchHistory } from '@/hooks/use-watch-history';
 
 export function ContinueWatchingCarousel() {
-  const { history } = useWatchHistory();
+  const { history, removeFromWatchHistory } = useWatchHistory();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -16,5 +16,5 @@ export function ContinueWatchingCarousel() {
     return null;
   }
 
-  return <MediaCarousel title="Continue Watching" media={history} />;
+  return <MediaCarousel title="Continue Watching" media={history} onRemoveItem={removeFromWatchHistory} />;
 }

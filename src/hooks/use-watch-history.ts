@@ -46,10 +46,22 @@ export function useWatchHistory() {
     }
   }, [getWatchHistory]);
 
+  const removeFromWatchHistory = useCallback((mediaId: string) => {
+    try {
+      const currentHistory = getWatchHistory();
+      const newHistory = currentHistory.filter(item => item.id !== mediaId);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+      setHistory(newHistory);
+    } catch (error) {
+      console.error("Could not remove from watch history in localStorage", error);
+    }
+  }, [getWatchHistory]);
+
+
   useEffect(() => {
     const sortedHistory = getWatchHistory().sort((a, b) => b.watchedAt - a.watchedAt);
     setHistory(sortedHistory);
   }, [getWatchHistory]);
 
-  return { history, addToWatchHistory };
+  return { history, addToWatchHistory, removeFromWatchHistory };
 }
