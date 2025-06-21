@@ -24,9 +24,6 @@ export default async function WatchPage({ params }: { params: { id: string } }) 
         notFound();
     }
 
-    // IMPORTANT: This is a placeholder for the actual streaming URL.
-    // You will need a backend endpoint that takes the telegram_file_id
-    // and returns the video stream.
     const videoSrc = `/api/stream/${media.telegram_file_id}`;
 
     return (
@@ -40,18 +37,10 @@ export default async function WatchPage({ params }: { params: { id: string } }) 
                     controls
                     autoPlay
                     className="w-full h-full"
-                    // The src attribute points to a non-existent API route.
-                    // You need to implement this API route to handle streaming.
-                    // src={videoSrc}
+                    src={videoSrc}
                 >
                     Your browser does not support the video tag.
                 </video>
-            </div>
-            <div className="mt-6 p-4 bg-card/80 border-l-4 border-primary text-foreground rounded-md shadow">
-                <p className="font-bold text-primary">Developer Note:</p>
-                <p className="mt-1">
-                    The video player above is ready, but the streaming source (`src`) is commented out. You need to create a backend API route (e.g., at `{videoSrc}`) that takes the `telegram_file_id` and streams the video content from Telegram's servers.
-                </p>
             </div>
         </div>
     );
