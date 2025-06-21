@@ -8,7 +8,7 @@ export interface StreamingProvider {
   url: string;
 }
 
-const justWatch = new JustWatch({ country: 'US' });
+const justWatch = new JustWatch({ locale: 'en_US' });
 
 // A simple in-memory cache for providers to avoid re-fetching on every call within a single request lifecycle.
 let providersCache: any[] | null = null;
@@ -39,10 +39,10 @@ export async function getStreamingProviders(
 
         const providerMap = new Map(providers.map(p => [p.id, p]));
 
-        const searchResult = await justWatch.search({ query: title, contentType: type });
+        const searchResult = await justWatch.search({ query: title });
         
         // Find the best match, optionally using release year
-        const bestMatch = searchResult?.items?.find(item => item.original_release_year === releaseYear) || searchResult?.items?.[0];
+        const bestMatch = searchResult?.items?.find(item => item.original_release_year === releaseYear && item.object_type === type) || searchResult?.items?.[0];
 
         if (!bestMatch || !bestMatch.offers) {
             return [];
