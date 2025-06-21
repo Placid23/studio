@@ -1,3 +1,4 @@
+
 import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { Button } from '@/components/ui/button';
 import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
@@ -51,7 +52,11 @@ export default async function Home() {
     );
   }
   
-  const heroMovie = trendingMovies?.[0];
+  const heroMovie = trendingMovies && trendingMovies.length > 0 
+    ? trendingMovies[Math.floor(Math.random() * trendingMovies.length)] 
+    : undefined;
+  
+  const trendingCarouselMovies = trendingMovies?.filter(movie => movie.id !== heroMovie?.id) || [];
 
   if (!heroMovie) {
     return (
@@ -99,7 +104,7 @@ export default async function Home() {
       </div>
 
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
-        <MediaCarousel title="Trending Now" media={trendingMovies?.slice(1) || []} />
+        <MediaCarousel title="Trending Now" media={trendingCarouselMovies} />
         <MediaCarousel title="Popular TV Shows" media={popularShows || []} />
         <MediaCarousel title="Action & Adventure" media={actionMovies || []} />
         <MediaCarousel title="Comedy" media={comedyMovies || []} />
