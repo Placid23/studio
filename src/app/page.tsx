@@ -79,12 +79,13 @@ export default async function Home() {
           priority
           data-ai-hint="movie backdrop"
         />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-16 text-white">
           <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_5px_15px_rgba(0,0,0,0.7)]">
             {heroMovie.title}
           </h1>
-          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium text-foreground [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
+          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
             {heroMovie.synopsis}
           </p>
           <div className="flex gap-4 mt-4">
