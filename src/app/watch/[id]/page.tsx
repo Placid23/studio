@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
 
+export const dynamic = 'force-dynamic';
+
 export default async function WatchPage({ params }: { params: { id: string } }) {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         return (

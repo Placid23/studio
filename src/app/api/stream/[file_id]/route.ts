@@ -11,6 +11,7 @@ export async function GET(
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
+    console.error('TELEGRAM_BOT_TOKEN is not configured.');
     return new NextResponse('Telegram Bot Token not configured', { status: 500 });
   }
 
@@ -25,13 +26,13 @@ export async function GET(
 
     if (!fileInfoResponse.ok) {
         const error = await fileInfoResponse.json();
-        console.error('Telegram getFile API error:', error);
+        console.error(`Telegram getFile API error for fileId ${fileId}:`, error);
         return new NextResponse(`Failed to get file info from Telegram: ${error.description || 'Unknown error'}`, { status: fileInfoResponse.status });
     }
 
     const fileInfo = await fileInfoResponse.json();
     if (!fileInfo.ok || !fileInfo.result.file_path) {
-        console.error('Invalid response from Telegram getFile API:', fileInfo);
+        console.error(`Invalid response from Telegram getFile API for fileId ${fileId}:`, fileInfo);
         return new NextResponse('Failed to get file path from Telegram', { status: 500 });
     }
 
@@ -45,16 +46,15 @@ export async function GET(
 
     if (!videoResponse.ok) {
       const errorText = await videoResponse.text();
-      console.error(`Failed to download file from Telegram. Status: ${videoResponse.status}`, errorText);
+      console.error(`Failed to download file from Telegram for fileId ${fileId}. Status: ${videoResponse.status}`, errorText);
       return new NextResponse('Failed to download file from Telegram', { status: videoResponse.status });
     }
 
     if (!videoResponse.body) {
-      console.error('Failed to download file from Telegram: Response body is null.');
+      console.error(`Failed to download file from Telegram for fileId ${fileId}: Response body is null.`);
       return new NextResponse('Failed to download file from Telegram: Empty response', { status: 500 });
     }
     
-    // Create a new stream from the video response body
     const stream = videoResponse.body;
 
     // Return the stream with appropriate headers
@@ -64,11 +64,12 @@ export async function GET(
         'Content-Type': videoResponse.headers.get('Content-Type') || 'video/mp4',
         'Content-Length': videoResponse.headers.get('Content-Length') || '',
         'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-cache, no-store',
       },
     });
 
   } catch (error) {
-    console.error('Error streaming from Telegram:', error);
+    console.error(`Error streaming from Telegram for fileId ${fileId}:`, error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
