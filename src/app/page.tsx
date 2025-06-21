@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
-import { getPopularShows } from '@/lib/tvmaze';
+import { getPopularShows, getShowsByQuery } from '@/lib/tvmaze';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 
@@ -15,17 +15,27 @@ const GENRE_IDS = {
 };
 
 export default async function Home() {
-  let trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows;
+  let trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows, horrorShows, kDramas;
   let error: string | null = null;
 
   try {
     // Fetch all movie data in parallel
-    [trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows] = await Promise.all([
+    [
+      trendingMovies, 
+      actionMovies, 
+      comedyMovies, 
+      scifiMovies, 
+      popularShows,
+      horrorShows,
+      kDramas
+    ] = await Promise.all([
       getTrendingMovies(),
       getMoviesByGenre(GENRE_IDS.Action),
       getMoviesByGenre(GENRE_IDS.Comedy),
       getMoviesByGenre(GENRE_IDS.SciFi),
       getPopularShows(),
+      getShowsByQuery('horror'),
+      getShowsByQuery('k-drama'),
     ]);
   } catch (e: any) {
     if (e.message.includes('API key') || e.message.includes('NEXT_PUBLIC_TMDB_API_KEY')) {
@@ -109,6 +119,8 @@ export default async function Home() {
         <ContinueWatchingCarousel />
         <MediaCarousel title="Trending Now" media={trendingCarouselMovies} />
         <MediaCarousel title="Popular TV Shows" media={popularShows || []} />
+        <MediaCarousel title="Horror TV" media={horrorShows || []} />
+        <MediaCarousel title="K-Dramas" media={kDramas || []} />
         <MediaCarousel title="Action & Adventure" media={actionMovies || []} />
         <MediaCarousel title="Comedy" media={comedyMovies || []} />
         <MediaCarousel title="Sci-Fi" media={scifiMovies || []} />

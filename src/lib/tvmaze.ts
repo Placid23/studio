@@ -32,6 +32,11 @@ interface TVMazeEpisode {
     image: { medium: string; original: string } | null;
 }
 
+interface TVMazeSearchResult {
+  score: number;
+  show: TVMazeShow;
+}
+
 
 async function fetchFromTVMaze<T>(endpoint: string): Promise<T> {
   const url = `${API_BASE_URL}/${endpoint}`;
@@ -86,6 +91,18 @@ export async function getPopularShows(): Promise<Show[]> {
       .map(mapTVMazeShowToShow);
   } catch (error) {
     console.error('getPopularShows error:', error);
+    return [];
+  }
+}
+
+export async function getShowsByQuery(query: string): Promise<Show[]> {
+  try {
+    const data = await fetchFromTVMaze<TVMazeSearchResult[]>(`search/shows?q=${encodeURIComponent(query)}`);
+    return data
+      .slice(0, 20)
+      .map(result => mapTVMazeShowToShow(result.show));
+  } catch (error) {
+    console.error(`getShowsByQuery for "${query}" error:`, error);
     return [];
   }
 }
