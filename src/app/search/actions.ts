@@ -11,11 +11,33 @@ export async function findMovies(
   searchTerm: string,
   filters: { genre: string; rating: string; year: string }
 ): Promise<Movie[]> {
+  let movies: Movie[];
+
   if (searchTerm) {
-    const searchResults = await searchMovies(searchTerm);
-    // The TMDb discover endpoint doesn't support a search query.
-    // So if a search term is provided, we prioritize it over filters.
-    return searchResults;
+    movies = await searchMovies(searchTerm);
+  } else {
+    // If there's no search term, 'discover' endpoint handles filters server-side.
+    return await discoverMovies(filters);
   }
-  return await discoverMovies(filters);
+
+  // If there was a search term, apply filters to the results
+  // because the TMDB search endpoint doesn't support filtering.
+  let filteredMovies = movies;
+
+  if (filters.genre && filters.genre !== 'all') {
+    const genreId = parseInt(filters.genre, 10);
+    filteredMovies = filteredMovies.filter(movie => movie.genre_ids?.includes(genreId));
+  }
+
+  if (filters.rating && filters.rating !== 'all') {
+    const minRating = parseFloat(filters.rating);
+    filteredMovies = filteredMovies.filter(movie => movie.rating >= minRating);
+  }
+
+  if (filters.year && filters.year !== 'all') {
+    const year = parseInt(filters.year, 10);
+    filteredMovies = filteredMovies.filter(movie => movie.year === year);
+  }
+
+  return filteredMovies;
 }

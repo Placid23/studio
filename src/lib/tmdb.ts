@@ -74,6 +74,7 @@ function mapTMDbMovieToMovie(movie: TMDbMovie, genres: Map<number, string>): Mov
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
     duration: movie.runtime,
     genres: movieGenres,
+    genre_ids: movie.genre_ids,
     rating: movie.vote_average,
     synopsis: movie.overview,
     cast: movie.credits?.cast.slice(0, 10).map(c => c.name),

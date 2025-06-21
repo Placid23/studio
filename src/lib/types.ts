@@ -5,6 +5,7 @@ export interface Movie {
   year: number;
   duration?: number; // in minutes
   genres: string[];
+  genre_ids?: number[];
   rating: number;
   synopsis: string;
   cast?: string[];
