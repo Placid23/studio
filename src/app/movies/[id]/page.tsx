@@ -2,7 +2,7 @@ import type { Movie } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, Clock, Calendar, PlusCircle } from 'lucide-react';
+import { Star, Clock, Calendar, PlusCircle, Play } from 'lucide-react';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { Suspense } from 'react';
@@ -12,6 +12,7 @@ import { getMovieDetails } from '@/lib/tmdb';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   // Prevent API calls for non-numeric IDs.
@@ -24,6 +25,14 @@ export default async function MovieDetailPage({ params }: { params: { id: string
   if (!movie) {
     notFound();
   }
+
+  const supabase = createClient();
+  const { data: supabaseMovie } = await supabase
+    .from('movies')
+    .select('id')
+    .eq('title', movie.title)
+    .eq('type', 'movie')
+    .single();
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -87,11 +96,17 @@ export default async function MovieDetailPage({ params }: { params: { id: string
               ))}
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
-            <div className="mt-8">
+            <div className="mt-8 flex items-center gap-4">
               <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground">
                 <PlusCircle className="mr-2 h-6 w-6" />
                 Add to Watchlist
               </Button>
+              {supabaseMovie && (
+                <Button size="lg" variant="secondary">
+                  <Play className="mr-2 h-6 w-6" />
+                  Stream Now
+                </Button>
+              )}
             </div>
           </div>
         </div>

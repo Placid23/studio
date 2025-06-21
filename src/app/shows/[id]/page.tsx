@@ -1,7 +1,8 @@
 import type { Show, Episode } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Tv, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Star, Tv, Calendar, PlusCircle, Play } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { getShowDetails } from '@/lib/tvmaze';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -10,6 +11,7 @@ import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { Suspense } from 'react';
+import { createClient } from '@/lib/supabase/server';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -29,6 +31,14 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
   if (!show) {
     notFound();
   }
+
+  const supabase = createClient();
+  const { data: supabaseShow } = await supabase
+    .from('movies')
+    .select('id')
+    .eq('title', show.title)
+    .eq('type', 'show')
+    .single();
 
   const episodesBySeason = groupEpisodesBySeason(show.episodes);
 
@@ -94,6 +104,18 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
               ))}
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
+            <div className="mt-8 flex items-center gap-4">
+              <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground">
+                <PlusCircle className="mr-2 h-6 w-6" />
+                Add to Watchlist
+              </Button>
+              {supabaseShow && (
+                <Button size="lg" variant="secondary">
+                  <Play className="mr-2 h-6 w-6" />
+                  Stream Now
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
