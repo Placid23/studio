@@ -32,13 +32,17 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
     notFound();
   }
 
-  const supabase = createClient();
-  const { data: supabaseShow } = await supabase
-    .from('movies')
-    .select('id')
-    .eq('title', show.title)
-    .eq('type', 'show')
-    .single();
+  let supabaseShow: { id: any } | null = null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('movies')
+      .select('id')
+      .eq('title', show.title)
+      .eq('type', 'show')
+      .single();
+    supabaseShow = data;
+  }
 
   const episodesBySeason = groupEpisodesBySeason(show.episodes);
 

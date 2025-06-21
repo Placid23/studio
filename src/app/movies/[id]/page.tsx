@@ -26,13 +26,17 @@ export default async function MovieDetailPage({ params }: { params: { id: string
     notFound();
   }
 
-  const supabase = createClient();
-  const { data: supabaseMovie } = await supabase
-    .from('movies')
-    .select('id')
-    .eq('title', movie.title)
-    .eq('type', 'movie')
-    .single();
+  let supabaseMovie: { id: any } | null = null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('movies')
+      .select('id')
+      .eq('title', movie.title)
+      .eq('type', 'movie')
+      .single();
+    supabaseMovie = data;
+  }
 
   return (
     <div className="animate-in fade-in-50 duration-500">
