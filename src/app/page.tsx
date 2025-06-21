@@ -13,10 +13,11 @@ const GENRE_IDS = {
   Comedy: '35',
   SciFi: '878',
   Animation: '16',
+  Romance: '10749',
 };
 
 export default async function Home() {
-  let trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows, horrorShows, kDramas, animeMovies;
+  let trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows, horrorShows, kDramas, animeMovies, romanceMovies;
   let error: string | null = null;
 
   try {
@@ -29,7 +30,8 @@ export default async function Home() {
       popularShows,
       horrorShows,
       kDramas,
-      animeMovies
+      animeMovies,
+      romanceMovies
     ] = await Promise.all([
       getTrendingMovies(),
       getMoviesByGenre(GENRE_IDS.Action),
@@ -39,6 +41,7 @@ export default async function Home() {
       getShowsByQuery('horror'),
       getShowsByQuery('k-drama'),
       getMoviesByGenre(GENRE_IDS.Animation),
+      getMoviesByGenre(GENRE_IDS.Romance),
     ]);
   } catch (e: any) {
     if (e.message.includes('API key') || e.message.includes('NEXT_PUBLIC_TMDB_API_KEY')) {
@@ -127,6 +130,7 @@ export default async function Home() {
         <MediaCarousel title="K-Dramas" media={kDramas || []} />
         <MediaCarousel title="Action & Adventure" media={actionMovies || []} />
         <MediaCarousel title="Comedy" media={comedyMovies || []} />
+        <MediaCarousel title="Romance" media={romanceMovies || []} />
         <MediaCarousel title="Sci-Fi" media={scifiMovies || []} />
       </div>
     </div>
