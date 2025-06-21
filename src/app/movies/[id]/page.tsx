@@ -1,5 +1,4 @@
 import type { Movie } from '@/lib/types';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BackButton } from '@/components/layout/BackButton';
 import { getMovieDetails } from '@/lib/tmdb';
+import { ImageLoader } from '@/components/media/ImageLoader';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   const movie = await getMovieDetails(params.id);
@@ -20,8 +20,8 @@ export default async function MovieDetailPage({ params }: { params: { id: string
 
   return (
     <div className="animate-in fade-in-50 duration-500">
-      <div className="relative h-[45vh] md:h-[65vh] w-full">
-        <Image
+      <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
+        <ImageLoader
           src={movie.backdropUrl}
           alt={`Backdrop for ${movie.title}`}
           fill
@@ -36,13 +36,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
       <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
         <BackButton />
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 lg:w-1/4">
-            <Image
+          <div className="w-full md:w-1/3 lg:w-1/4 img-container rounded-lg shadow-2xl">
+            <ImageLoader
               src={movie.posterUrl}
               alt={`Poster for ${movie.title}`}
               width={500}
               height={750}
-              className="rounded-lg shadow-2xl"
+              className="rounded-lg"
               data-ai-hint="movie poster"
             />
           </div>

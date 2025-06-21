@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { PlayCircle } from 'lucide-react';
+import { ImageLoader } from './ImageLoader';
 
 interface TrailerPlayerProps {
   posterUrl: string;
@@ -7,8 +7,8 @@ interface TrailerPlayerProps {
 
 export function TrailerPlayer({ posterUrl }: TrailerPlayerProps) {
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-xl cursor-pointer group">
-      <Image
+    <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-xl cursor-pointer group img-container">
+      <ImageLoader
         src={posterUrl}
         alt="Trailer thumbnail"
         fill

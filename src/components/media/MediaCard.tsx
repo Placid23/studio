@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Movie, Show } from '@/lib/types';
 import { Star, PlayCircle } from 'lucide-react';
+import { ImageLoader } from './ImageLoader';
 
 interface MediaCardProps {
   media: Movie | Show;
@@ -13,8 +13,8 @@ export function MediaCard({ media }: MediaCardProps) {
 
   return (
     <Link href={href} className="group relative block w-full flex-shrink-0">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg border-2 border-transparent shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl">
-        <Image
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg border-2 border-transparent shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl img-container">
+        <ImageLoader
           src={media.posterUrl}
           alt={media.title}
           fill

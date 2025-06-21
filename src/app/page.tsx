@@ -2,10 +2,10 @@
 import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { Button } from '@/components/ui/button';
 import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
 import { getPopularShows } from '@/lib/tvmaze';
+import { ImageLoader } from '@/components/media/ImageLoader';
 
 const GENRE_IDS = {
   Action: '28',
@@ -68,8 +68,8 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col">
-      <div className="relative h-[56.25vw] min-h-[400px] max-h-[800px] w-full">
-        <Image
+      <div className="relative h-[56.25vw] min-h-[400px] max-h-[800px] w-full img-container">
+        <ImageLoader
           src={heroMovie.backdropUrl}
           alt={heroMovie.title}
           fill

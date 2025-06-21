@@ -142,3 +142,31 @@
   0% { transform: translateX(-50%); }
   100% { transform: translateX(100%); }
 }
+
+/* Creative Image Loader */
+@keyframes shimmer-loader-animation {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.img-container {
+  position: relative;
+  overflow: hidden;
+  background-color: hsl(var(--card));
+}
+
+.img-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--card) / 0) 0,
+    hsl(var(--foreground) / 0.02) 20%,
+    hsl(var(--foreground) / 0.05) 60%,
+    hsl(var(--card) / 0) 100%
+  );
+  animation: shimmer-loader-animation 1.5s infinite;
+}

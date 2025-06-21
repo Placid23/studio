@@ -1,11 +1,11 @@
 import type { Show, Episode } from '@/lib/types';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Star, Tv, Calendar } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { getShowDetails } from '@/lib/tvmaze';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ImageLoader } from '@/components/media/ImageLoader';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -30,8 +30,8 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="animate-in fade-in-50 duration-500">
-      <div className="relative h-[45vh] md:h-[65vh] w-full">
-        <Image
+      <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
+        <ImageLoader
           src={show.backdropUrl}
           alt={`Backdrop for ${show.title}`}
           fill
@@ -46,13 +46,13 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
       <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
         <BackButton />
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 lg:w-1/4">
-            <Image
+          <div className="w-full md:w-1/3 lg:w-1/4 img-container rounded-lg shadow-2xl">
+            <ImageLoader
               src={show.posterUrl}
               alt={`Poster for ${show.title}`}
               width={500}
               height={750}
-              className="rounded-lg shadow-2xl"
+              className="rounded-lg"
               data-ai-hint="tv show poster"
             />
           </div>
@@ -102,14 +102,16 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                     <div className="flex flex-col divide-y divide-border">
                       {episodes.map((episode) => (
                         <div key={episode.id} className="p-6 flex flex-col md:flex-row gap-4">
-                           <Image
-                              src={episode.imageUrl || 'https://placehold.co/400x225.png'}
-                              alt={episode.name}
-                              width={200}
-                              height={112}
-                              className="rounded-md aspect-video object-cover"
-                              data-ai-hint="tv episode still"
-                            />
+                           <div className="img-container rounded-md">
+                             <ImageLoader
+                                src={episode.imageUrl || 'https://placehold.co/400x225.png'}
+                                alt={episode.name}
+                                width={200}
+                                height={112}
+                                className="rounded-md aspect-video object-cover"
+                                data-ai-hint="tv episode still"
+                              />
+                           </div>
                           <div className="flex-1">
                             <h3 className="font-bold text-md text-primary">
                               E{episode.number}: {episode.name}
