@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Do not cache this route
 
 export async function GET(
@@ -42,8 +43,15 @@ export async function GET(
     // Step 3: Fetch the file and stream it back
     const videoResponse = await fetch(fileDownloadUrl);
 
-    if (!videoResponse.ok || !videoResponse.body) {
-        return new NextResponse('Failed to download file from Telegram', { status: 500 });
+    if (!videoResponse.ok) {
+      const errorText = await videoResponse.text();
+      console.error(`Failed to download file from Telegram. Status: ${videoResponse.status}`, errorText);
+      return new NextResponse('Failed to download file from Telegram', { status: videoResponse.status });
+    }
+
+    if (!videoResponse.body) {
+      console.error('Failed to download file from Telegram: Response body is null.');
+      return new NextResponse('Failed to download file from Telegram: Empty response', { status: 500 });
     }
     
     // Create a new stream from the video response body

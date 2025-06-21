@@ -36,6 +36,7 @@ export default async function WatchPage({ params }: { params: { id: string } }) 
                 <video
                     controls
                     autoPlay
+                    muted
                     className="w-full h-full"
                     src={videoSrc}
                 >
