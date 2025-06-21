@@ -6,6 +6,7 @@ import { BackButton } from '@/components/layout/BackButton';
 import { getShowDetails } from '@/lib/tvmaze';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ImageLoader } from '@/components/media/ImageLoader';
+import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -30,6 +31,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="animate-in fade-in-50 duration-500">
+      <WatchHistoryTracker media={show} />
       <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
         <ImageLoader
           src={show.backdropUrl}

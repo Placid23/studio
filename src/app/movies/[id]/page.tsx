@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BackButton } from '@/components/layout/BackButton';
 import { getMovieDetails } from '@/lib/tmdb';
 import { ImageLoader } from '@/components/media/ImageLoader';
+import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   const movie = await getMovieDetails(params.id);
@@ -20,6 +21,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
 
   return (
     <div className="animate-in fade-in-50 duration-500">
+      <WatchHistoryTracker media={movie} />
       <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
         <ImageLoader
           src={movie.backdropUrl}

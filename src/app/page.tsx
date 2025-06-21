@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
 import { getPopularShows } from '@/lib/tvmaze';
 import { ImageLoader } from '@/components/media/ImageLoader';
+import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 
 const GENRE_IDS = {
   Action: '28',
@@ -104,6 +105,7 @@ export default async function Home() {
       </div>
 
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
+        <ContinueWatchingCarousel />
         <MediaCarousel title="Trending Now" media={trendingCarouselMovies} />
         <MediaCarousel title="Popular TV Shows" media={popularShows || []} />
         <MediaCarousel title="Action & Adventure" media={actionMovies || []} />
