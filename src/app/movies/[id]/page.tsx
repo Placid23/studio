@@ -13,6 +13,11 @@ import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
+  // Prevent API calls for non-numeric IDs.
+  if (isNaN(Number(params.id))) {
+    notFound();
+  }
+
   const movie = await getMovieDetails(params.id);
 
   if (!movie) {
