@@ -30,13 +30,18 @@ export default async function MovieDetailPage({ params }: { params: { id: string
   let supabaseMovie: { id: any; telegram_file_id: string | null } | null = null;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('movies')
       .select('id, telegram_file_id')
-      .eq('title', movie.title)
+      .ilike('title', `${movie.title}%`)
       .eq('type', 'movie')
-      .single();
-    supabaseMovie = data;
+      .limit(1);
+      
+    if (error) {
+      console.error('Supabase query error:', error.message);
+    } else if (data && data.length > 0) {
+      supabaseMovie = data[0];
+    }
   }
 
   return (

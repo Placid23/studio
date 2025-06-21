@@ -57,13 +57,18 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
   let supabaseShow: { id: any; telegram_file_id: string | null } | null = null;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('movies')
       .select('id, telegram_file_id')
-      .eq('title', show.title)
+      .ilike('title', `${show.title}%`)
       .eq('type', 'show')
-      .single();
-    supabaseShow = data;
+      .limit(1);
+
+    if (error) {
+      console.error('Supabase query error:', error.message);
+    } else if (data && data.length > 0) {
+      supabaseShow = data[0];
+    }
   }
 
   const episodesBySeason = groupEpisodesBySeason(show.episodes);
