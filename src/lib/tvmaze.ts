@@ -63,7 +63,7 @@ async function fetchFromTVMaze<T>(endpoint: string): Promise<T> {
 function mapTVMazeShowToShow(show: TVMazeShow): Show {
   return {
     type: 'show',
-    id: String(show.id),
+    id: `tvmaze:${show.id}`,
     title: show.name,
     year: show.premiered ? new Date(show.premiered).getFullYear() : 0,
     genres: show.genres || [],
