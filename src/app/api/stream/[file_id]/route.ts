@@ -24,14 +24,15 @@ export async function GET(
     const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
     const fileInfoResponse = await fetch(getFileUrl);
 
-    if (!fileInfoResponse.ok) {
-        const error = await fileInfoResponse.json();
-        console.error(`Telegram getFile API error for fileId ${fileId}:`, error);
-        return new NextResponse(`Failed to get file info from Telegram: ${error.description || 'Unknown error'}`, { status: fileInfoResponse.status });
+    // Call .json() only ONCE to consume the response body
+    const fileInfo = await fileInfoResponse.json();
+
+    if (!fileInfoResponse.ok || !fileInfo.ok) {
+        console.error(`Telegram getFile API error for fileId ${fileId}:`, fileInfo);
+        return new NextResponse(`Failed to get file info from Telegram: ${fileInfo.description || 'Unknown error'}`, { status: fileInfoResponse.status });
     }
 
-    const fileInfo = await fileInfoResponse.json();
-    if (!fileInfo.ok || !fileInfo.result.file_path) {
+    if (!fileInfo.result.file_path) {
         console.error(`Invalid response from Telegram getFile API for fileId ${fileId}:`, fileInfo);
         return new NextResponse('Failed to get file path from Telegram', { status: 500 });
     }
