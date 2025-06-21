@@ -28,10 +28,11 @@ export default async function MovieDetailPage({ params }: { params: { id: string
           alt={`Backdrop for ${movie.title}`}
           fill
           style={{objectFit: "cover"}}
-          className="opacity-30"
+          className=""
           priority
           data-ai-hint="movie backdrop"
         />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
       </div>
 
