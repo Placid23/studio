@@ -1,18 +1,18 @@
 'use client';
 
 import { useRef } from 'react';
-import { MovieCard } from './MovieCard';
-import type { Movie } from '@/lib/types';
+import { MediaCard } from './MediaCard';
+import type { Movie, Show } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-interface MovieCarouselProps {
+interface MediaCarouselProps {
   title: string;
-  movies: Movie[];
+  media: (Movie | Show)[];
 }
 
-export function MovieCarousel({ title, movies }: MovieCarouselProps) {
-  if (!movies || movies.length === 0) return null;
+export function MediaCarousel({ title, media }: MediaCarouselProps) {
+  if (!media || media.length === 0) return null;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -37,9 +37,9 @@ export function MovieCarousel({ title, movies }: MovieCarouselProps) {
           ref={scrollRef}
           className="scrollbar-hide -mx-4 flex space-x-4 overflow-x-auto px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         >
-          {movies.map((movie) => (
-            <div key={movie.id} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
-              <MovieCard movie={movie} />
+          {media.map((item) => (
+            <div key={item.id} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
+              <MediaCard media={item} />
             </div>
           ))}
         </div>

@@ -52,6 +52,7 @@ function mapTMDbMovieToMovie(movie: TMDbMovie, genres: Map<number, string>): Mov
     : movie.genres?.map(g => g.name) || [];
 
   return {
+    type: 'movie',
     id: String(movie.id),
     title: movie.title,
     year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,

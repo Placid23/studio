@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useTransition, useCallback } from 'react';
 import type { Movie } from '@/lib/types';
-import { MovieCard } from '@/components/movies/MovieCard';
+import { MediaCard } from '@/components/media/MediaCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -125,7 +125,7 @@ function SearchContent() {
       ) : movies.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+            <MediaCard key={movie.id} media={movie} />
           ))}
         </div>
       ) : (

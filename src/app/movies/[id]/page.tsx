@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, Clock, Calendar, PlusCircle } from 'lucide-react';
-import { TrailerPlayer } from '@/components/movies/TrailerPlayer';
-import SimilarMovies from '@/components/movies/SimilarMovies';
+import { TrailerPlayer } from '@/components/media/TrailerPlayer';
+import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BackButton } from '@/components/layout/BackButton';
@@ -116,8 +116,8 @@ export default async function MovieDetailPage({ params }: { params: { id: string
         </div>
         
         <div className="mt-16">
-          <Suspense fallback={<SimilarMovies.Skeleton />}>
-            <SimilarMovies movie={movie} />
+          <Suspense fallback={<SimilarMedia.Skeleton />}>
+            <SimilarMedia media={movie} />
           </Suspense>
         </div>
       </div>

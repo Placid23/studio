@@ -1,14 +1,19 @@
 import { getSimilarMovies } from "@/lib/tmdb";
 import type { Movie } from "@/lib/types";
-import { MovieCard } from "./MovieCard";
+import { MediaCard } from "./MediaCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface SimilarMoviesProps {
-  movie: Movie;
+interface SimilarMediaProps {
+  media: Movie;
 }
 
-async function SimilarMovies({ movie }: SimilarMoviesProps) {
-  const suggestedMovies = await getSimilarMovies(movie.id);
+async function SimilarMedia({ media }: SimilarMediaProps) {
+  // Currently only supports finding similar movies.
+  if (media.type !== 'movie') {
+    return null;
+  }
+  
+  const suggestedMovies = await getSimilarMovies(media.id);
 
   if (!suggestedMovies || suggestedMovies.length === 0) {
     return null;
@@ -19,14 +24,14 @@ async function SimilarMovies({ movie }: SimilarMoviesProps) {
       <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">You Might Also Like</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         {suggestedMovies.map((m) => (
-          <MovieCard key={m.id} movie={m} />
+          <MediaCard key={m.id} media={m} />
         ))}
       </div>
     </div>
   );
 }
 
-function SimilarMoviesSkeleton() {
+function SimilarMediaSkeleton() {
   return (
     <div>
       <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">You Might Also Like</h2>
@@ -41,6 +46,6 @@ function SimilarMoviesSkeleton() {
   );
 }
 
-SimilarMovies.Skeleton = SimilarMoviesSkeleton;
+SimilarMedia.Skeleton = SimilarMediaSkeleton;
 
-export default SimilarMovies;
+export { SimilarMedia };
