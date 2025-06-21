@@ -35,14 +35,14 @@ async function getGenreMap(): Promise<Map<number, string>> {
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/genre/movie/list?api_key=${API_KEY}&language=en-US`);
-    if (!res.ok) throw new Error('Failed to fetch genres');
-    const data = await res.json();
+    const data = await fetchFromTMDb<{ genres: Genre[] }>('genre/movie/list');
     genreMap = new Map(data.genres.map((g: Genre) => [g.id, g.name]));
     return genreMap;
   } catch (error) {
     console.error('getGenreMap error:', error);
-    return new Map();
+    // Re-throw the error to be handled by the calling function (e.g., in the Page component)
+    // This provides better error visibility in the UI.
+    throw new Error('Failed to fetch genres');
   }
 }
 
