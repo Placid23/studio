@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Star, Tv, Calendar, PlusCircle, Play } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { getShowDetails } from '@/lib/tvmaze';
+import { getMovieDetails } from '@/lib/tmdb';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
@@ -12,6 +13,7 @@ import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
 // Group episodes by season
 function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode[]> {
@@ -25,19 +27,39 @@ function groupEpisodesBySeason(episodes: Episode[] = []): Record<string, Episode
   }, {} as Record<string, Episode[]>);
 }
 
+async function fetchShowData(id: string): Promise<Show | null> {
+    const [source, showId] = id.split(':');
+    if (!source || !showId) return null;
+
+    if (source === 'tvmaze') {
+        return getShowDetails(showId);
+    } else if (source === 'tmdb') {
+        const movieAsShow = await getMovieDetails(showId);
+        if (movieAsShow) {
+            return {
+                ...movieAsShow,
+                type: 'show',
+                episodes: [], // TMDB movie endpoint doesn't provide episodes
+            };
+        }
+    }
+    return null;
+}
+
+
 export default async function ShowDetailPage({ params }: { params: { id: string } }) {
-  const show = await getShowDetails(params.id);
+  const show = await fetchShowData(params.id);
 
   if (!show) {
     notFound();
   }
 
-  let supabaseShow: { id: any } | null = null;
+  let supabaseShow: { id: any; telegram_file_id: string | null } | null = null;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = createClient();
     const { data } = await supabase
       .from('movies')
-      .select('id')
+      .select('id, telegram_file_id')
       .eq('title', show.title)
       .eq('type', 'show')
       .single();
@@ -83,7 +105,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                 <Star className="w-5 h-5 text-yellow-400" />
                 <span className="font-bold text-lg text-foreground">{show.rating.toFixed(1)}</span>
               </div>
-              {show.episodes && (
+              {show.episodes && show.episodes.length > 0 && (
                 <>
                   <span className="text-muted-foreground/50">|</span>
                   <div className="flex items-center gap-2">
@@ -113,11 +135,13 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                 <PlusCircle className="mr-2 h-6 w-6" />
                 Add to Watchlist
               </Button>
-              {supabaseShow && (
-                <Button size="lg" variant="secondary">
-                  <Play className="mr-2 h-6 w-6" />
-                  Stream Now
-                </Button>
+               {supabaseShow && supabaseShow.telegram_file_id && (
+                <Link href={`/watch/${supabaseShow.id}`} passHref>
+                    <Button size="lg" variant="secondary">
+                      <Play className="mr-2 h-6 w-6" />
+                      Stream Now
+                    </Button>
+                </Link>
               )}
             </div>
           </div>

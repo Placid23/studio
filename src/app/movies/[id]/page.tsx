@@ -13,25 +13,26 @@ import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
-  // Prevent API calls for non-numeric IDs.
-  if (isNaN(Number(params.id))) {
+  const movieId = params.id.split('-')[0];
+  if (isNaN(Number(movieId))) {
     notFound();
   }
 
-  const movie = await getMovieDetails(params.id);
+  const movie = await getMovieDetails(movieId);
 
   if (!movie) {
     notFound();
   }
 
-  let supabaseMovie: { id: any } | null = null;
+  let supabaseMovie: { id: any; telegram_file_id: string | null } | null = null;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = createClient();
     const { data } = await supabase
       .from('movies')
-      .select('id')
+      .select('id, telegram_file_id')
       .eq('title', movie.title)
       .eq('type', 'movie')
       .single();
@@ -105,11 +106,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                 <PlusCircle className="mr-2 h-6 w-6" />
                 Add to Watchlist
               </Button>
-              {supabaseMovie && (
-                <Button size="lg" variant="secondary">
-                  <Play className="mr-2 h-6 w-6" />
-                  Stream Now
-                </Button>
+              {supabaseMovie && supabaseMovie.telegram_file_id && (
+                 <Link href={`/watch/${supabaseMovie.id}`} passHref>
+                    <Button size="lg" variant="secondary">
+                      <Play className="mr-2 h-6 w-6" />
+                      Stream Now
+                    </Button>
+                 </Link>
               )}
             </div>
           </div>
