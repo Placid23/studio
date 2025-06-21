@@ -7,10 +7,11 @@ import { HoldToDeleteButton } from './HoldToDeleteButton';
 interface MediaCardProps {
   media: Movie | Show;
   onRemove?: (id: string) => void;
+  watchHref?: string;
 }
 
-export function MediaCard({ media, onRemove }: MediaCardProps) {
-  const href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
+export function MediaCard({ media, onRemove, watchHref }: MediaCardProps) {
+  const href = watchHref || (media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`);
   const hint = media.type === 'movie' ? "movie poster" : "tv show poster";
 
   return (

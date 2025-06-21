@@ -1,6 +1,7 @@
 export interface Movie {
   type: 'movie';
   id: string;
+  supabaseId?: any;
   title: string;
   year: number;
   duration?: number; // in minutes
@@ -28,6 +29,7 @@ export interface Episode {
 export interface Show {
   type: 'show';
   id: string;
+  supabaseId?: any;
   title: string;
   year: number;
   genres: string[];

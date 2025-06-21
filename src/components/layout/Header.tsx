@@ -50,6 +50,15 @@ export function Header() {
               TV Shows
             </Link>
             <Link
+              href="/library"
+              className={cn(
+                'transition-colors hover:text-primary',
+                pathname === '/library' ? 'text-primary' : 'text-foreground/80'
+              )}
+            >
+              My Library
+            </Link>
+            <Link
               href="/search"
               className={cn(
                 'transition-colors hover:text-primary',
