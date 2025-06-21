@@ -20,12 +20,13 @@ function SearchContent() {
   const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  // State for filters, initialized from URL params for shareable links
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('query') || '');
-  const [genre, setGenre] = useState(searchParams.get('genre') || 'all');
-  const [rating, setRating] = useState(searchParams.get('rating') || 'all');
-  const [year, setYear] = useState(searchParams.get('year') || 'all');
+  // State for filters, initialized with defaults and populated from URL via useEffect
+  const [searchTerm, setSearchTerm] = useState('');
+  const [genre, setGenre] = useState('all');
+  const [rating, setRating] = useState('all');
+  const [year, setYear] = useState('all');
 
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
@@ -49,9 +50,20 @@ function SearchContent() {
   useEffect(() => {
     getGenres().then(setGenres);
   }, []);
-
-  // Effect to fetch movies when filters change.
+  
+  // Initialize filter state from URL search params on mount.
   useEffect(() => {
+    setSearchTerm(searchParams.get('query') || '');
+    setGenre(searchParams.get('genre') || 'all');
+    setRating(searchParams.get('rating') || 'all');
+    setYear(searchParams.get('year') || 'all');
+    setIsInitializing(false);
+  }, [searchParams]);
+
+  // Effect to fetch movies when filters change, but not on initial render.
+  useEffect(() => {
+    if (isInitializing) return;
+
     startTransition(async () => {
       const results = await findMovies(debouncedSearchTerm, { genre, rating, year });
       setMovies(results);
@@ -66,7 +78,7 @@ function SearchContent() {
     });
     router.push(`${pathname}?${queryString}`);
 
-  }, [debouncedSearchTerm, genre, rating, year, createQueryString, pathname, router]);
+  }, [debouncedSearchTerm, genre, rating, year, createQueryString, pathname, router, isInitializing]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -116,7 +128,7 @@ function SearchContent() {
         </div>
       </div>
 
-      {isPending ? (
+      {(isPending || isInitializing) ? (
          <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Loader2 className="w-16 h-16 text-primary animate-spin" />
           <h2 className="mt-6 text-2xl font-bold">Finding your next favorite movie...</h2>
