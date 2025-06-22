@@ -7,6 +7,7 @@ import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
 import { getPopularShows, getShowsByQuery } from '@/lib/tvmaze';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
+import type { Movie, Show } from '@/lib/types';
 
 const GENRE_IDS = {
   Action: '28',
@@ -17,47 +18,33 @@ const GENRE_IDS = {
 };
 
 export default async function Home() {
-  let trendingMovies, actionMovies, comedyMovies, scifiMovies, popularShows, horrorShows, kDramas, animeMovies, romanceMovies;
-  let error: string | null = null;
+  const results = await Promise.allSettled([
+    getTrendingMovies(),
+    getMoviesByGenre(GENRE_IDS.Action),
+    getMoviesByGenre(GENRE_IDS.Comedy),
+    getMoviesByGenre(GENRE_IDS.SciFi),
+    getPopularShows(),
+    getShowsByQuery('horror'),
+    getShowsByQuery('k-drama'),
+    getMoviesByGenre(GENRE_IDS.Animation),
+    getMoviesByGenre(GENRE_IDS.Romance),
+  ]);
 
-  try {
-    // Fetch all movie data in parallel
-    [
-      trendingMovies, 
-      actionMovies, 
-      comedyMovies, 
-      scifiMovies, 
-      popularShows,
-      horrorShows,
-      kDramas,
-      animeMovies,
-      romanceMovies
-    ] = await Promise.all([
-      getTrendingMovies(),
-      getMoviesByGenre(GENRE_IDS.Action),
-      getMoviesByGenre(GENRE_IDS.Comedy),
-      getMoviesByGenre(GENRE_IDS.SciFi),
-      getPopularShows(),
-      getShowsByQuery('horror'),
-      getShowsByQuery('k-drama'),
-      getMoviesByGenre(GENRE_IDS.Animation),
-      getMoviesByGenre(GENRE_IDS.Romance),
-    ]);
-  } catch (e: any) {
-    if (e.message.includes('API key') || e.message.includes('NEXT_PUBLIC_TMDB_API_KEY')) {
-      error = 'NEXT_PUBLIC_TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
-    } else {
-      error = 'Failed to load movies. Please try again later.';
+  const hasError = results.some(result => result.status === 'rejected');
+  
+  if (hasError) {
+    const rejectedReason = (results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined)?.reason;
+    let errorMessage = 'Failed to load movies. Please try again later.';
+    if (rejectedReason instanceof Error && (rejectedReason.message.includes('API key') || rejectedReason.message.includes('NEXT_PUBLIC_TMDB_API_KEY'))) {
+      errorMessage = 'NEXT_PUBLIC_TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
     }
-  }
-
-  if (error) {
+    
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-destructive">Error Loading Movies</h1>
-          <p className="mt-2 text-destructive/80">{error}</p>
+          <p className="mt-2 text-destructive/80">{errorMessage}</p>
           <p className="mt-4 text-sm text-muted-foreground">
             Get your free API key from{' '}
             <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
@@ -69,6 +56,19 @@ export default async function Home() {
     );
   }
   
+  const [
+    trendingMovies, 
+    actionMovies, 
+    comedyMovies, 
+    scifiMovies, 
+    popularShows,
+    horrorShows,
+    kDramas,
+    animeMovies,
+    romanceMovies
+  ] = results.map(r => (r as PromiseFulfilledResult<any>).value) as [(Movie[]), (Movie[]), (Movie[]), (Movie[]), (Show[]), (Show[]), (Show[]), (Movie[]), (Movie[])];
+
+
   const heroMovie = trendingMovies && trendingMovies.length > 0 
     ? trendingMovies[Math.floor(Math.random() * trendingMovies.length)] 
     : undefined;
