@@ -1,42 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { MediaCard } from '@/components/media/MediaCard';
-import { searchMovies } from '@/lib/tmdb';
-import { getShowsByQuery } from '@/lib/tvmaze';
 import type { Movie, Show } from '@/lib/types';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
-
-async function enrichMedia(media: { id: any; title: string; type: 'movie' | 'show' }): Promise<(Movie | Show) & { supabaseId: any }> {
-  let enrichedData: Movie | Show | undefined;
-
-  // Simple title cleaning
-  const cleanTitle = media.title.split(/S\d{2}E\d{2}/i)[0].replace(/\./g, ' ').trim();
-
-  if (media.type === 'movie') {
-    const results = await searchMovies(cleanTitle);
-    enrichedData = results[0];
-  } else {
-    const results = await getShowsByQuery(cleanTitle);
-    enrichedData = results[0];
-  }
-
-  if (enrichedData) {
-    return { ...enrichedData, supabaseId: media.id, title: media.title };
-  }
-
-  // Fallback for when no match is found on external APIs
-  return {
-    id: `supabase-${media.id}`,
-    supabaseId: media.id,
-    title: media.title,
-    type: media.type,
-    year: new Date().getFullYear(),
-    genres: [],
-    rating: 0,
-    synopsis: 'No information available.',
-    posterUrl: 'https://placehold.co/500x750.png',
-    backdropUrl: 'https://placehold.co/1920x1080.png',
-  };
-}
 
 export default async function LibraryPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -44,7 +9,7 @@ export default async function LibraryPage() {
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">Streaming Misconfigured</h1>
+          <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
           <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
         </div>
       </div>
@@ -52,7 +17,7 @@ export default async function LibraryPage() {
   }
   
   const supabase = createClient();
-  const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type').order('created_at', { ascending: false });
+  const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres').order('created_at', { ascending: false });
 
   if (error) {
     return (
@@ -63,7 +28,18 @@ export default async function LibraryPage() {
     )
   }
 
-  const enrichedLibrary = await Promise.all((libraryItems || []).map(enrichMedia));
+  const enrichedLibrary = (libraryItems || []).map(item => ({
+    id: item.id,
+    supabaseId: item.id,
+    title: item.title,
+    type: item.type,
+    year: item.year || 0,
+    genres: item.genres || [],
+    rating: item.rating || 0,
+    synopsis: '', // Not needed for card view
+    posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
+    backdropUrl: 'https://placehold.co/1920x1080.png', // Default backdrop
+  })) as (Movie | Show)[];
 
   return (
     <div className="container mx-auto px-4 py-8">
