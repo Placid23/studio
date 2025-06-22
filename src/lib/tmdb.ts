@@ -138,9 +138,13 @@ export async function getSimilarMovies(id: string): Promise<Movie[]> {
   return data.results.slice(0, 10).map(movie => mapTMDbMovieToMovie(movie, genres));
 }
 
-export async function searchMovies(query: string): Promise<Movie[]> {
+export async function searchMovies(query: string, year?: string): Promise<Movie[]> {
   const genres = await getGenreMap();
-  const data = await fetchFromTMDb<{ results: TMDbMovie[] }>('search/movie', { query });
+  const params: Record<string, string> = { query };
+  if (year && year !== 'all') {
+    params.primary_release_year = year;
+  }
+  const data = await fetchFromTMDb<{ results: TMDbMovie[] }>('search/movie', params);
   return data.results.map(movie => mapTMDbMovieToMovie(movie, genres));
 }
 

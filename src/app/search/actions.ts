@@ -14,14 +14,15 @@ export async function findMovies(
   let movies: Movie[];
 
   if (searchTerm) {
-    movies = await searchMovies(searchTerm);
+    // Pass the year filter directly to the TMDB API search endpoint.
+    movies = await searchMovies(searchTerm, filters.year);
   } else {
     // If there's no search term, 'discover' endpoint handles filters server-side.
     return await discoverMovies(filters);
   }
 
-  // If there was a search term, apply filters to the results
-  // because the TMDB search endpoint doesn't support filtering.
+  // If there was a search term, apply filters to the results.
+  // The year filter is handled by the API, so we only need to filter by genre and rating.
   let filteredMovies = movies;
 
   if (filters.genre && filters.genre !== 'all') {
@@ -32,11 +33,6 @@ export async function findMovies(
   if (filters.rating && filters.rating !== 'all') {
     const minRating = parseFloat(filters.rating);
     filteredMovies = filteredMovies.filter(movie => movie.rating >= minRating);
-  }
-
-  if (filters.year && filters.year !== 'all') {
-    const year = parseInt(filters.year, 10);
-    filteredMovies = filteredMovies.filter(movie => movie.year === year);
   }
 
   return filteredMovies;
