@@ -13,6 +13,10 @@ export default function Signup({ searchParams }: { searchParams: { message: stri
   const signUp = async (formData: FormData) => {
     'use server';
 
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return redirect(`/signup?message=Supabase is not configured.`);
+    }
+
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const origin = headers().get('origin');

@@ -26,6 +26,11 @@ export function MobileNav({ user, navLinks }: { user: User | null, navLinks: Nav
     const router = useRouter();
 
     const handleSignOut = async () => {
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            router.push('/login');
+            router.refresh();
+            return;
+        }
         const supabase = createClient();
         await supabase.auth.signOut();
         router.push('/login');

@@ -12,6 +12,10 @@ export default function Login({ searchParams }: { searchParams: { message: strin
   const signIn = async (formData: FormData) => {
     'use server';
 
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return redirect('/login?message=Supabase is not configured.');
+    }
+
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const supabase = createClient();

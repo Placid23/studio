@@ -4,10 +4,17 @@ import { createClient } from '@/lib/supabase/server';
 import { UserNav } from './UserNav';
 import { MobileNav } from './MobileNav';
 import { DesktopNav } from './DesktopNav';
+import type { User } from '@supabase/supabase-js';
 
 export async function Header() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user: User | null = null;
+  
+  // Only attempt to get the user if Supabase is configured
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  }
 
   const navLinks = [
     { href: '/', label: 'Home' },

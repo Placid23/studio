@@ -1,15 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
+import { AlertTriangle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function WatchPage({ params }: { params: { id: string } }) {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         return (
-            <div className="container mx-auto px-4 py-8 text-center">
-                 <h1 className="text-2xl font-bold text-destructive">Streaming Misconfigured</h1>
-                 <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
+            <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+                <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+                <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-destructive">Streaming Misconfigured</h1>
+                <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
+                </div>
             </div>
         )
     }
