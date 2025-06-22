@@ -11,7 +11,14 @@ interface MediaCardProps {
 }
 
 export function MediaCard({ media, onRemove, watchHref }: MediaCardProps) {
-  const href = watchHref || (media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`);
+  let href = watchHref;
+  if (!href) {
+    if (media.supabaseId) {
+      href = `/watch/${media.supabaseId}`;
+    } else {
+      href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
+    }
+  }
   const hint = media.type === 'movie' ? "movie poster" : "tv show poster";
 
   return (

@@ -29,7 +29,7 @@ export default async function LibraryPage() {
   }
 
   const enrichedLibrary = (libraryItems || []).map(item => ({
-    id: item.id,
+    id: String(item.id),
     supabaseId: item.id,
     title: item.title,
     type: item.type,
