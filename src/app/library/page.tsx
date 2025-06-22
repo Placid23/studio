@@ -2,8 +2,18 @@ import { createClient } from '@/lib/supabase/server';
 import { MediaCard } from '@/components/media/MediaCard';
 import type { Movie, Show } from '@/lib/types';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 export default async function LibraryPage() {
+  const supabase = createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return redirect('/login?message=You must be logged in to view your library.');
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
@@ -16,7 +26,6 @@ export default async function LibraryPage() {
     );
   }
   
-  const supabase = createClient();
   const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres').order('created_at', { ascending: false });
 
   if (error) {
