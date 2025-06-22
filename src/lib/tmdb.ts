@@ -1,3 +1,4 @@
+
 import type { Movie } from './types';
 
 const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
@@ -41,17 +42,9 @@ async function getGenreMap(): Promise<Map<number, string>> {
   if (genreMap) {
     return genreMap;
   }
-
-  try {
-    const data = await fetchFromTMDb<{ genres: Genre[] }>('genre/movie/list');
-    genreMap = new Map(data.genres.map((g: Genre) => [g.id, g.name]));
-    return genreMap;
-  } catch (error) {
-    console.error('getGenreMap error:', error);
-    // Re-throw the error to be handled by the calling function (e.g., in the Page component)
-    // This provides better error visibility in the UI.
-    throw new Error('Failed to fetch genres');
-  }
+  const data = await fetchFromTMDb<{ genres: Genre[] }>('genre/movie/list');
+  genreMap = new Map(data.genres.map((g: Genre) => [g.id, g.name]));
+  return genreMap;
 }
 
 function mapTMDbMovieToMovie(movie: TMDbMovie, genres: Map<number, string>): Movie {
