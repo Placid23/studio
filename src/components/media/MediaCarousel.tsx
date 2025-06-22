@@ -5,6 +5,7 @@ import { MediaCard } from './MediaCard';
 import type { Movie, Show } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MediaCarouselProps {
   title: string;
@@ -66,5 +67,25 @@ export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps
         </Button>
       </div>
     </div>
+  );
+}
+
+
+export function MediaCarouselSkeleton() {
+  return (
+      <div className="w-full">
+          <Skeleton className="h-8 w-1/3 mb-4 rounded-md" />
+          <div className="relative">
+              <div className="scrollbar-hide -mx-4 flex space-x-4 overflow-x-auto px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                      <div key={index} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
+                          <div className="aspect-[2/3] w-full">
+                              <Skeleton className="w-full h-full rounded-lg" />
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      </div>
   );
 }

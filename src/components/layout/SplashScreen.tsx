@@ -53,14 +53,6 @@ export function SplashScreen() {
           NovaStream
         </motion.h1>
       </motion.div>
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
-        className="absolute bottom-8 text-xs text-foreground/50 z-10"
-      >
-        Powered by NovaStream
-      </motion.p>
     </motion.div>
   );
 }
