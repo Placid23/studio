@@ -1,94 +1,90 @@
 
-import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
+import { PlayCircle, Info } from 'lucide-react';
 import Link from 'next/link';
-import { getTrendingMovies, getMoviesByGenre } from '@/lib/tmdb';
-import { getPopularShows, getShowsByQuery } from '@/lib/tvmaze';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 import type { Movie, Show } from '@/lib/types';
+import { createClient } from '@/lib/supabase/server';
+import { MediaCarousel } from '@/components/media/MediaCarousel';
+import { AlertTriangle } from 'lucide-react';
 
-const GENRE_IDS = {
-  Action: '28',
-  Comedy: '35',
-  SciFi: '878',
-  Animation: '16',
-  Romance: '10749',
-};
+function mapSupabaseItemToMedia(item: any): Movie | Show {
+    const common = {
+      id: String(item.id),
+      supabaseId: item.id,
+      title: item.title,
+      year: item.year || 0,
+      genres: item.genres || [],
+      rating: item.rating || 0,
+      synopsis: item.synopsis || 'No synopsis available.',
+      posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
+      backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
+    };
+    if (item.type === 'movie') {
+      return { ...common, type: 'movie' };
+    } else {
+      return { ...common, type: 'show' };
+    }
+}
+
 
 export default async function Home() {
-  const results = await Promise.allSettled([
-    getTrendingMovies(),
-    getMoviesByGenre(GENRE_IDS.Action),
-    getMoviesByGenre(GENRE_IDS.Comedy),
-    getMoviesByGenre(GENRE_IDS.SciFi),
-    getPopularShows(),
-    getShowsByQuery('horror'),
-    getShowsByQuery('k-drama'),
-    getMoviesByGenre(GENRE_IDS.Animation),
-    getMoviesByGenre(GENRE_IDS.Romance),
-  ]);
-
-  const hasError = results.some(result => result.status === 'rejected');
-  
-  if (hasError) {
-    const rejectedReason = (results.find(r => r.status === 'rejected') as PromiseRejectedResult | undefined)?.reason;
-    let errorMessage = 'Failed to load movies. Please try again later.';
-    if (rejectedReason instanceof Error && (rejectedReason.message.includes('API key') || rejectedReason.message.includes('NEXT_PUBLIC_TMDB_API_KEY'))) {
-      errorMessage = 'NEXT_PUBLIC_TMDB_API_KEY is missing or invalid. Please add it to your .env file.';
-    }
-    
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">Error Loading Movies</h1>
-          <p className="mt-2 text-destructive/80">{errorMessage}</p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Get your free API key from{' '}
-            <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-              The Movie Database website
-            </a>.
-          </p>
+          <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
+          <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
         </div>
       </div>
     );
   }
-  
-  const [
-    trendingMovies, 
-    actionMovies, 
-    comedyMovies, 
-    scifiMovies, 
-    popularShows,
-    horrorShows,
-    kDramas,
-    animeMovies,
-    romanceMovies
-  ] = results.map(r => (r as PromiseFulfilledResult<any>).value) as [(Movie[]), (Movie[]), (Movie[]), (Movie[]), (Show[]), (Show[]), (Show[]), (Movie[]), (Movie[])];
 
+  const supabase = createClient();
+  const { data: mediaItems, error } = await supabase
+    .from('movies')
+    .select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url')
+    .order('created_at', { ascending: false })
+    .limit(40);
 
-  const heroMovie = trendingMovies && trendingMovies.length > 0 
-    ? trendingMovies[Math.floor(Math.random() * trendingMovies.length)] 
-    : undefined;
-  
-  const trendingCarouselMovies = trendingMovies?.filter(movie => movie.id !== heroMovie?.id) || [];
-
-  if (!heroMovie) {
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold">No trending movies found.</h1>
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">Error Loading Media</h1>
+          <p className="mt-2 text-destructive/80">{error.message}</p>
+        </div>
       </div>
     );
   }
+
+  const allMedia = (mediaItems || []).map(mapSupabaseItemToMedia);
+
+  const heroMedia = allMedia.length > 0 ? allMedia[Math.floor(Math.random() * allMedia.length)] : null;
+
+  const recentMovies = allMedia.filter(m => m.type === 'movie' && m.id !== heroMedia?.id);
+  const recentShows = allMedia.filter(m => m.type === 'show' && m.id !== heroMedia?.id);
+
+  if (!heroMedia) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <h1 className="text-2xl font-bold">No media found in your library.</h1>
+        <p className="text-muted-foreground">Add some via your Telegram bot!</p>
+      </div>
+    );
+  }
+
+  const heroLink = heroMedia.type === 'movie' ? `/movies/${heroMedia.id}` : `/shows/${heroMedia.id}`;
 
   return (
     <div className="flex flex-col">
       <div className="relative h-[56.25vw] min-h-[400px] max-h-[800px] w-full img-container">
         <ImageLoader
-          src={heroMovie.backdropUrl}
-          alt={heroMovie.title}
+          src={heroMedia.backdropUrl!}
+          alt={heroMedia.title}
           fill
           style={{objectFit: "cover"}}
           className="absolute inset-0"
@@ -99,19 +95,21 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-16 text-white">
           <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_5px_15px_rgba(0,0,0,0.7)]">
-            {heroMovie.title}
+            {heroMedia.title}
           </h1>
           <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
-            {heroMovie.synopsis}
+            {heroMedia.synopsis}
           </p>
           <div className="flex gap-4 mt-4">
-            <Link href={`/movies/${heroMovie.id}`} passHref>
-              <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground">
-                <PlayCircle className="mr-2 h-6 w-6" />
-                Play
-              </Button>
-            </Link>
-            <Link href={`/movies/${heroMovie.id}`} passHref>
+            {heroMedia.supabaseId && (
+              <Link href={`/watch/${heroMedia.supabaseId}`} passHref>
+                <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground">
+                  <PlayCircle className="mr-2 h-6 w-6" />
+                  Play
+                </Button>
+              </Link>
+            )}
+            <Link href={heroLink} passHref>
                <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
                 <Info className="mr-2 h-6 w-6" />
                 More Info
@@ -123,15 +121,8 @@ export default async function Home() {
 
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
         <ContinueWatchingCarousel />
-        <MediaCarousel title="Trending Now" media={trendingCarouselMovies} />
-        <MediaCarousel title="Popular TV Shows" media={popularShows || []} />
-        <MediaCarousel title="Anime" media={animeMovies || []} />
-        <MediaCarousel title="Horror TV" media={horrorShows || []} />
-        <MediaCarousel title="K-Dramas" media={kDramas || []} />
-        <MediaCarousel title="Action & Adventure" media={actionMovies || []} />
-        <MediaCarousel title="Comedy" media={comedyMovies || []} />
-        <MediaCarousel title="Romance" media={romanceMovies || []} />
-        <MediaCarousel title="Sci-Fi" media={scifiMovies || []} />
+        <MediaCarousel title="Recent Movies" media={recentMovies} />
+        <MediaCarousel title="Recent TV Shows" media={recentShows} />
       </div>
     </div>
   );

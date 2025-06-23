@@ -1,39 +1,68 @@
 'use server';
 
-import { discoverMovies, getGenres as fetchGenres, searchMovies } from "@/lib/tmdb";
-import type { Movie } from "@/lib/types";
+import type { Movie, Show } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
 
-export async function getGenres() {
-  return fetchGenres();
+function mapSupabaseItemToMedia(item: any): Movie | Show {
+    const common = {
+      id: String(item.id),
+      supabaseId: item.id,
+      title: item.title,
+      year: item.year || 0,
+      genres: item.genres || [],
+      rating: item.rating || 0,
+      synopsis: item.synopsis || 'No synopsis available.',
+      posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
+      backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
+    };
+    if (item.type === 'movie') {
+      return { ...common, type: 'movie' };
+    } else {
+      return { ...common, type: 'show' };
+    }
 }
 
-export async function findMovies(
-  searchTerm: string,
-  filters: { genre: string; rating: string; year: string }
-): Promise<Movie[]> {
-  let movies: Movie[];
+export async function getAvailableGenres(): Promise<string[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from('movies').select('genres');
 
-  if (searchTerm) {
-    // Pass the year filter directly to the TMDB API search endpoint.
-    movies = await searchMovies(searchTerm, filters.year);
-  } else {
-    // If there's no search term, 'discover' endpoint handles filters server-side.
-    return await discoverMovies(filters);
+  if (error || !data) {
+    return [];
   }
 
-  // If there was a search term, apply filters to the results.
-  // The year filter is handled by the API, so we only need to filter by genre and rating.
-  let filteredMovies = movies;
+  const allGenres = data.flatMap(item => item.genres || []);
+  return [...new Set(allGenres)].sort();
+}
+
+export async function searchMedia(
+  searchTerm: string,
+  filters: { genre: string; rating: string; year: string }
+): Promise<(Movie | Show)[]> {
+  const supabase = createClient();
+  let query = supabase.from('movies').select('*, telegram_file_id');
+
+  if (searchTerm) {
+    query = query.ilike('title', `%${searchTerm}%`);
+  }
 
   if (filters.genre && filters.genre !== 'all') {
-    const genreId = parseInt(filters.genre, 10);
-    filteredMovies = filteredMovies.filter(movie => movie.genre_ids?.includes(genreId));
+    query = query.contains('genres', [filters.genre]);
+  }
+
+  if (filters.year && filters.year !== 'all') {
+    query = query.eq('year', parseInt(filters.year, 10));
   }
 
   if (filters.rating && filters.rating !== 'all') {
-    const minRating = parseFloat(filters.rating);
-    filteredMovies = filteredMovies.filter(movie => movie.rating >= minRating);
+    query = query.gte('rating', parseFloat(filters.rating));
   }
 
-  return filteredMovies;
+  const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
+  
+  if (error) {
+    console.error("Supabase search error:", error);
+    return [];
+  }
+
+  return data.map(mapSupabaseItemToMedia);
 }

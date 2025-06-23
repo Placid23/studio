@@ -8,11 +8,11 @@ export interface Movie {
   genres: string[];
   genre_ids?: number[];
   rating: number;
-  synopsis: string;
+  synopsis: string | null;
   cast?: string[];
   director?: string;
-  posterUrl: string;
-  backdropUrl:string;
+  posterUrl: string | null;
+  backdropUrl:string | null;
   trailerUrl?: string;
 }
 
@@ -34,9 +34,9 @@ export interface Show {
   year: number;
   genres: string[];
   rating: number;
-  synopsis: string;
-  posterUrl: string;
-  backdropUrl: string;
+  synopsis: string | null;
+  posterUrl: string | null;
+  backdropUrl: string | null;
   episodes?: Episode[];
   trailerUrl?: string;
   cast?: string[];

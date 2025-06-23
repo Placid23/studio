@@ -26,7 +26,7 @@ export default async function LibraryPage() {
     return redirect('/login?message=You must be logged in to view your library.');
   }
   
-  const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres').order('created_at', { ascending: false });
+  const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url').order('created_at', { ascending: false });
 
   if (error) {
     return (
@@ -45,9 +45,9 @@ export default async function LibraryPage() {
     year: item.year || 0,
     genres: item.genres || [],
     rating: item.rating || 0,
-    synopsis: '', // Not needed for card view
+    synopsis: item.synopsis || 'No synopsis available.',
     posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
-    backdropUrl: 'https://placehold.co/1920x1080.png', // Default backdrop
+    backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
   })) as (Movie | Show)[];
 
   return (

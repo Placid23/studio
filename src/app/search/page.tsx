@@ -1,13 +1,13 @@
 'use client';
 
 import { Suspense, useState, useEffect, useTransition, useCallback } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Movie, Show } from '@/lib/types';
 import { MediaCard } from '@/components/media/MediaCard';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Search, Film, Loader2 } from 'lucide-react';
-import { getGenres, findMovies } from './actions';
+import { getAvailableGenres, searchMedia } from './actions';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 const allYears = Array.from({ length: 50 }, (_, i) => String(new Date().getFullYear() - i));
@@ -17,8 +17,8 @@ function SearchContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
-  const [genres, setGenres] = useState<{ id: number; name: string }[]>([]);
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
+  const [media, setMedia] = useState<(Movie | Show)[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -48,7 +48,7 @@ function SearchContent() {
   
   // Fetch genres on component mount.
   useEffect(() => {
-    getGenres().then(setGenres);
+    getAvailableGenres().then(setGenres);
   }, []);
   
   // Initialize filter state from URL search params on mount.
@@ -65,8 +65,8 @@ function SearchContent() {
     if (isInitializing) return;
 
     startTransition(async () => {
-      const results = await findMovies(debouncedSearchTerm, { genre, rating, year });
-      setMovies(results);
+      const results = await searchMedia(debouncedSearchTerm, { genre, rating, year });
+      setMedia(results);
     });
 
     // Update the URL with the new search params.
@@ -83,7 +83,7 @@ function SearchContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 space-y-4">
-        <h1 className="text-4xl font-black text-primary uppercase tracking-wider">Search Movies</h1>
+        <h1 className="text-4xl font-black text-primary uppercase tracking-wider">Search Library</h1>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
@@ -101,7 +101,7 @@ function SearchContent() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Genres</SelectItem>
-              {genres.map(g => <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>)}
+              {genres.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={rating} onValueChange={setRating}>
@@ -131,19 +131,19 @@ function SearchContent() {
       {(isPending || isInitializing) ? (
          <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Loader2 className="w-16 h-16 text-primary animate-spin" />
-          <h2 className="mt-6 text-2xl font-bold">Finding your next favorite movie...</h2>
+          <h2 className="mt-6 text-2xl font-bold">Searching your library...</h2>
           <p className="mt-2 text-muted-foreground">Please wait a moment</p>
         </div>
-      ) : movies.length > 0 ? (
+      ) : media.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies.map((movie) => (
-            <MediaCard key={movie.id} media={movie} />
+          {media.map((item) => (
+            <MediaCard key={item.id} media={item} />
           ))}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Film className="w-16 h-16 text-muted-foreground/50" />
-          <h2 className="mt-6 text-2xl font-bold">No movies found</h2>
+          <h2 className="mt-6 text-2xl font-bold">No media found</h2>
           <p className="mt-2 text-muted-foreground">Try a different search term or adjust the filters.</p>
         </div>
       )}

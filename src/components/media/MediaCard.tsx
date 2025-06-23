@@ -13,10 +13,11 @@ interface MediaCardProps {
 export function MediaCard({ media, onRemove, watchHref }: MediaCardProps) {
   let href = watchHref;
   if (!href) {
+    // If a supabaseId is present, we prioritize the watch link
     if (media.supabaseId) {
-      href = `/watch/${media.supabaseId}`;
+       href = `/watch/${media.supabaseId}`;
     } else {
-      href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
+       href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
     }
   }
   const hint = media.type === 'movie' ? "movie poster" : "tv show poster";
@@ -28,7 +29,7 @@ export function MediaCard({ media, onRemove, watchHref }: MediaCardProps) {
           <HoldToDeleteButton onDelete={() => onRemove(media.id)} />
         )}
         <ImageLoader
-          src={media.posterUrl}
+          src={media.posterUrl!}
           alt={media.title}
           fill
           style={{objectFit: "cover"}}
