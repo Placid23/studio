@@ -40,12 +40,11 @@ export default async function WatchPage({ params }: { params: { id: string } }) 
             <h1 className="text-3xl font-bold mb-4">{media.title}</h1>
             <div className="aspect-video w-full bg-black rounded-lg overflow-hidden shadow-2xl">
                 <video
-                    key={videoSrc}
                     controls
-                    autoPlay
-                    muted
                     className="w-full h-full"
                     src={videoSrc}
+                    // Add poster for a better loading experience
+                    poster={media.backdrop_url || media.poster_url || ''}
                 >
                     Your browser does not support the video tag.
                 </video>

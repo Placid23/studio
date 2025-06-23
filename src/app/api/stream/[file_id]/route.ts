@@ -20,49 +20,52 @@ export async function GET(
   }
 
   try {
+    // 1. Get file path and size from Telegram
     const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
     const fileInfoResponse = await fetch(getFileUrl);
     const fileInfo = await fileInfoResponse.json();
 
     if (!fileInfoResponse.ok || !fileInfo.ok) {
-        console.error(`Telegram getFile API error for fileId ${fileId}:`, fileInfo);
-        return new NextResponse(`Failed to get file info from Telegram: ${fileInfo.description || 'Unknown error'}`, { status: fileInfoResponse.status });
+      console.error(`Telegram getFile API error for fileId ${fileId}:`, fileInfo);
+      return new NextResponse(`Failed to get file info from Telegram: ${fileInfo.description || 'Unknown error'}`, { status: fileInfo.error_code || 500 });
     }
 
     if (!fileInfo.result.file_path) {
-        console.error(`Invalid response from Telegram getFile API for fileId ${fileId}:`, fileInfo);
-        return new NextResponse('Failed to get file path from Telegram', { status: 500 });
+      console.error(`Invalid response from Telegram getFile API for fileId ${fileId}:`, fileInfo);
+      return new NextResponse('Failed to get file path from Telegram', { status: 500 });
     }
 
     const filePath = fileInfo.result.file_path;
     const fileDownloadUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
     
-    const videoResponse = await fetch(fileDownloadUrl);
+    // 2. Proxy Range requests for video seeking
+    const range = request.headers.get('range');
+    const headers = new Headers();
+    if (range) {
+      headers.set('range', range);
+    }
 
-    if (!videoResponse.ok) {
+    // 3. Fetch the video file (or a chunk of it) from Telegram
+    const videoResponse = await fetch(fileDownloadUrl, { headers });
+
+    if (!videoResponse.ok || !videoResponse.body) {
       const errorText = await videoResponse.text();
       console.error(`Failed to download file from Telegram for fileId ${fileId}. Status: ${videoResponse.status}`, errorText);
-      return new NextResponse('Failed to download file from Telegram', { status: videoResponse.status });
+      return new NextResponse(errorText || 'Failed to download file from Telegram', { status: videoResponse.status });
     }
 
-    if (!videoResponse.body) {
-      console.error(`Failed to download file from Telegram for fileId ${fileId}: Response body is null.`);
-      return new NextResponse('Failed to download file from Telegram: Empty response', { status: 500 });
-    }
+    // 4. Proxy the stream and headers from Telegram back to the client
+    const responseHeaders = new Headers(videoResponse.headers);
+    responseHeaders.set('Accept-Ranges', 'bytes');
+    responseHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
     
-    // Using TransformStream to ensure a clean, readable stream for the response.
-    // This can help with compatibility and edge cases in stream handling.
     const { readable, writable } = new TransformStream();
     videoResponse.body.pipeTo(writable);
-
+    
     return new NextResponse(readable, {
-      status: 200,
-      headers: {
-        'Content-Type': videoResponse.headers.get('Content-Type') || 'video/mp4',
-        'Content-Length': videoResponse.headers.get('Content-Length') || '',
-        'Accept-Ranges': 'bytes',
-        'Cache-Control': 'no-cache, no-store',
-      },
+      status: videoResponse.status,
+      statusText: videoResponse.statusText,
+      headers: responseHeaders,
     });
 
   } catch (error) {
