@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
-import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
+// import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { getMovieDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
@@ -106,9 +106,9 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             <TrailerPlayer posterUrl={movie.backdropUrl!} trailerUrl={movie.trailerUrl} />
         </div>
 
-        <Suspense fallback={<StreamingProvidersSkeleton />}>
+        {/* <Suspense fallback={<StreamingProvidersSkeleton />}>
           <StreamingProviders media={movie} />
-        </Suspense>
+        </Suspense> */}
 
         <Suspense fallback={null}>
             <SimilarMedia mediaId={movie.id} mediaType="movie" />

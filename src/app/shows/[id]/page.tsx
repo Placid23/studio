@@ -4,7 +4,7 @@ import { Star, Calendar } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
-import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
+// import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { Suspense } from 'react';
 import { getShowDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
@@ -96,9 +96,9 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
             <TrailerPlayer posterUrl={show.backdropUrl!} trailerUrl={show.trailerUrl} />
         </div>
         
-        <Suspense fallback={<StreamingProvidersSkeleton />}>
+        {/* <Suspense fallback={<StreamingProvidersSkeleton />}>
           <StreamingProviders media={show} />
-        </Suspense>
+        </Suspense> */}
 
         <Suspense fallback={null}>
             <SimilarMedia mediaId={show.id} mediaType="show" />
