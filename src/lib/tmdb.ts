@@ -1,4 +1,3 @@
-'use server';
 
 import type { Movie, Show } from './types';
 

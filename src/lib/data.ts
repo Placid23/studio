@@ -1,2 +1,3 @@
-// This file is no longer used. Data is now fetched from Supabase.
+// This file is intentionally left empty.
+// It was previously used for hardcoded data, which caused server instability.
 export {};
