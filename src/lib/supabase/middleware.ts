@@ -2,72 +2,70 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  // Gracefully handle missing Supabase credentials.
-  // The app will still function, and pages that need Supabase will show a specific error.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
-  }
-
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            })
+          },
+          remove(name: string, options: CookieOptions) {
+            request.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            })
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+            })
+          },
         },
-        set(name: string, value: string, options: CookieOptions) {
-          // If the cookie is set, update it on the request and response
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          // If the cookie is removed, update the cookies for the request and response
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-    }
-  )
+      }
+    )
 
-  // This will refresh the session if expired
-  await supabase.auth.getUser()
+    // This will refresh the session if expired
+    await supabase.auth.getUser()
+  } catch (e) {
+    // If an error occurs, we will just return the unmodified response.
+    // This prevents the application from crashing if Supabase is not configured correctly.
+    return NextResponse.next({
+        request: {
+            headers: request.headers,
+        },
+    });
+  }
 
   return response
 }

@@ -5,6 +5,10 @@ import type { Movie } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
 export async function addToWatchlistAction(movie: Movie): Promise<{ success: boolean; message: string }> {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return { success: false, message: "Supabase is not configured." };
+    }
+
     const supabase = createClient();
     
     const { data: { user } } = await supabase.auth.getUser();

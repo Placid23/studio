@@ -11,9 +11,14 @@ export async function Header() {
   
   // Only attempt to get the user if Supabase is configured
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    try {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      user = data.user;
+    } catch (e) {
+        // This can happen if the Supabase URL is not a valid URL.
+        // We'll just ignore it and the user will be treated as logged out.
+    }
   }
 
   const navLinks = [

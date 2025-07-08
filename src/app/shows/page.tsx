@@ -1,7 +1,7 @@
 import { MediaCard } from '@/components/media/MediaCard';
 import { createClient } from '@/lib/supabase/server';
 import type { Movie, Show } from '@/lib/types';
-import { Clapperboard } from 'lucide-react';
+import { AlertTriangle, Clapperboard } from 'lucide-react';
 
 function mapSupabaseItemToMedia(item: any): Movie | Show {
     const common = {
@@ -23,6 +23,18 @@ function mapSupabaseItemToMedia(item: any): Movie | Show {
 }
 
 export default async function ShowsPage() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
+          <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = createClient();
   const { data, error } = await supabase.from('movies').select('*').eq('type', 'show').order('created_at', { ascending: false });
 
