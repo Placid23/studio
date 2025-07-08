@@ -1,68 +1,25 @@
 'use server';
 
 import type { Movie, Show } from "@/lib/types";
-import { createClient } from "@/lib/supabase/server";
+import { getAvailableGenres as getGenresFromApi, searchMedia as searchTmdb } from "@/lib/tmdb";
 
-function mapSupabaseItemToMedia(item: any): Movie | Show {
-    const common = {
-      id: String(item.id),
-      supabaseId: item.id,
-      title: item.title,
-      year: item.year || 0,
-      genres: item.genres || [],
-      rating: item.rating || 0,
-      synopsis: item.synopsis || 'No synopsis available.',
-      posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
-      backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
-    };
-    if (item.type === 'movie') {
-      return { ...common, type: 'movie' };
-    } else {
-      return { ...common, type: 'show' };
-    }
-}
-
-export async function getAvailableGenres(): Promise<string[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from('movies').select('genres');
-
-  if (error || !data) {
-    return [];
-  }
-
-  const allGenres = data.flatMap(item => item.genres || []);
-  return [...new Set(allGenres)].sort();
+export async function getAvailableGenres(mediaType: 'movie' | 'tv' = 'movie'): Promise<{id: number, name: string}[]> {
+  return getGenresFromApi(mediaType);
 }
 
 export async function searchMedia(
   searchTerm: string,
-  filters: { genre: string; rating: string; year: string }
+  filters: { genre: string; }
 ): Promise<(Movie | Show)[]> {
-  const supabase = createClient();
-  let query = supabase.from('movies').select('*');
-
-  if (searchTerm) {
-    query = query.ilike('title', `%${searchTerm}%`);
-  }
+  // TMDB's multi-search doesn't support filtering by genre, rating, or year in the same way.
+  // We will perform a text search, and if a genre is selected, we'd typically do another call.
+  // For simplicity here, we'll just use the text search. Advanced filtering would require more complex logic.
+  
+  const results = await searchTmdb(searchTerm);
 
   if (filters.genre && filters.genre !== 'all') {
-    query = query.contains('genres', [filters.genre]);
+    return results.filter(item => item.genres.map(g => g.toLowerCase()).includes(filters.genre.toLowerCase()));
   }
 
-  if (filters.year && filters.year !== 'all') {
-    query = query.eq('year', parseInt(filters.year, 10));
-  }
-
-  if (filters.rating && filters.rating !== 'all') {
-    query = query.gte('rating', parseFloat(filters.rating));
-  }
-
-  const { data, error } = await query.order('created_at', { ascending: false }).limit(50);
-  
-  if (error) {
-    console.error("Supabase search error:", error);
-    return [];
-  }
-
-  return data.map(mapSupabaseItemToMedia);
+  return results;
 }

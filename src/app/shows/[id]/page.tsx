@@ -1,48 +1,36 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Star, Calendar, PlusCircle, Play } from 'lucide-react';
+import { Star, Calendar } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
 import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
-import type { Show } from '@/lib/types';
-
-
-function mapSupabaseItemToShow(item: any): Show {
-  return {
-    id: String(item.id),
-    supabaseId: item.id,
-    title: item.title,
-    type: 'show',
-    year: item.year || 0,
-    genres: item.genres || [],
-    rating: item.rating || 0,
-    synopsis: item.synopsis || 'No synopsis available.',
-    posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
-    backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
-  };
-}
+import { getShowDetails } from '@/lib/tmdb';
+import { TrailerPlayer } from '@/components/media/TrailerPlayer';
+import { SimilarMedia } from '@/components/media/SimilarMedia';
+import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
+import { addToWatchlistAction } from './actions';
+import { AlertTriangle } from 'lucide-react';
 
 export default async function ShowDetailPage({ params }: { params: { id: string } }) {
-  const showId = params.id;
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('movies')
-    .select('*')
-    .eq('id', showId)
-    .eq('type', 'show')
-    .single();
-
-  if (error || !data) {
-    notFound();
+  if (!process.env.TMDB_API_KEY) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
+          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+        </div>
+      </div>
+    );
   }
 
-  const show = mapSupabaseItemToShow(data);
+  const show = await getShowDetails(params.id);
+
+  if (!show) {
+    notFound();
+  }
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -98,16 +86,22 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
-              <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground">
-                <PlusCircle className="mr-2 h-6 w-6" />
-                Add to Watchlist
-              </Button>
+              <AddToWatchlistButton media={show} addAction={addToWatchlistAction} />
             </div>
           </div>
         </div>
         
+        <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
+            <TrailerPlayer posterUrl={show.backdropUrl!} trailerUrl={show.trailerUrl} />
+        </div>
+        
         <Suspense fallback={<StreamingProvidersSkeleton />}>
           <StreamingProviders media={show} />
+        </Suspense>
+
+        <Suspense fallback={null}>
+            <SimilarMedia mediaId={show.id} mediaType="show" />
         </Suspense>
 
       </div>

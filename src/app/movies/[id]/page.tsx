@@ -1,48 +1,36 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Star, Clock, Calendar, PlusCircle, Play, Film } from 'lucide-react';
+import { Star, Clock, Calendar, Film } from 'lucide-react';
 import { Suspense } from 'react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { StreamingProviders, StreamingProvidersSkeleton } from '@/components/media/StreamingProviders';
-import { createClient } from '@/lib/supabase/server';
-import Link from 'next/link';
-import type { Movie } from '@/lib/types';
-
-
-function mapSupabaseItemToMovie(item: any): Movie {
-  return {
-    id: String(item.id),
-    supabaseId: item.id,
-    title: item.title,
-    type: 'movie',
-    year: item.year || 0,
-    genres: item.genres || [],
-    rating: item.rating || 0,
-    synopsis: item.synopsis || 'No synopsis available.',
-    posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
-    backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
-  };
-}
+import { getMovieDetails } from '@/lib/tmdb';
+import { TrailerPlayer } from '@/components/media/TrailerPlayer';
+import { SimilarMedia } from '@/components/media/SimilarMedia';
+import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
+import { addToWatchlistAction } from './actions';
+import { AlertTriangle } from 'lucide-react';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
-  const movieId = params.id;
+  if (!process.env.TMDB_API_KEY) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
+          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+        </div>
+      </div>
+    );
+  }
   
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('movies')
-    .select('*')
-    .eq('id', movieId)
-    .eq('type', 'movie')
-    .single();
+  const movie = await getMovieDetails(params.id);
 
-  if (error || !data) {
+  if (!movie) {
     notFound();
   }
-
-  const movie = mapSupabaseItemToMovie(data);
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -91,6 +79,15 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                   </div>
                 </>
               )}
+              {movie.duration > 0 && (
+                <>
+                  <span className="text-muted-foreground/50">|</span>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    <span>{movie.duration} min</span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {movie.genres.map((genre) => (
@@ -99,16 +96,22 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
-              <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground">
-                <PlusCircle className="mr-2 h-6 w-6" />
-                Add to Watchlist
-              </Button>
+               <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
         </div>
         
+        <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
+            <TrailerPlayer posterUrl={movie.backdropUrl!} trailerUrl={movie.trailerUrl} />
+        </div>
+
         <Suspense fallback={<StreamingProvidersSkeleton />}>
           <StreamingProviders media={movie} />
+        </Suspense>
+
+        <Suspense fallback={null}>
+            <SimilarMedia mediaId={movie.id} mediaType="movie" />
         </Suspense>
       </div>
     </div>

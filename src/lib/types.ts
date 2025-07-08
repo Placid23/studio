@@ -1,19 +1,18 @@
 export interface Movie {
   type: 'movie';
-  id: string;
-  supabaseId?: any;
+  id: string; // TMDB ID
+  supabaseId?: any; // Supabase ID, if in library
   title: string;
   year: number;
   duration?: number; // in minutes
   genres: string[];
-  genre_ids?: number[];
   rating: number;
   synopsis: string | null;
   cast?: string[];
   director?: string;
   posterUrl: string | null;
   backdropUrl:string | null;
-  trailerUrl?: string;
+  trailerUrl?: string; // YouTube embed URL
 }
 
 export interface Episode {
@@ -28,8 +27,8 @@ export interface Episode {
 
 export interface Show {
   type: 'show';
-  id: string;
-  supabaseId?: any;
+  id: string; // TMDB ID
+  supabaseId?: any; // Supabase ID, if in library
   title: string;
   year: number;
   genres: string[];
@@ -38,6 +37,6 @@ export interface Show {
   posterUrl: string | null;
   backdropUrl: string | null;
   episodes?: Episode[];
-  trailerUrl?: string;
+  trailerUrl?: string; // YouTube embed URL
   cast?: string[];
 }
