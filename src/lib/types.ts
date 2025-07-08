@@ -16,13 +16,20 @@ export interface Movie {
 }
 
 export interface Episode {
-  id: number;
+  id: string;
   name: string;
-  season: number;
-  number: number;
-  runtime: number; // in minutes
-  summary: string;
-  imageUrl?: string;
+  season_number: number;
+  episode_number: number;
+  synopsis: string | null;
+  still_path: string | null;
+}
+
+export interface Season {
+  id: string;
+  name: string;
+  season_number: number;
+  episode_count: number;
+  poster_path: string | null;
 }
 
 export interface Show {
@@ -36,7 +43,7 @@ export interface Show {
   synopsis: string | null;
   posterUrl: string | null;
   backdropUrl: string | null;
-  episodes?: Episode[];
   trailerUrl?: string; // YouTube embed URL
   cast?: string[];
+  seasons?: Season[];
 }

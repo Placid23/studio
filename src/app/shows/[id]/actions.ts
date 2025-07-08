@@ -1,7 +1,8 @@
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
-import type { Show } from "@/lib/types";
+import { getSeasonDetails } from "@/lib/tmdb";
+import type { Show, Episode } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
 export async function addToWatchlistAction(show: Show): Promise<{ success: boolean; message: string }> {
@@ -38,4 +39,8 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
 
     revalidatePath('/library');
     return { success: true, message: `${show.title} has been added to your library.` };
+}
+
+export async function getEpisodesForSeason(showId: string, seasonNumber: number): Promise<Episode[]> {
+    return getSeasonDetails(showId, seasonNumber);
 }

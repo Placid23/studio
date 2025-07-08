@@ -1,5 +1,5 @@
 
-import type { Movie, Show } from './types';
+import type { Movie, Show, Episode, Season } from './types';
 
 const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
@@ -69,7 +69,14 @@ function mapTmdbToShow(tmdbShow: any): Show {
         posterUrl: getImageUrl(tmdbShow.poster_path, 'w500'),
         backdropUrl: getImageUrl(tmdbShow.backdrop_path, 'w1280'),
         cast: tmdbShow.credits?.cast.slice(0, 10).map((c: any) => c.name),
-        trailerUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}` : undefined
+        trailerUrl: trailer ? `https://www.youtube.com/embed/${trailer.key}` : undefined,
+        seasons: tmdbShow.seasons?.map((s:any) => ({
+            id: String(s.id),
+            name: s.name,
+            season_number: s.season_number,
+            episode_count: s.episode_count,
+            poster_path: s.poster_path,
+        })) || []
     };
 }
 
@@ -121,6 +128,19 @@ export async function getShowDetails(id: string): Promise<Show | null> {
   const data = await fetchFromTMDB(`/tv/${id}`, { append_to_response: 'videos,credits' });
   if (!data) return null;
   return mapTmdbToShow(data);
+}
+
+export async function getSeasonDetails(showId: string, seasonNumber: number): Promise<Episode[]> {
+    const data = await fetchFromTMDB(`/tv/${showId}/season/${seasonNumber}`);
+    if (!data?.episodes) return [];
+    return data.episodes.map((ep: any) => ({
+        id: String(ep.id),
+        name: ep.name,
+        season_number: ep.season_number,
+        episode_number: ep.episode_number,
+        synopsis: ep.overview,
+        still_path: ep.still_path,
+    }));
 }
 
 export async function getSimilarMovies(id: string): Promise<Movie[]> {

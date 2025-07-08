@@ -1,17 +1,58 @@
 import { BackButton } from '@/components/layout/BackButton';
-import { AlertTriangle } from 'lucide-react';
+import { VideoPlayer } from '@/components/media/VideoPlayer';
+import { getMovieDetails, getShowDetails } from '@/lib/tmdb';
+import { notFound } from 'next/navigation';
 
-export default async function WatchPage() {
+export default async function WatchPage({ 
+    params,
+    searchParams
+}: { 
+    params: { id: string };
+    searchParams: { season?: string, episode?: string }
+}) {
+    const videoSrc = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+    const isTvShow = searchParams.season && searchParams.episode;
+    let title = "NovaStream";
+    let subTitle = "";
+
+    try {
+        if (isTvShow) {
+            const show = await getShowDetails(params.id);
+            if(show) {
+                title = show.title;
+                subTitle = `S${searchParams.season} E${searchParams.episode}`;
+            }
+        } else {
+            const movie = await getMovieDetails(params.id);
+            if (movie) {
+                title = movie.title;
+            }
+        }
+    } catch (error) {
+        console.error("Failed to fetch media details for watch page", error);
+        // Do not block rendering, just use default titles.
+    }
+    
+    if (!title) {
+        notFound();
+    }
+    
+
     return (
-        <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-                <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-                <h1 className="text-2xl font-bold text-destructive">Playback Not Available</h1>
-                <p className="mt-2 text-destructive/80">The streaming method has been updated. This page is temporarily disabled.</p>
-                 <div className="mt-6">
+        <div className="bg-black text-white min-h-screen flex flex-col">
+            <header className="p-4 flex items-center justify-between z-10 bg-gradient-to-b from-black/70 to-transparent">
+                <div>
                     <BackButton />
+                    <div className="mt-2">
+                        <h1 className="text-2xl font-bold">{title}</h1>
+                        {subTitle && <p className="text-muted-foreground">{subTitle}</p>}
+                    </div>
                 </div>
-            </div>
+            </header>
+            <main className="flex-1 flex items-center justify-center">
+                <VideoPlayer src={videoSrc} />
+            </main>
         </div>
     );
 }

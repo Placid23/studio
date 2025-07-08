@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Clock, Calendar, Film } from 'lucide-react';
+import { Star, Clock, Calendar, Film, PlayCircle } from 'lucide-react';
 import { Suspense } from 'react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
@@ -11,6 +11,8 @@ import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
 import { AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   if (!process.env.TMDB_API_KEY) {
@@ -95,6 +97,12 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
+                <Button asChild size="lg">
+                    <Link href={`/watch/${movie.id}`}>
+                        <PlayCircle className="mr-2 h-6 w-6" />
+                        Watch Now
+                    </Link>
+                </Button>
                <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
