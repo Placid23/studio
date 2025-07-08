@@ -39,7 +39,7 @@ export async function searchMedia(
   filters: { genre: string; rating: string; year: string }
 ): Promise<(Movie | Show)[]> {
   const supabase = createClient();
-  let query = supabase.from('movies').select('*, telegram_file_id');
+  let query = supabase.from('movies').select('*');
 
   if (searchTerm) {
     query = query.ilike('title', `%${searchTerm}%`);

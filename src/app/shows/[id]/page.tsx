@@ -33,7 +33,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
 
   const { data, error } = await supabase
     .from('movies')
-    .select('*, telegram_file_id')
+    .select('*')
     .eq('id', showId)
     .eq('type', 'show')
     .single();
@@ -102,14 +102,6 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                 <PlusCircle className="mr-2 h-6 w-6" />
                 Add to Watchlist
               </Button>
-               {data && data.telegram_file_id && (
-                <Link href={`/watch/${data.id}`} passHref>
-                    <Button size="lg" variant="secondary">
-                      <Play className="mr-2 h-6 w-6" />
-                      Stream Now
-                    </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>

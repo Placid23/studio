@@ -101,14 +101,6 @@ export default async function Home() {
             {heroMedia.synopsis}
           </p>
           <div className="flex gap-4 mt-4">
-            {heroMedia.supabaseId && (
-              <Link href={`/watch/${heroMedia.supabaseId}`} passHref>
-                <Button size="lg" className="bg-primary hover:bg-primary/80 text-primary-foreground">
-                  <PlayCircle className="mr-2 h-6 w-6" />
-                  Play
-                </Button>
-              </Link>
-            )}
             <Link href={heroLink} passHref>
                <Button size="lg" variant="outline" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
                 <Info className="mr-2 h-6 w-6" />
