@@ -1,4 +1,6 @@
 
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -6,37 +8,113 @@ import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
+import type { Movie, Show } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
-export const dynamic = 'force-dynamic';
+export default function Home() {
+  const [trending, setTrending] = useState<(Movie | Show)[]>([]);
+  const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
+  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([]);
+  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
+  const [popularShows, setPopularShows] = useState<Show[]>([]);
+  const [topRatedShows, setTopRatedShows] = useState<Show[]>([]);
+  const [popularInCountry, setPopularInCountry] = useState<Movie[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function Home() {
-  if (!process.env.TMDB_API_KEY) {
+  useEffect(() => {
+    async function fetchCountryCode(): Promise<string | null> {
+      return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+          console.log("Geolocation is not supported by your browser");
+          resolve(null);
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+              const data = await response.json();
+              resolve(data.countryCode);
+            } catch (err) {
+              console.error("Failed to fetch country code:", err);
+              resolve(null);
+            }
+          },
+          () => {
+            console.log("Unable to retrieve your location.");
+            resolve(null);
+          }
+        );
+      });
+    }
+
+    async function fetchAllMedia() {
+      if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
+        setError('The TMDB_API_KEY environment variable is not configured.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const countryCode = await fetchCountryCode();
+
+        const [
+          trendingData,
+          popularMoviesData,
+          topRatedMoviesData,
+          upcomingMoviesData,
+          popularShowsData,
+          topRatedShowsData,
+          popularInCountryData
+        ] = await Promise.all([
+          getTrending('movie'),
+          getPopularMovies(),
+          getTopRatedMovies(),
+          getUpcomingMovies(),
+          getPopularShows(),
+          getTopRatedShows(),
+          countryCode ? getPopularMovies(countryCode) : Promise.resolve([])
+        ]);
+
+        setTrending(trendingData);
+        setPopularMovies(popularMoviesData);
+        setTopRatedMovies(topRatedMoviesData);
+        setUpcomingMovies(upcomingMoviesData);
+        setPopularShows(popularShowsData);
+        setTopRatedShows(topRatedShowsData);
+        if (popularInCountryData.length > 0) {
+          setPopularInCountry(popularInCountryData);
+        }
+      } catch (e) {
+        console.error(e);
+        setError('Failed to load media. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAllMedia();
+  }, []);
+
+  if (error) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
-          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+          <h1 className="text-2xl font-bold text-destructive">Error</h1>
+          <p className="mt-2 text-destructive/80">{error}</p>
         </div>
       </div>
     );
   }
-
-  const [
-    trending,
-    popularMovies,
-    topRatedMovies,
-    upcomingMovies,
-    popularShows,
-    topRatedShows
-  ] = await Promise.all([
-    getTrending('movie'),
-    getPopularMovies(),
-    getTopRatedMovies(),
-    getUpcomingMovies(),
-    getPopularShows(),
-    getTopRatedShows()
-  ]);
+  
+  if (isLoading) {
+    // You can replace this with a proper loading skeleton component
+    return <div>Loading...</div>;
+  }
 
   const heroMedia = trending.length > 0 ? trending[Math.floor(Math.random() * Math.min(trending.length, 10))] : null;
 
@@ -85,6 +163,9 @@ export default async function Home() {
 
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
         <ContinueWatchingCarousel />
+        {popularInCountry.length > 0 && (
+          <MediaCarousel title="Popular in Your Country" media={popularInCountry} />
+        )}
         <MediaCarousel title="Popular Movies" media={popularMovies} />
         <MediaCarousel title="Top Rated Movies" media={topRatedMovies} />
         <MediaCarousel title="Upcoming Movies" media={upcomingMovies} />

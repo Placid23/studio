@@ -1,7 +1,7 @@
 
 import type { Movie, Show, Episode, Season } from './types';
 
-const API_KEY = process.env.TMDB_API_KEY;
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
@@ -9,6 +9,10 @@ async function fetchFromTMDB(path: string, params: Record<string, string> = {}) 
   if (!API_KEY) {
     // This check is primarily for server-side logs. Client-side will show the UI error.
     console.error('TMDB_API_KEY environment variable is not set');
+    // In client-side components, we should throw to let react-query handle it.
+    if (typeof window !== 'undefined') {
+      throw new Error('TMDB_API_KEY is not configured.');
+    }
     return null;
   }
 
@@ -24,11 +28,17 @@ async function fetchFromTMDB(path: string, params: Record<string, string> = {}) 
     });
     if (!response.ok) {
       console.error(`TMDB API error for path ${path}: ${response.statusText}`);
+      if (typeof window !== 'undefined') {
+        throw new Error(`Failed to fetch from TMDB: ${response.statusText}`);
+      }
       return null;
     }
     return response.json();
   } catch (error) {
     console.error(`Failed to fetch from TMDB path ${path}:`, error);
+     if (typeof window !== 'undefined') {
+        throw error;
+      }
     return null;
   }
 }
@@ -87,8 +97,9 @@ export async function getTrending(mediaType: 'movie' | 'tv' = 'movie'): Promise<
   return data.results.map((item: any) => mediaType === 'movie' ? mapTmdbToMovie(item) : mapTmdbToShow(item));
 }
 
-export async function getPopularMovies(): Promise<Movie[]> {
-    const data = await fetchFromTMDB('/movie/popular');
+export async function getPopularMovies(region?: string): Promise<Movie[]> {
+    const params = region ? { region } : {};
+    const data = await fetchFromTMDB('/movie/popular', params);
     if (!data?.results) return [];
     return data.results.map(mapTmdbToMovie);
 }
@@ -105,8 +116,9 @@ export async function getUpcomingMovies(): Promise<Movie[]> {
     return data.results.map(mapTmdbToMovie);
 }
 
-export async function getPopularShows(): Promise<Show[]> {
-    const data = await fetchFromTMDB('/tv/popular');
+export async function getPopularShows(region?: string): Promise<Show[]> {
+    const params = region ? { region } : {};
+    const data = await fetchFromTMDB('/tv/popular', params);
     if (!data?.results) return [];
     return data.results.map(mapTmdbToShow);
 }
