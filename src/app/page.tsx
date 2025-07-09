@@ -7,6 +7,8 @@ import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCar
 import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   if (!process.env.TMDB_API_KEY) {
     return (
