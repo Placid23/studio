@@ -7,6 +7,8 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { PwaInstallPrompt } from '@/components/layout/PwaInstallPrompt';
 import { SplashProvider } from '@/components/layout/SplashProvider';
 
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
