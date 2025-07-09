@@ -22,30 +22,45 @@ function mapSupabaseItemToMedia(item: any): Movie | Show {
     }
 }
 
+function SupabaseError() {
+  return (
+    <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+        <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
+        <p className="mt-2 text-destructive/80">Could not connect to the database. Please ensure your Supabase URL and Key are configured correctly in your environment variables.</p>
+      </div>
+    </div>
+  )
+}
+
 export default async function ShowsPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return (
-      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
-          <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
-        </div>
-      </div>
-    );
+    return <SupabaseError />;
   }
 
-  const supabase = createClient();
-  const { data, error } = await supabase.from('movies').select('*').eq('type', 'show').order('created_at', { ascending: false });
+  let shows: Show[] = [];
+  let fetchError: string | null = null;
 
-  const shows = (data || []).map(mapSupabaseItemToMedia) as Show[];
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.from('movies').select('*').eq('type', 'show').order('created_at', { ascending: false });
+    
+    if (error) {
+      fetchError = error.message;
+    } else {
+      shows = (data || []).map(mapSupabaseItemToMedia) as Show[];
+    }
+  } catch (e) {
+    return <SupabaseError />;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-black text-primary uppercase tracking-wider mb-8">
         TV Shows
       </h1>
-      {error && <p className="text-destructive">Error loading shows: {error.message}</p>}
+      {fetchError && <p className="text-destructive">Error loading shows: {fetchError}</p>}
       {shows.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {shows.map((show) => (

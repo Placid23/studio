@@ -4,35 +4,53 @@ import type { Movie, Show } from '@/lib/types';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
+function SupabaseError() {
+  return (
+    <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+        <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
+        <p className="mt-2 text-destructive/80">Could not connect to the database. Please ensure your Supabase URL and Key are configured correctly in your environment variables.</p>
+      </div>
+    </div>
+  )
+}
+
 export default async function LibraryPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return (
-      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">Supabase Misconfigured</h1>
-          <p className="mt-2 text-destructive/80">Supabase URL or Key is not configured.</p>
-        </div>
-      </div>
-    );
+    return <SupabaseError />;
   }
 
-  const supabase = createClient();
+  let libraryItems: any[] | null = [];
+  let fetchError: any = null;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return redirect('/login?message=You must be logged in to view your library.');
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      // The redirect needs to be outside the try/catch or it will be caught.
+      // Next.js throws an error for redirects that we don't want to catch here.
+      return redirect('/login?message=You must be logged in to view your library.');
+    }
+    
+    const { data, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url').order('created_at', { ascending: false });
+
+    libraryItems = data;
+    fetchError = error;
+
+  } catch (e) {
+    // This catches errors during client creation or other unexpected issues.
+    return <SupabaseError />;
   }
-  
-  const { data: libraryItems, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url').order('created_at', { ascending: false });
 
-  if (error) {
+  if (fetchError) {
     return (
         <div className="container mx-auto px-4 py-8 text-center">
              <h1 className="text-2xl font-bold text-destructive">Error fetching library</h1>
-             <p className="mt-2 text-destructive/80">{error.message}</p>
+             <p className="mt-2 text-destructive/80">{fetchError.message}</p>
         </div>
     )
   }
