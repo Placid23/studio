@@ -20,11 +20,12 @@ export default function Home() {
   const [popularShows, setPopularShows] = useState<Show[]>([]);
   const [topRatedShows, setTopRatedShows] = useState<Show[]>([]);
   const [popularInCountry, setPopularInCountry] = useState<Movie[]>([]);
+  const [countryName, setCountryName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCountryCode(): Promise<string | null> {
+    async function fetchCountryInfo(): Promise<{ code: string; name: string } | null> {
       return new Promise((resolve) => {
         if (!navigator.geolocation) {
           console.log("Geolocation is not supported by your browser");
@@ -38,9 +39,9 @@ export default function Home() {
               const { latitude, longitude } = position.coords;
               const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
               const data = await response.json();
-              resolve(data.countryCode);
+              resolve({ code: data.countryCode, name: data.countryName });
             } catch (err) {
-              console.error("Failed to fetch country code:", err);
+              console.error("Failed to fetch country info:", err);
               resolve(null);
             }
           },
@@ -60,7 +61,10 @@ export default function Home() {
       }
 
       try {
-        const countryCode = await fetchCountryCode();
+        const countryInfo = await fetchCountryInfo();
+        if (countryInfo) {
+          setCountryName(countryInfo.name);
+        }
 
         const [
           trendingData,
@@ -77,7 +81,7 @@ export default function Home() {
           getUpcomingMovies(),
           getPopularShows(),
           getTopRatedShows(),
-          countryCode ? getPopularMovies(countryCode) : Promise.resolve([])
+          countryInfo ? getPopularMovies(countryInfo.code) : Promise.resolve([])
         ]);
 
         setTrending(trendingData);
@@ -164,7 +168,7 @@ export default function Home() {
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
         <ContinueWatchingCarousel />
         {popularInCountry.length > 0 && (
-          <MediaCarousel title="Popular in Your Country" media={popularInCountry} />
+          <MediaCarousel title={countryName ? `Popular in ${countryName}` : "Popular in Your Country"} media={popularInCountry} />
         )}
         <MediaCarousel title="Popular Movies" media={popularMovies} />
         <MediaCarousel title="Top Rated Movies" media={topRatedMovies} />
