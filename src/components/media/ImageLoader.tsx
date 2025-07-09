@@ -20,7 +20,7 @@ export function ImageLoader(props: ImageProps) {
         'transition-opacity duration-300 ease-in',
         isLoading ? 'opacity-0' : 'opacity-100'
       )}
-      onLoadingComplete={() => setIsLoading(false)}
+      onLoad={() => setIsLoading(false)}
     />
   );
 }

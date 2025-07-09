@@ -2,16 +2,20 @@
   "name": "NovaStream",
   "short_name": "NovaStream",
   "description": "Your next-gen streaming experience.",
-  "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
-  ],
-  "theme_color": "#E11D48",
-  "background_color": "#0a0a0a",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait"
+  "background_color": "#0f0f0f",
+  "theme_color": "#e50914",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
