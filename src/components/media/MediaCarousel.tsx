@@ -46,13 +46,10 @@ export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps
           ))}
         </div>
         
-        <div className="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-background to-transparent pointer-events-none md:block hidden" />
-        <div className="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-background to-transparent pointer-events-none md:block hidden" />
-
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-r-lg rounded-l-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-r-lg rounded-l-none bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm z-20 md:flex items-center justify-center"
           onClick={() => scroll('left')}
         >
           <ChevronLeft className="h-8 w-8" />
@@ -60,7 +57,7 @@ export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps
         <Button 
           variant="ghost" 
           size="icon" 
-          className="absolute right-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-l-lg rounded-r-none bg-background/50 hover:bg-background/80 z-20 md:flex items-center justify-center"
+          className="absolute right-0 top-1/2 -translate-y-1/2 h-24 w-14 rounded-l-lg rounded-r-none bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm z-20 md:flex items-center justify-center"
           onClick={() => scroll('right')}
         >
           <ChevronRight className="h-8 w-8" />
