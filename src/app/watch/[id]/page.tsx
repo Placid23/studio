@@ -43,7 +43,7 @@ export default async function WatchPage({
         <div className="bg-black text-white min-h-screen flex flex-col">
             <header className="p-4 flex items-center justify-between z-10 bg-gradient-to-b from-black/70 to-transparent">
                 <div>
-                    <BackButton />
+                    <BackButton className="border-white/30 bg-transparent hover:bg-white/10 text-white" />
                     <div className="mt-2">
                         <h1 className="text-2xl font-bold">{title}</h1>
                         {subTitle && <p className="text-muted-foreground">{subTitle}</p>}
