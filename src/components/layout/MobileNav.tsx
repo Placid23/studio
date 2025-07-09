@@ -9,6 +9,7 @@ import {
   SheetContent,
   SheetTrigger,
   SheetClose,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import type { User } from '@supabase/supabase-js';
@@ -45,6 +46,7 @@ export function MobileNav({ user, navLinks }: { user: User | null, navLinks: Nav
                 </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[250px] bg-background/95 p-6 flex flex-col">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <SheetClose asChild>
                    <Link href="/" className="flex items-center gap-2 mb-8">
                       <Clapperboard className="h-8 w-8 text-primary" />
