@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { User } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { LogOut, Library } from 'lucide-react';
+import { LogOut, Library, User as UserIcon } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 
 export async function UserNav({ user }: { user: User | null }) {
@@ -69,6 +69,12 @@ export async function UserNav({ user }: { user: User | null }) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
+             <DropdownMenuItem asChild>
+                <Link href="/account">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    <span>Account</span>
+                </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
                 <Link href="/library">
                     <Library className="mr-2 h-4 w-4" />

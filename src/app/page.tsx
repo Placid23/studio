@@ -10,6 +10,7 @@ import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
 import { useEffect, useState } from 'react';
+import Loading from './loading';
 
 export default function Home() {
   const [trending, setTrending] = useState<(Movie | Show)[]>([]);
@@ -99,6 +100,10 @@ export default function Home() {
     fetchAllMedia();
   }, []);
 
+  if (isLoading) {
+    return <Loading />;
+  }
+  
   if (error) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
@@ -109,11 +114,6 @@ export default function Home() {
         </div>
       </div>
     );
-  }
-  
-  if (isLoading) {
-    // You can replace this with a proper loading skeleton component
-    return <div>Loading...</div>;
   }
 
   const heroMedia = trending.length > 0 ? trending[Math.floor(Math.random() * Math.min(trending.length, 10))] : null;
@@ -142,12 +142,12 @@ export default function Home() {
           data-ai-hint="movie backdrop"
         />
         <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
         <div className="absolute bottom-[10%] md:bottom-[20%] left-4 md:left-16 text-white">
           <h1 className="text-3xl md:text-6xl font-black uppercase tracking-wider text-primary [text-shadow:0_5px_15px_rgba(0,0,0,0.7)]">
             {heroMedia.title}
           </h1>
-          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium [text-shadow:0_2px_6px_rgba(0,0,0,0.8)]">
+          <p className="max-w-xs md:max-w-xl mt-2 md:mt-4 text-sm md:text-lg font-medium [text-shadow:0_2px_6px_rgba(0,0,0,0.8)] line-clamp-3">
             {heroMedia.synopsis}
           </p>
           <div className="flex gap-4 mt-4">

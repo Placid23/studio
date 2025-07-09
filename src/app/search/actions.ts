@@ -11,14 +11,19 @@ export async function searchMedia(
   searchTerm: string,
   filters: { genre: string; }
 ): Promise<(Movie | Show)[]> {
-  // TMDB's multi-search doesn't support filtering by genre, rating, or year in the same way.
-  // We will perform a text search, and if a genre is selected, we'd typically do another call.
-  // For simplicity here, we'll just use the text search. Advanced filtering would require more complex logic.
   
   const results = await searchTmdb(searchTerm);
 
+  // If a genre filter is applied, filter the search results.
+  // Note: TMDB's multi-search doesn't support pre-filtering by genre in the API call,
+  // so we filter the results after they're fetched.
   if (filters.genre && filters.genre !== 'all') {
-    return results.filter(item => item.genres.map(g => g.toLowerCase()).includes(filters.genre.toLowerCase()));
+    const allGenres = await getGenresFromApi('movie');
+    const genreName = allGenres.find(g => String(g.id) === filters.genre)?.name;
+    
+    if (genreName) {
+      return results.filter(item => item.genres.includes(genreName));
+    }
   }
 
   return results;
