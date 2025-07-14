@@ -15,7 +15,7 @@ function mapSupabaseItemToMedia(item: any): Movie | Show {
       posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
       backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
     };
-    if (item.type === 'movie') {
+    if (item.type === 'Movie') {
       return { ...common, type: 'movie' };
     } else {
       return { ...common, type: 'show' };
@@ -44,7 +44,7 @@ export default async function MoviesPage() {
 
   try {
     const supabase = createClient();
-    const { data, error } = await supabase.from('movies').select('*').eq('type', 'movie').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('movies').select('*').eq('type', 'Movie').order('created_at', { ascending: false });
     
     if (error) {
       fetchError = error.message;

@@ -19,7 +19,7 @@ export async function addToWatchlistAction(movie: Movie): Promise<{ success: boo
     const { error } = await supabase.from('movies').insert({
         id: parseInt(movie.id),
         title: movie.title,
-        type: 'movie',
+        type: 'Movie',
         poster_url: movie.posterUrl,
         backdrop_url: movie.backdropUrl,
         rating: movie.rating,

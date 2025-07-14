@@ -17,9 +17,9 @@ function mapSupabaseItemToMedia(item: any): Movie | Show {
       backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
     };
     if (item.type === 'Movie') {
-      return { ...common, type: 'Movie' };
+      return { ...common, type: 'movie' };
     } else {
-      return { ...common, type: 'TV' };
+      return { ...common, type: 'show' };
     }
 }
 

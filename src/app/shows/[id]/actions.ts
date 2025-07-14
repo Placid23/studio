@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonDetails } from "@/lib/fmovies";
+import { getSeasonDetails } from "@/lib/tmdb";
 import type { Show, Episode } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
@@ -19,11 +19,11 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
     }
 
     const { error } = await supabase.from('movies').insert({
-        // The new API uses the full link as the ID
         id: show.id,
         title: show.title,
-        type: show.type, // Use 'TV' from the show object
+        type: 'TV',
         poster_url: show.posterUrl,
+        backdrop_url: show.backdropUrl,
         rating: show.rating,
         year: show.year,
         genres: show.genres,
@@ -44,7 +44,5 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
 }
 
 export async function getEpisodesForSeason(showId: string, seasonNumber: number): Promise<Episode[]> {
-    // This function is no longer supported by the new API.
-    // We can return an empty array or remove related components later.
-    return [];
+    return getSeasonDetails(showId, seasonNumber);
 }
