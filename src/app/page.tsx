@@ -2,13 +2,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { PlayCircle, Info, AlertTriangle } from 'lucide-react';
+import { Info, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 import { MediaCarousel } from '@/components/media/MediaCarousel';
-import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies } from '@/lib/tmdb';
-import { getPopularShows, getTopRatedShows } from '@/lib/tvmaze';
+import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import Loading from './loading';
@@ -132,7 +131,7 @@ export default function Home() {
     );
   }
 
-  const heroLink = heroMedia.type === 'movie' ? `/movies/${heroMedia.id}` : `/shows/${heroMedia.id}?source=${heroMedia.source}`;
+  const heroLink = heroMedia.type === 'movie' ? `/movies/${heroMedia.id}` : `/shows/${heroMedia.id}`;
 
   return (
     <div className="flex flex-col">

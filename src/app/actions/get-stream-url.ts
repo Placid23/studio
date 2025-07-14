@@ -2,30 +2,23 @@
 'use server';
 
 import { getMediaInfo, getStreamUrl } from '@/lib/fmovies';
-import { getMovieDetails } from '@/lib/tmdb';
-import { getShowDetails as getShowDetailsFromTmdb } from '@/lib/tmdb';
-import { getShowDetails as getShowDetailsFromTvmaze } from '@/lib/tvmaze';
+import { getMovieDetails, getShowDetails } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
 
 export async function getStreamUrlAction(
     mediaId: string, 
-    mediaType: 'movie' | 'show', 
-    source: 'tmdb' | 'tvmaze'
+    mediaType: 'movie' | 'show'
 ): Promise<{ success: boolean; url?: string; message: string }> {
     try {
         let mediaTitle: string | undefined;
         let releaseYear: number | undefined;
 
-        // 1. Get metadata from TMDB/TVMaze to find the title
+        // 1. Get metadata from TMDB to find the title
         let media: Movie | Show | null = null;
         if (mediaType === 'movie') {
             media = await getMovieDetails(mediaId);
         } else {
-            if (source === 'tvmaze') {
-                media = await getShowDetailsFromTvmaze(mediaId);
-            } else {
-                media = await getShowDetailsFromTmdb(mediaId);
-            }
+            media = await getShowDetails(mediaId);
         }
         
         if (!media) {

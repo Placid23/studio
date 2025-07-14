@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -16,14 +17,8 @@ export function ContinueWatchingCarousel() {
     return null;
   }
   
-  const handleRemove = (id: string, source?: 'tmdb' | 'tvmaze') => {
-      const itemToRemove = history.find(item => {
-          if (item.id !== id) return false;
-          if (item.type === 'show' && source) {
-              return item.source === source;
-          }
-          return item.type === 'movie';
-      });
+  const handleRemove = (id: string) => {
+      const itemToRemove = history.find(item => item.id === id);
       if (itemToRemove) {
           removeFromWatchHistory(itemToRemove.id);
       }

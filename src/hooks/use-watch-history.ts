@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -49,17 +50,7 @@ export function useWatchHistory() {
   const removeFromWatchHistory = useCallback((mediaId: string) => {
     try {
       const currentHistory = getWatchHistory();
-      // Find the item to be removed to check its source if it's a show
-      const itemToRemove = currentHistory.find(item => item.id === mediaId);
-
-      const newHistory = currentHistory.filter(item => {
-        if (item.type === 'show' && itemToRemove?.type === 'show') {
-            // For shows, we need to match id AND source to be sure
-            return !(item.id === itemToRemove.id && item.source === itemToRemove.source);
-        }
-        return item.id !== mediaId;
-      });
-
+      const newHistory = currentHistory.filter(item => item.id !== mediaId);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
       setHistory(newHistory);
     } catch (error) {

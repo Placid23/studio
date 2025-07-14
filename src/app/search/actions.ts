@@ -3,7 +3,6 @@
 
 import type { Movie, Show } from "@/lib/types";
 import { getAvailableGenres as getGenresFromApi, searchMedia as searchTmdb } from "@/lib/tmdb";
-import { searchShows as searchTvmaze } from "@/lib/tvmaze";
 
 export async function getAvailableGenres(mediaType: 'movie' | 'tv' = 'movie'): Promise<{id: number, name: string}[]> {
   return getGenresFromApi(mediaType);
@@ -14,12 +13,7 @@ export async function searchMedia(
   filters: { genre: string; }
 ): Promise<(Movie | Show)[]> {
   
-  const [tmdbResults, tvmazeResults] = await Promise.all([
-    searchTmdb(searchTerm),
-    searchTvmaze(searchTerm),
-  ]);
-
-  let results: (Movie | Show)[] = [...tmdbResults, ...tvmazeResults];
+  const results = await searchTmdb(searchTerm);
 
   // If a genre filter is applied, filter the search results.
   if (filters.genre && filters.genre !== 'all') {

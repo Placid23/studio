@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import type { Movie, Show } from '@/lib/types';
 import { Star, PlayCircle } from 'lucide-react';
@@ -6,16 +7,16 @@ import { HoldToDeleteButton } from './HoldToDeleteButton';
 
 interface MediaCardProps {
   media: Movie | Show;
-  onRemove?: (id: string, source?: 'tmdb' | 'tvmaze') => void;
+  onRemove?: (id: string) => void;
 }
 
 export function MediaCard({ media, onRemove }: MediaCardProps) {
   const isMovie = media.type === 'movie';
-  const href = isMovie ? `/movies/${media.id}` : `/shows/${media.id}?source=${media.source}`;
+  const href = isMovie ? `/movies/${media.id}` : `/shows/${media.id}`;
   const hint = isMovie ? "movie poster" : "tv show poster";
   const watchHref = isMovie 
     ? `/watch/${media.id}` 
-    : `/watch/${media.id}?season=1&episode=1&source=${media.source}`;
+    : `/watch/${media.id}?season=1&episode=1`;
 
 
   return (
@@ -53,7 +54,7 @@ export function MediaCard({ media, onRemove }: MediaCardProps) {
         </div>
       </Link>
       {onRemove && (
-        <HoldToDeleteButton onDelete={() => onRemove(media.id, media.type === 'show' ? media.source : undefined)} />
+        <HoldToDeleteButton onDelete={() => onRemove(media.id)} />
       )}
     </div>
   );

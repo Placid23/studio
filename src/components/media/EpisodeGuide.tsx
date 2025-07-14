@@ -19,10 +19,10 @@ export function EpisodeGuide({ show }: { show: Show }) {
 
   useEffect(() => {
     startTransition(async () => {
-      const fetchedEpisodes = await getEpisodesForSeason(show.id, Number(selectedSeason), show.source);
+      const fetchedEpisodes = await getEpisodesForSeason(show.id, Number(selectedSeason));
       setEpisodes(fetchedEpisodes);
     });
-  }, [selectedSeason, show.id, show.source]);
+  }, [selectedSeason, show.id]);
 
   return (
     <div className="space-y-6">
@@ -45,17 +45,17 @@ export function EpisodeGuide({ show }: { show: Show }) {
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <EpisodeCardSkeleton key={i} />)
           : episodes.map((episode) => (
-            <EpisodeCard key={episode.id} episode={episode} showId={show.id} source={show.source} />
+            <EpisodeCard key={episode.id} episode={episode} showId={show.id} />
           ))}
       </div>
     </div>
   );
 }
 
-function EpisodeCard({ episode, showId, source }: { episode: Episode; showId: string; source: 'tmdb' | 'tvmaze' }) {
+function EpisodeCard({ episode, showId }: { episode: Episode; showId: string; }) {
   return (
     <div className="bg-card/60 rounded-lg overflow-hidden flex flex-col group">
-      <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}&source=${source}`}>
+      <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
         <div className="relative aspect-video img-container">
           <ImageLoader
             src={episode.still_path!}
@@ -76,7 +76,7 @@ function EpisodeCard({ episode, showId, source }: { episode: Episode; showId: st
         </h3>
         <p className="text-muted-foreground text-sm mt-2 flex-1 line-clamp-3">{episode.synopsis}</p>
         <Button asChild variant="secondary" className="mt-4 w-full">
-           <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}&source=${source}`}>
+           <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
               <PlayCircle className="mr-2 h-4 w-4" /> Play
             </Link>
         </Button>

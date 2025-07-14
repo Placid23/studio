@@ -2,8 +2,7 @@
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
-import { getSeasonDetails as getSeasonDetailsFromTmdb } from "@/lib/tmdb";
-import { getEpisodesForSeason as getEpisodesForSeasonFromTvmaze } from "@/lib/tvmaze";
+import { getSeasonDetails } from "@/lib/tmdb";
 import type { Show, Episode } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
@@ -20,7 +19,7 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
     }
 
     const { error } = await supabase.from('movies').insert({
-        id: show.id,
+        id: parseInt(show.id),
         title: show.title,
         type: 'TV',
         poster_url: show.posterUrl,
@@ -29,8 +28,6 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
         year: show.year,
         genres: show.genres,
         synopsis: show.synopsis,
-        // Add source to distinguish between tmdb and tvmaze in the library
-        source: show.source, 
     });
 
     if (error) {
@@ -46,9 +43,6 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
     return { success: true, message: `${show.title} has been added to your library.` };
 }
 
-export async function getEpisodesForSeason(showId: string, seasonNumber: number, source: 'tmdb' | 'tvmaze'): Promise<Episode[]> {
-    if (source === 'tvmaze') {
-        return getEpisodesForSeasonFromTvmaze(showId, seasonNumber);
-    }
-    return getSeasonDetailsFromTmdb(showId, seasonNumber);
+export async function getEpisodesForSeason(showId: string, seasonNumber: number): Promise<Episode[]> {
+    return getSeasonDetails(showId, seasonNumber);
 }

@@ -6,8 +6,7 @@ import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { Suspense } from 'react';
-import { getShowDetails as getShowDetailsFromTmdb } from '@/lib/tmdb';
-import { getShowDetails as getShowDetailsFromTvmaze } from '@/lib/tvmaze';
+import { getShowDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
@@ -18,27 +17,20 @@ import { Button } from '@/components/ui/button';
 import { EpisodeGuide } from '@/components/media/EpisodeGuide';
 import type { Show } from '@/lib/types';
 
-export default async function ShowDetailPage({ params, searchParams }: { params: { id: string }, searchParams: { source?: string } }) {
-  const source = searchParams.source || 'tmdb';
-
-  let show: Show | null = null;
-  
-  if (source === 'tvmaze') {
-      show = await getShowDetailsFromTvmaze(params.id);
-  } else {
-      if (!process.env.TMDB_API_KEY) {
-        return (
-          <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-              <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
-              <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
-            </div>
-          </div>
-        );
-      }
-      show = await getShowDetailsFromTmdb(params.id);
+export default async function ShowDetailPage({ params }: { params: { id: string } }) {
+  if (!process.env.TMDB_API_KEY) {
+    return (
+      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
+          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+        </div>
+      </div>
+    );
   }
+  
+  const show = await getShowDetails(params.id);
 
   if (!show) {
     notFound();
@@ -101,7 +93,7 @@ export default async function ShowDetailPage({ params, searchParams }: { params:
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
               <Button asChild size="lg">
-                <Link href={`/watch/${show.id}?season=1&episode=1&source=${show.source}`}>
+                <Link href={`/watch/${show.id}?season=1&episode=1`}>
                     <PlayCircle className="mr-2 h-6 w-6" />
                     Watch Now
                 </Link>
@@ -124,7 +116,7 @@ export default async function ShowDetailPage({ params, searchParams }: { params:
         </div>
         
         <Suspense fallback={null}>
-            {show.source === 'tmdb' && <SimilarMedia mediaId={show.id} mediaType="show" />}
+            <SimilarMedia mediaId={show.id} mediaType="show" />
         </Suspense>
 
       </div>

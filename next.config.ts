@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -19,12 +20,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'image.tmdb.org',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'static.tvmaze.com',
         port: '',
         pathname: '/**',
       },

@@ -59,14 +59,13 @@ export default function WatchPage() {
 
     const id = params.id as string;
     const mediaType = (searchParams.get('season') && searchParams.get('episode')) ? 'show' : 'movie';
-    const source = (searchParams.get('source') as 'tmdb' | 'tvmaze') || 'tmdb';
-
+    
     useEffect(() => {
         if (!id) return;
         
         const fetchStream = async () => {
             setStatus('loading');
-            const result = await getStreamUrlAction(id, mediaType, source);
+            const result = await getStreamUrlAction(id, mediaType);
             if (result.success && result.url) {
                 setVideoSrc(result.url);
                 setStatus('success');
@@ -78,7 +77,7 @@ export default function WatchPage() {
         };
 
         fetchStream();
-    }, [id, mediaType, source]);
+    }, [id, mediaType]);
 
     if (!id) {
         notFound();
