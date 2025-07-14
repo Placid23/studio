@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface MediaCarouselProps {
   title: string;
   media: (Movie | Show)[];
-  onRemoveItem?: (id: string) => void;
+  onRemoveItem?: (id: string, source?: 'tmdb' | 'tvmaze') => void;
 }
 
 export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps) {
@@ -39,8 +39,8 @@ export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps
           ref={scrollRef}
           className="scrollbar-hide -mx-4 flex space-x-4 overflow-x-auto px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         >
-          {media.map((item) => (
-            <div key={item.id} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
+          {media.map((item, index) => (
+            <div key={`${item.id}-${item.source || index}`} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
               <MediaCard media={item} onRemove={onRemoveItem} />
             </div>
           ))}

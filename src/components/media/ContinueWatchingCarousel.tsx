@@ -15,6 +15,19 @@ export function ContinueWatchingCarousel() {
   if (!isClient || !history || history.length === 0) {
     return null;
   }
+  
+  const handleRemove = (id: string, source?: 'tmdb' | 'tvmaze') => {
+      const itemToRemove = history.find(item => {
+          if (item.id !== id) return false;
+          if (item.type === 'show' && source) {
+              return item.source === source;
+          }
+          return item.type === 'movie';
+      });
+      if (itemToRemove) {
+          removeFromWatchHistory(itemToRemove.id);
+      }
+  }
 
-  return <MediaCarousel title="Continue Watching" media={history} onRemoveItem={removeFromWatchHistory} />;
+  return <MediaCarousel title="Continue Watching" media={history} onRemoveItem={handleRemove} />;
 }

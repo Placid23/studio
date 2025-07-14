@@ -6,14 +6,17 @@ import { HoldToDeleteButton } from './HoldToDeleteButton';
 
 interface MediaCardProps {
   media: Movie | Show;
-  onRemove?: (id: string) => void;
+  onRemove?: (id: string, source?: 'tmdb' | 'tvmaze') => void;
 }
 
 export function MediaCard({ media, onRemove }: MediaCardProps) {
   const isMovie = media.type === 'movie';
   const href = isMovie ? `/movies/${media.id}` : `/shows/${media.id}?source=${media.source}`;
   const hint = isMovie ? "movie poster" : "tv show poster";
-  const watchHref = `/watch/${media.supabaseId || media.id}?source=${media.source}`;
+  const watchHref = isMovie 
+    ? `/watch/${media.id}` 
+    : `/watch/${media.id}?season=1&episode=1&source=${media.source}`;
+
 
   return (
     <div className="group relative w-full flex-shrink-0">
@@ -49,8 +52,8 @@ export function MediaCard({ media, onRemove }: MediaCardProps) {
           </div>
         </div>
       </Link>
-      {onRemove && media.supabaseId && (
-        <HoldToDeleteButton onDelete={() => onRemove(media.supabaseId)} />
+      {onRemove && (
+        <HoldToDeleteButton onDelete={() => onRemove(media.id, media.type === 'show' ? media.source : undefined)} />
       )}
     </div>
   );
