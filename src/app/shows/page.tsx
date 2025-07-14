@@ -1,3 +1,4 @@
+
 import { MediaCard } from '@/components/media/MediaCard';
 import { createClient } from '@/lib/supabase/server';
 import type { Movie, Show } from '@/lib/types';
@@ -12,13 +13,13 @@ function mapSupabaseItemToMedia(item: any): Movie | Show {
       genres: item.genres || [],
       rating: item.rating || 0,
       synopsis: item.synopsis || 'No synopsis available.',
-      posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
+      posterUrl: item.poster_url || 'https://placehold.co/180x270.png',
       backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
     };
-    if (item.type === 'movie') {
-      return { ...common, type: 'movie' };
+    if (item.type === 'Movie') {
+      return { ...common, type: 'Movie' };
     } else {
-      return { ...common, type: 'show' };
+      return { ...common, type: 'TV' };
     }
 }
 
@@ -44,7 +45,7 @@ export default async function ShowsPage() {
 
   try {
     const supabase = createClient();
-    const { data, error } = await supabase.from('movies').select('*').eq('type', 'show').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('movies').select('*').eq('type', 'TV').order('created_at', { ascending: false });
     
     if (error) {
       fetchError = error.message;
@@ -71,7 +72,7 @@ export default async function ShowsPage() {
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Clapperboard className="w-16 h-16 text-muted-foreground/50" />
           <h2 className="mt-6 text-2xl font-bold">No Shows Found</h2>
-          <p className="mt-2 text-muted-foreground">Shows you upload via the Telegram bot will appear here.</p>
+          <p className="mt-2 text-muted-foreground">Shows you add to your library will appear here.</p>
         </div>
       )}
     </div>
