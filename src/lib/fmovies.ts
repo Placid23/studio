@@ -16,9 +16,6 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
         url.searchParams.append(key, value);
     }
     
-    // The API requires a proxy parameter to avoid blocking.
-    url.searchParams.append('proxy', 'true');
-
     try {
         console.log(`[fmovies] Fetching: ${url.toString()}`);
         const response = await fetch(url.toString(), {
