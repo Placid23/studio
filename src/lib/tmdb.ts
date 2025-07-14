@@ -96,7 +96,10 @@ function mapTmdbToShow(tmdbShow: any): Show {
 export async function getTrending(mediaType: 'movie' | 'tv' = 'movie'): Promise<(Movie | Show)[]> {
   const data = await fetchFromTMDB(`/trending/${mediaType}/week`);
   if (!data?.results) return [];
-  return data.results.map((item: any) => mediaType === 'movie' ? mapTmdbToMovie(item) : mapTmdbToShow(item));
+  // Ensure we only return the correct media type, TMDB search can be fuzzy
+  return data.results
+    .filter((item: any) => item.media_type === mediaType)
+    .map((item: any) => mediaType === 'movie' ? mapTmdbToMovie(item) : mapTmdbToShow(item));
 }
 
 export async function getPopularMovies(region?: string): Promise<Movie[]> {
