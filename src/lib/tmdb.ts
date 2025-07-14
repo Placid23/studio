@@ -52,6 +52,7 @@ function mapTmdbToMovie(tmdbMovie: any): Movie {
     return {
         id: String(tmdbMovie.id),
         type: 'movie',
+        source: 'tmdb',
         title: tmdbMovie.title,
         year: tmdbMovie.release_date ? new Date(tmdbMovie.release_date).getFullYear() : 0,
         genres: tmdbMovie.genres?.map((g: any) => g.name) || [],
@@ -71,6 +72,7 @@ function mapTmdbToShow(tmdbShow: any): Show {
     return {
         id: String(tmdbShow.id),
         type: 'show',
+        source: 'tmdb',
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,
         genres: tmdbShow.genres?.map((g: any) => g.name) || [],
@@ -151,7 +153,7 @@ export async function getSeasonDetails(showId: string, seasonNumber: number): Pr
         season_number: ep.season_number,
         episode_number: ep.episode_number,
         synopsis: ep.overview,
-        still_path: ep.still_path,
+        still_path: getImageUrl(ep.still_path, 'w500'),
     }));
 }
 

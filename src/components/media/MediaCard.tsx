@@ -10,9 +10,10 @@ interface MediaCardProps {
 }
 
 export function MediaCard({ media, onRemove }: MediaCardProps) {
-  const href = media.type === 'movie' ? `/movies/${media.id}` : `/shows/${media.id}`;
-  const hint = media.type === 'movie' ? "movie poster" : "tv show poster";
-  const watchHref = `/watch/${media.supabaseId || media.id}`;
+  const isMovie = media.type === 'movie';
+  const href = isMovie ? `/movies/${media.id}` : `/shows/${media.id}?source=${media.source}`;
+  const hint = isMovie ? "movie poster" : "tv show poster";
+  const watchHref = `/watch/${media.supabaseId || media.id}?source=${media.source}`;
 
   return (
     <div className="group relative w-full flex-shrink-0">
@@ -39,10 +40,12 @@ export function MediaCard({ media, onRemove }: MediaCardProps) {
 
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/80 to-transparent">
             <h3 className="text-base font-bold drop-shadow-lg truncate">{media.title}</h3>
-            <div className="flex items-center gap-1 text-xs mt-1">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold">{media.rating.toFixed(1)}</span>
-            </div>
+            {media.rating > 0 && (
+              <div className="flex items-center gap-1 text-xs mt-1">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold">{media.rating.toFixed(1)}</span>
+              </div>
+            )}
           </div>
         </div>
       </Link>

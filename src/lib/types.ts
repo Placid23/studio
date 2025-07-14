@@ -13,6 +13,7 @@ export interface Movie {
   posterUrl: string | null;
   backdropUrl:string | null;
   trailerUrl?: string; // YouTube embed URL
+  source: 'tmdb';
 }
 
 export interface Episode {
@@ -34,7 +35,7 @@ export interface Season {
 
 export interface Show {
   type: 'show';
-  id: string; // TMDB ID
+  id: string; // TMDB or TVMaze ID
   supabaseId?: any; // Supabase ID, if in library
   title: string;
   year: number;
@@ -46,4 +47,5 @@ export interface Show {
   trailerUrl?: string; // YouTube embed URL
   cast?: string[];
   seasons?: Season[];
+  source: 'tmdb' | 'tvmaze';
 }

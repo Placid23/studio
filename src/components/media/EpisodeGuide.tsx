@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -9,7 +10,6 @@ import { ImageLoader } from './ImageLoader';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { PlayCircle } from 'lucide-react';
-import { getImageUrl } from '@/lib/tmdb';
 
 export function EpisodeGuide({ show }: { show: Show }) {
   const seasons = show.seasons?.filter(s => s.season_number > 0) || [];
@@ -19,10 +19,10 @@ export function EpisodeGuide({ show }: { show: Show }) {
 
   useEffect(() => {
     startTransition(async () => {
-      const fetchedEpisodes = await getEpisodesForSeason(show.id, Number(selectedSeason));
+      const fetchedEpisodes = await getEpisodesForSeason(show.id, Number(selectedSeason), show.source);
       setEpisodes(fetchedEpisodes);
     });
-  }, [selectedSeason, show.id]);
+  }, [selectedSeason, show.id, show.source]);
 
   return (
     <div className="space-y-6">
@@ -34,7 +34,7 @@ export function EpisodeGuide({ show }: { show: Show }) {
           <SelectContent>
             {seasons.map((season) => (
               <SelectItem key={season.id} value={String(season.season_number)}>
-                {season.name} ({season.episode_count} Episodes)
+                {season.name} {season.episode_count ? `(${season.episode_count} Episodes)` : ''}
               </SelectItem>
             ))}
           </SelectContent>
@@ -45,20 +45,20 @@ export function EpisodeGuide({ show }: { show: Show }) {
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <EpisodeCardSkeleton key={i} />)
           : episodes.map((episode) => (
-            <EpisodeCard key={episode.id} episode={episode} showId={show.id} />
+            <EpisodeCard key={episode.id} episode={episode} showId={show.id} source={show.source} />
           ))}
       </div>
     </div>
   );
 }
 
-function EpisodeCard({ episode, showId }: { episode: Episode; showId: string }) {
+function EpisodeCard({ episode, showId, source }: { episode: Episode; showId: string; source: 'tmdb' | 'tvmaze' }) {
   return (
     <div className="bg-card/60 rounded-lg overflow-hidden flex flex-col group">
-      <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
+      <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}&source=${source}`}>
         <div className="relative aspect-video img-container">
           <ImageLoader
-            src={getImageUrl(episode.still_path, 'w500')}
+            src={episode.still_path!}
             alt={episode.name}
             fill
             style={{objectFit: 'cover'}}
@@ -76,7 +76,7 @@ function EpisodeCard({ episode, showId }: { episode: Episode; showId: string }) 
         </h3>
         <p className="text-muted-foreground text-sm mt-2 flex-1 line-clamp-3">{episode.synopsis}</p>
         <Button asChild variant="secondary" className="mt-4 w-full">
-           <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
+           <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}&source=${source}`}>
               <PlayCircle className="mr-2 h-4 w-4" /> Play
             </Link>
         </Button>

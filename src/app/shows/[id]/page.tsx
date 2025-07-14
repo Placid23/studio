@@ -5,7 +5,8 @@ import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { Suspense } from 'react';
-import { getShowDetails } from '@/lib/tmdb';
+import { getShowDetails as getShowDetailsFromTmdb } from '@/lib/tmdb';
+import { getShowDetails as getShowDetailsFromTvmaze } from '@/lib/tvmaze';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
@@ -14,21 +15,29 @@ import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { EpisodeGuide } from '@/components/media/EpisodeGuide';
+import type { Show } from '@/lib/types';
 
-export default async function ShowDetailPage({ params }: { params: { id: string } }) {
-  if (!process.env.TMDB_API_KEY) {
-    return (
-      <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
-          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
-        </div>
-      </div>
-    );
+export default async function ShowDetailPage({ params, searchParams }: { params: { id: string }, searchParams: { source?: string } }) {
+  const source = searchParams.source || 'tmdb';
+
+  let show: Show | null = null;
+  
+  if (source === 'tvmaze') {
+      show = await getShowDetailsFromTvmaze(params.id);
+  } else {
+      if (!process.env.TMDB_API_KEY) {
+        return (
+          <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
+              <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
+              <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+            </div>
+          </div>
+        );
+      }
+      show = await getShowDetailsFromTmdb(params.id);
   }
-
-  const show = await getShowDetails(params.id);
 
   if (!show) {
     notFound();
@@ -67,13 +76,15 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
           <div className="w-full md:w-2/3 lg:w-3/4 text-foreground pt-8 md:pt-16">
             <h1 className="text-4xl md:text-6xl font-black text-primary uppercase tracking-wide">{show.title}</h1>
             <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <span className="font-bold text-lg text-foreground">{show.rating.toFixed(1)}</span>
-              </div>
+              {show.rating > 0 && (
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <span className="font-bold text-lg text-foreground">{show.rating.toFixed(1)}</span>
+                </div>
+              )}
               {show.year > 0 && (
                 <>
-                  <span className="text-muted-foreground/50">|</span>
+                   {show.rating > 0 && <span className="text-muted-foreground/50">|</span>}
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
                     <span>{show.year}</span>
@@ -89,7 +100,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
               <Button asChild size="lg">
-                <Link href={`/watch/${show.id}?season=1&episode=1`}>
+                <Link href={`/watch/${show.id}?season=1&episode=1&source=${show.source}`}>
                     <PlayCircle className="mr-2 h-6 w-6" />
                     Watch Now
                 </Link>
@@ -112,7 +123,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
         </div>
         
         <Suspense fallback={null}>
-            <SimilarMedia mediaId={show.id} mediaType="show" />
+            {show.source === 'tmdb' && <SimilarMedia mediaId={show.id} mediaType="show" />}
         </Suspense>
 
       </div>

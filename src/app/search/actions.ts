@@ -1,7 +1,9 @@
+
 'use server';
 
 import type { Movie, Show } from "@/lib/types";
 import { getAvailableGenres as getGenresFromApi, searchMedia as searchTmdb } from "@/lib/tmdb";
+import { searchShows as searchTvmaze } from "@/lib/tvmaze";
 
 export async function getAvailableGenres(mediaType: 'movie' | 'tv' = 'movie'): Promise<{id: number, name: string}[]> {
   return getGenresFromApi(mediaType);
@@ -12,13 +14,16 @@ export async function searchMedia(
   filters: { genre: string; }
 ): Promise<(Movie | Show)[]> {
   
-  const results = await searchTmdb(searchTerm);
+  const [tmdbResults, tvmazeResults] = await Promise.all([
+    searchTmdb(searchTerm),
+    searchTvmaze(searchTerm),
+  ]);
+
+  let results: (Movie | Show)[] = [...tmdbResults, ...tvmazeResults];
 
   // If a genre filter is applied, filter the search results.
-  // Note: TMDB's multi-search doesn't support pre-filtering by genre in the API call,
-  // so we filter the results after they're fetched.
   if (filters.genre && filters.genre !== 'all') {
-    const allGenres = await getGenresFromApi('movie');
+    const allGenres = await getGenresFromApi('movie'); // TMDB genres for filtering
     const genreName = allGenres.find(g => String(g.id) === filters.genre)?.name;
     
     if (genreName) {
@@ -26,5 +31,13 @@ export async function searchMedia(
     }
   }
 
-  return results;
+  // Remove duplicates by title, preferring tmdb results
+  const uniqueResults = new Map<string, Movie | Show>();
+  for (const item of results) {
+    if (!uniqueResults.has(item.title)) {
+      uniqueResults.set(item.title, item);
+    }
+  }
+
+  return Array.from(uniqueResults.values());
 }

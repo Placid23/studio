@@ -1,26 +1,11 @@
 
 import { MediaCard } from '@/components/media/MediaCard';
 import type { Show } from '@/lib/types';
-import { getPopularShows } from '@/lib/tmdb';
+import { getPopularShows } from '@/lib/tvmaze';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
 
-function TmdbError() {
-  return (
-    <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
-      <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
-        <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
-        <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
-      </div>
-    </div>
-  )
-}
 
 export default async function ShowsPage() {
-  if (!process.env.TMDB_API_KEY) {
-    return <TmdbError />;
-  }
-
   let shows: Show[] = [];
   let fetchError: string | null = null;
 
@@ -46,7 +31,7 @@ export default async function ShowsPage() {
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Clapperboard className="w-16 h-16 text-muted-foreground/50" />
           <h2 className="mt-6 text-2xl font-bold">No Shows Found</h2>
-          <p className="mt-2 text-muted-foreground">Could not fetch shows from TMDB.</p>
+          <p className="mt-2 text-muted-foreground">Could not fetch shows from TVMaze.</p>
         </div>
       )}
     </div>
