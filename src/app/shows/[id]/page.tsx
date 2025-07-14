@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Star, Calendar, PlayCircle } from 'lucide-react';
