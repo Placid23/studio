@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { notFound, useSearchParams } from 'next/navigation';
+import { notFound, useSearchParams, useParams } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { getStreamUrlAction } from '@/app/actions/get-stream-url';
@@ -50,19 +50,23 @@ function WatchStatus({
     );
 }
 
-export default function WatchPage({ params }: { params: { id: string }}) {
+export default function WatchPage() {
+    const params = useParams();
     const searchParams = useSearchParams();
     const [videoSrc, setVideoSrc] = useState<string | null>(null);
     const [status, setStatus] = useState<LoadingState>('loading');
     const [message, setMessage] = useState('Please wait while we locate the best quality stream for you. This can sometimes take 20-30 seconds.');
 
+    const id = params.id as string;
     const mediaType = (searchParams.get('season') && searchParams.get('episode')) ? 'show' : 'movie';
     const source = (searchParams.get('source') as 'tmdb' | 'tvmaze') || 'tmdb';
 
     useEffect(() => {
+        if (!id) return;
+        
         const fetchStream = async () => {
             setStatus('loading');
-            const result = await getStreamUrlAction(params.id, mediaType, source);
+            const result = await getStreamUrlAction(id, mediaType, source);
             if (result.success && result.url) {
                 setVideoSrc(result.url);
                 setStatus('success');
@@ -74,9 +78,9 @@ export default function WatchPage({ params }: { params: { id: string }}) {
         };
 
         fetchStream();
-    }, [params.id, mediaType, source]);
+    }, [id, mediaType, source]);
 
-    if (!params.id) {
+    if (!id) {
         notFound();
     }
 
