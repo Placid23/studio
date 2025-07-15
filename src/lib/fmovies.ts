@@ -9,11 +9,12 @@ import axios from 'axios';
 const API_URL = process.env.STREAMING_API_URL || 'http://127.0.0.1:5000';
 
 async function fetchFromApi(path: string, params: Record<string, string> = {}) {
-    const url = `${API_URL}${path}`;
+    const url = new URL(path, API_URL);
+    Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
     
     try {
-        console.log(`[fmovies] Fetching with axios: ${url} with params: ${JSON.stringify(params)}`);
-        const response = await axios.get(url, { 
+        console.log(`[fmovies] Fetching with axios: ${url.toString()}`);
+        const response = await axios.get(url.toString(), { 
             timeout: 20000 // 20 second timeout
         });
         
