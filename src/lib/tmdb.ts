@@ -1,7 +1,7 @@
 
 import type { Movie, Show, Episode, Season } from './types';
 
-const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
@@ -52,7 +52,6 @@ function mapTmdbToMovie(tmdbMovie: any): Movie {
     return {
         id: String(tmdbMovie.id),
         type: 'movie',
-        source: 'tmdb',
         title: tmdbMovie.title,
         year: tmdbMovie.release_date ? new Date(tmdbMovie.release_date).getFullYear() : 0,
         genres: tmdbMovie.genres?.map((g: any) => g.name) || [],
@@ -72,7 +71,6 @@ function mapTmdbToShow(tmdbShow: any): Show {
     return {
         id: String(tmdbShow.id),
         type: 'show',
-        source: 'tmdb',
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,
         genres: tmdbShow.genres?.map((g: any) => g.name) || [],
@@ -98,8 +96,12 @@ export async function getTrending(mediaType: 'movie' | 'tv' = 'movie'): Promise<
   if (!data?.results) return [];
   // Ensure we only return the correct media type, TMDB search can be fuzzy
   return data.results
-    .filter((item: any) => item.media_type === mediaType)
-    .map((item: any) => mediaType === 'movie' ? mapTmdbToMovie(item) : mapTmdbToShow(item));
+    .filter((item: any) => (item.media_type === 'movie' || item.media_type === 'tv'))
+    .map((item: any) => {
+        if (item.media_type === 'movie') return mapTmdbToMovie(item);
+        if (item.media_type === 'tv') return mapTmdbToShow(item);
+        return null;
+    }).filter(Boolean) as (Movie | Show)[];
 }
 
 export async function getPopularMovies(region?: string): Promise<Movie[]> {
