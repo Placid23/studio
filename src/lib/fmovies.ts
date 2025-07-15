@@ -44,17 +44,15 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
 export async function getMediaInfo(title: string, year?: number): Promise<{ url: string } | null> {
     const data = await fetchFromApi('/search', { keyword: title });
     
-    if (!data || !data.results || data.results.length === 0) {
+    if (!data || !data.data || data.data.length === 0) {
         return null;
     }
 
-    // Find the best match. The API results can be messy.
-    // We prefer an exact title match and a close year match if available.
     const normalizedTitle = title.toLowerCase();
     
-    let bestMatch = data.results[0]; // Default to first result
+    let bestMatch = data.data[0];
     
-    const perfectMatch = data.results.find((item: any) => 
+    const perfectMatch = data.data.find((item: any) => 
         item.title && item.title.toLowerCase() === normalizedTitle &&
         (year && item.year ? Math.abs(item.year - year) <= 1 : true)
     );
@@ -63,10 +61,10 @@ export async function getMediaInfo(title: string, year?: number): Promise<{ url:
         bestMatch = perfectMatch;
     }
 
-    if (!bestMatch.url) return null;
+    if (!bestMatch.link) return null;
 
     return {
-        url: bestMatch.url,
+        url: bestMatch.link,
     };
 }
 
