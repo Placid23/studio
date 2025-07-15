@@ -6,54 +6,46 @@ import { Info, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
-import { MediaCarousel } from '@/components/media/MediaCarousel';
+import { MediaCarousel, MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
 import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Loading from './loading';
+
+async function MediaCarousels() {
+  const [
+    popularMoviesData,
+    topRatedMoviesData,
+    upcomingMoviesData,
+    popularShowsData,
+    topRatedShowsData,
+  ] = await Promise.all([
+    getPopularMovies(),
+    getTopRatedMovies(),
+    getUpcomingMovies(),
+    getPopularShows(),
+    getTopRatedShows(),
+  ]);
+
+  return (
+    <>
+      <MediaCarousel title="Popular Movies" media={popularMoviesData} />
+      <MediaCarousel title="Top Rated Movies" media={topRatedMoviesData} />
+      <MediaCarousel title="Upcoming Movies" media={upcomingMoviesData} />
+      <MediaCarousel title="Popular TV Shows" media={popularShowsData} />
+      <MediaCarousel title="Top Rated TV Shows" media={topRatedShowsData} />
+    </>
+  );
+}
+
 
 export default function Home() {
   const [trending, setTrending] = useState<(Movie | Show)[]>([]);
-  const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
-  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([]);
-  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
-  const [popularShows, setPopularShows] = useState<Show[]>([]);
-  const [topRatedShows, setTopRatedShows] = useState<Show[]>([]);
-  const [popularInCountry, setPopularInCountry] = useState<Movie[]>([]);
-  const [countryName, setCountryName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCountryInfo(): Promise<{ code: string; name: string } | null> {
-      return new Promise((resolve) => {
-        if (!navigator.geolocation) {
-          console.log("Geolocation is not supported by your browser");
-          resolve(null);
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            try {
-              const { latitude, longitude } = position.coords;
-              const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-              const data = await response.json();
-              resolve({ code: data.countryCode, name: data.countryName });
-            } catch (err) {
-              console.error("Failed to fetch country info:", err);
-              resolve(null);
-            }
-          },
-          () => {
-            console.log("Unable to retrieve your location.");
-            resolve(null);
-          }
-        );
-      });
-    }
-
-    async function fetchAllMedia() {
+    async function fetchTrending() {
       if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
         setError('The TMDB_API_KEY environment variable is not configured.');
         setIsLoading(false);
@@ -61,47 +53,17 @@ export default function Home() {
       }
 
       try {
-        const countryInfo = await fetchCountryInfo();
-        if (countryInfo) {
-          setCountryName(countryInfo.name);
-        }
-
-        const [
-          trendingData,
-          popularMoviesData,
-          topRatedMoviesData,
-          upcomingMoviesData,
-          popularShowsData,
-          topRatedShowsData,
-          popularInCountryData
-        ] = await Promise.all([
-          getTrending('movie'),
-          getPopularMovies(),
-          getTopRatedMovies(),
-          getUpcomingMovies(),
-          getPopularShows(),
-          getTopRatedShows(),
-          countryInfo ? getPopularMovies(countryInfo.code) : Promise.resolve([])
-        ]);
-
+        const trendingData = await getTrending('movie');
         setTrending(trendingData);
-        setPopularMovies(popularMoviesData);
-        setTopRatedMovies(topRatedMoviesData);
-        setUpcomingMovies(upcomingMoviesData);
-        setPopularShows(popularShowsData);
-        setTopRatedShows(topRatedShowsData);
-        if (popularInCountryData.length > 0) {
-          setPopularInCountry(popularInCountryData);
-        }
       } catch (e) {
         console.error(e);
-        setError('Failed to load media. Please try again later.');
+        setError('Failed to load trending media. Please try again later.');
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchAllMedia();
+    fetchTrending();
   }, []);
 
   if (isLoading) {
@@ -167,14 +129,15 @@ export default function Home() {
 
       <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
         <ContinueWatchingCarousel />
-        {popularInCountry.length > 0 && (
-          <MediaCarousel title={countryName ? `Popular in ${countryName}` : "Popular in Your Country"} media={popularInCountry} />
-        )}
-        <MediaCarousel title="Popular Movies" media={popularMovies} />
-        <MediaCarousel title="Top Rated Movies" media={topRatedMovies} />
-        <MediaCarousel title="Upcoming Movies" media={upcomingMovies} />
-        <MediaCarousel title="Popular TV Shows" media={popularShows} />
-        <MediaCarousel title="Top Rated TV Shows" media={topRatedShows} />
+        <Suspense fallback={<>
+          <MediaCarouselSkeleton />
+          <MediaCarouselSkeleton />
+          <MediaCarouselSkeleton />
+          <MediaCarouselSkeleton />
+          <MediaCarouselSkeleton />
+        </>}>
+          <MediaCarousels />
+        </Suspense>
       </div>
     </div>
   );
