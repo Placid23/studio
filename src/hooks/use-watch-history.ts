@@ -15,7 +15,12 @@ export function useWatchHistory() {
     try {
       const storedHistory = localStorage.getItem(HISTORY_KEY);
       if (storedHistory) {
-        return JSON.parse(storedHistory) as WatchHistoryItem[];
+        const parsedHistory = JSON.parse(storedHistory) as WatchHistoryItem[];
+        // Filter out any items that still have tvmaze image URLs to prevent errors
+        return parsedHistory.filter(item => 
+            !item.posterUrl?.includes('tvmaze.com') && 
+            !item.backdropUrl?.includes('tvmaze.com')
+        );
       }
     } catch (error) {
       console.error("Could not get watch history from localStorage", error);
@@ -25,6 +30,11 @@ export function useWatchHistory() {
 
   const addToWatchHistory = useCallback((media: Movie | Show) => {
     try {
+      // Don't add items with tvmaze urls to history
+      if (media.posterUrl?.includes('tvmaze.com') || media.backdropUrl?.includes('tvmaze.com')) {
+        return;
+      }
+
       const currentHistory = getWatchHistory();
       // Remove if it already exists to avoid duplicates and move it to the front
       const updatedHistory = currentHistory.filter(item => item.id !== media.id);
