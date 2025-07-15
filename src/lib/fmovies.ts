@@ -5,7 +5,7 @@ import { stripHtml } from "string-strip-html";
 
 // This should point to your local instance of the fmovies-api
 // IMPORTANT: This must be the address of the API, not the proxy.
-const API_URL = process.env.FMOVIES_API_URL || 'http://localhost:5000';
+const API_URL = process.env.FMOVIES_API_URL || 'http://127.0.0.1:5000';
 
 async function fetchFromApi(path: string, params: Record<string, string> = {}) {
     // This API doesn't use a standard / separator
