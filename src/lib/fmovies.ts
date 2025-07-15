@@ -4,8 +4,9 @@
 import type { Stream } from '@/app/actions/get-stream-url';
 import axios from 'axios';
 
-// This should point to your local instance of the fmovies-api
-const API_URL = 'http://127.0.0.1:5000';
+// The URL should be configurable via an environment variable.
+// This allows the Next.js server to connect to the API running on the host machine, not just localhost.
+const API_URL = process.env.STREAMING_API_URL || 'http://127.0.0.1:5000';
 
 async function fetchFromApi(path: string, params: Record<string, string> = {}) {
     const url = `${API_URL}${path}`;
@@ -13,7 +14,6 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
     try {
         console.log(`[fmovies] Fetching with axios: ${url} with params: ${JSON.stringify(params)}`);
         const response = await axios.get(url, { 
-            params,
             timeout: 20000 // 20 second timeout
         });
         
@@ -29,11 +29,10 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
         console.warn(`[fmovies] Received non-JSON response for ${path}:`, response.data);
         return null;
 
-
     } catch (error: any) {
         if (axios.isAxiosError(error)) {
              console.error(`[fmovies] Axios Error on path: ${path}. URL: ${url}. Error: ${error.message}`);
-             if (error.code === 'ECONNREFUSED' || error.response?.status === 404) {
+             if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.response?.status === 404) {
                  throw new Error(`Failed to connect to the streaming provider API. Is it running at ${API_URL}?`);
              }
         } else {
@@ -42,7 +41,6 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
         throw new Error(`An unexpected error occurred while contacting the streaming provider.`);
     }
 }
-
 
 /**
  * Scrapes the media detail page to find the stream URL.
