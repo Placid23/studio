@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { notFound, useSearchParams, useParams } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
-import { getStreamUrlAction } from '@/app/actions/get-stream-url';
+import { getStreamUrlAction, type Stream } from '@/app/actions/get-stream-url';
 import { Loader2, AlertTriangle, Clapperboard, Tv } from 'lucide-react';
 
 type LoadingState = 'loading' | 'error' | 'success';
@@ -53,7 +53,7 @@ function WatchStatus({
 export default function WatchPage() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const [videoSrc, setVideoSrc] = useState<string | null>(null);
+    const [streams, setStreams] = useState<Stream[] | null>(null);
     const [status, setStatus] = useState<LoadingState>('loading');
     const [message, setMessage] = useState('Please wait while we locate the best quality stream for you. This can sometimes take 20-30 seconds.');
 
@@ -66,8 +66,8 @@ export default function WatchPage() {
         const fetchStream = async () => {
             setStatus('loading');
             const result = await getStreamUrlAction(id, mediaType);
-            if (result.success && result.url) {
-                setVideoSrc(result.url);
+            if (result.success && result.streams) {
+                setStreams(result.streams);
                 setStatus('success');
                 setMessage(result.message);
             } else {
@@ -91,7 +91,7 @@ export default function WatchPage() {
             
             <main className="flex-1 flex items-center justify-center">
                 {status !== 'success' && <WatchStatus status={status} message={message} mediaType={mediaType} />}
-                {videoSrc && <VideoPlayer src={videoSrc} />}
+                {streams && <VideoPlayer streams={streams} />}
             </main>
         </div>
     );

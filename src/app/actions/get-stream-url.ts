@@ -5,10 +5,15 @@ import { getMediaInfo, getStreamUrl } from '@/lib/fmovies';
 import { getMovieDetails, getShowDetails } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
 
+export interface Stream {
+    quality: string;
+    url: string;
+}
+
 export async function getStreamUrlAction(
     mediaId: string, 
     mediaType: 'movie' | 'show'
-): Promise<{ success: boolean; url?: string; message: string }> {
+): Promise<{ success: boolean; streams?: Stream[]; message: string }> {
     try {
         let mediaTitle: string | undefined;
         let releaseYear: number | undefined;
@@ -42,13 +47,13 @@ export async function getStreamUrlAction(
         console.log(`[STREAM] Found match: ${mediaInfo.url}. Now fetching stream URL.`);
 
         // 3. Get the actual stream URL from the media page
-        const streamUrl = await getStreamUrl(mediaInfo.url);
-        if (!streamUrl) {
+        const streams = await getStreamUrl(mediaInfo.url);
+        if (!streams || streams.length === 0) {
             return { success: false, message: 'Found a match, but failed to extract the stream URL. The provider may have updated their site.' };
         }
 
-        console.log(`[STREAM] Success! Got stream URL for ${mediaTitle}.`);
-        return { success: true, url: streamUrl, message: "Stream URL fetched successfully." };
+        console.log(`[STREAM] Success! Got stream URLs for ${mediaTitle}.`);
+        return { success: true, streams, message: "Stream URLs fetched successfully." };
 
     } catch (error: any) {
         console.error('[getStreamUrlAction Error]', error);

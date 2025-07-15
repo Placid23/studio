@@ -1,6 +1,8 @@
 
 'use server';
 
+import type { Stream } from '@/app/actions/get-stream-url';
+
 // This should point to your local instance of the fmovies-api
 const API_URL = 'http://127.0.0.1:5000';
 
@@ -72,14 +74,19 @@ export async function getMediaInfo(title: string, year?: number): Promise<{ url:
 /**
  * Scrapes the media detail page to find the stream URL.
  * @param mediaUrl The URL of the media's detail page from getMediaInfo.
- * @returns A direct URL to the video stream (.mp4 or .m3u8).
+ * @returns An array of stream objects with quality and URL.
  */
-export async function getStreamUrl(mediaUrl: string): Promise<string | null> {
+export async function getStreamUrl(mediaUrl: string): Promise<Stream[] | null> {
     const data = await fetchFromApi('/details', { link: mediaUrl });
     
-    if (!data || !data.stream_url) {
+    if (!data || !data.streams || data.streams.length === 0) {
         return null;
     }
     
-    return data.stream_url;
+    // The API returns an object where keys are qualities and values are URLs.
+    // We need to convert this to an array of objects.
+    return Object.entries(data.streams).map(([quality, url]) => ({
+        quality,
+        url: url as string,
+    }));
 }
