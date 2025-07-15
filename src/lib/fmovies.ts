@@ -22,8 +22,6 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
             throw new Error(`The streaming provider API returned an error: ${response.statusText}`);
         }
         
-        // The scraping API might return a string or non-JSON on error/not found.
-        // Let's ensure we only return if we get a valid object.
         if (typeof response.data === 'object' && response.data !== null) {
             return response.data;
         }
@@ -47,41 +45,8 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
 
 
 /**
- * Searches for a movie or TV show by title.
- * @param query The title of the media to search for.
- * @returns A URL to the media's detail page on the provider's site.
- */
-export async function getMediaInfo(title: string, year?: number): Promise<{ url: string } | null> {
-    const data = await fetchFromApi('/search', { keyword: title });
-    
-    if (!data || !data.data || data.data.length === 0) {
-        return null;
-    }
-
-    const normalizedTitle = title.toLowerCase();
-    
-    let bestMatch = data.data[0];
-    
-    const perfectMatch = data.data.find((item: any) => 
-        item.title && item.title.toLowerCase() === normalizedTitle &&
-        (year && item.year ? Math.abs(item.year - year) <= 1 : true)
-    );
-
-    if (perfectMatch) {
-        bestMatch = perfectMatch;
-    }
-
-    if (!bestMatch.link) return null;
-
-    return {
-        url: bestMatch.link,
-    };
-}
-
-
-/**
  * Scrapes the media detail page to find the stream URL.
- * @param mediaUrl The URL of the media's detail page from getMediaInfo.
+ * @param mediaUrl The URL of the media's detail page.
  * @returns An array of stream objects with quality and URL.
  */
 export async function getStreamUrl(mediaUrl: string): Promise<Stream[] | null> {
