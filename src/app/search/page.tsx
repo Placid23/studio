@@ -18,8 +18,7 @@ function SearchContent() {
   const [genres, setGenres] = useState<{id: number, name: string}[]>([]);
   const [media, setMedia] = useState<(Movie | Show)[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [isInitializing, setIsInitializing] = useState(true);
-
+  
   const [searchTerm, setSearchTerm] = useState(searchParams.get('query') || '');
   const [genre, setGenre] = useState(searchParams.get('genre') || 'all');
 
@@ -27,17 +26,15 @@ function SearchContent() {
 
   const createQueryString = useCallback(
     (params: Record<string, string>) => {
-      const newSearchParams = new URLSearchParams(searchParams.toString());
+      const newSearchParams = new URLSearchParams();
       for (const [key, value] of Object.entries(params)) {
         if (value && value !== 'all') {
           newSearchParams.set(key, value);
-        } else {
-          newSearchParams.delete(key);
         }
       }
       return newSearchParams.toString();
     },
-    [searchParams]
+    []
   );
   
   useEffect(() => {
@@ -45,32 +42,39 @@ function SearchContent() {
   }, []);
   
   useEffect(() => {
-    setSearchTerm(searchParams.get('query') || '');
-    setGenre(searchParams.get('genre') || 'all');
-    setIsInitializing(false);
-  }, [searchParams]);
+    const initialQuery = searchParams.get('query') || '';
+    const initialGenre = searchParams.get('genre') || 'all';
+
+    setSearchTerm(initialQuery);
+    setGenre(initialGenre);
+    
+    if (initialQuery) {
+        startTransition(async () => {
+            const results = await searchMedia(initialQuery, { genre: initialGenre });
+            setMedia(results);
+        });
+    } else {
+        setMedia([]);
+    }
+  }, []); // Run only once on mount to populate from URL
 
   useEffect(() => {
-    if (isInitializing) return;
-    if (!debouncedSearchTerm) {
-      setMedia([]);
-      const queryString = createQueryString({ query: '' });
-      router.push(`${pathname}?${queryString}`);
-      return;
-    };
-
-    startTransition(async () => {
-      const results = await searchMedia(debouncedSearchTerm, { genre });
-      setMedia(results);
-    });
-
     const queryString = createQueryString({
       query: debouncedSearchTerm,
       genre,
     });
-    router.push(`${pathname}?${queryString}`);
-
-  }, [debouncedSearchTerm, genre, createQueryString, pathname, router, isInitializing]);
+    // Use replace to avoid polluting browser history on every keystroke
+    router.replace(`${pathname}?${queryString}`);
+    
+    if (debouncedSearchTerm) {
+        startTransition(async () => {
+          const results = await searchMedia(debouncedSearchTerm, { genre });
+          setMedia(results);
+        });
+    } else {
+        setMedia([]);
+    }
+  }, [debouncedSearchTerm, genre, createQueryString, pathname, router]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -99,7 +103,7 @@ function SearchContent() {
         </div>
       </div>
 
-      {(isPending || (isInitializing && debouncedSearchTerm)) ? (
+      {isPending ? (
          <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Loader2 className="w-16 h-16 text-primary animate-spin" />
           <h2 className="mt-6 text-2xl font-bold">Searching...</h2>
@@ -110,10 +114,10 @@ function SearchContent() {
             <MediaCard key={`${item.type}-${item.id}`} media={item} />
           ))}
         </div>
-      ) : debouncedSearchTerm ? (
+      ) : searchTerm ? (
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Film className="w-16 h-16 text-muted-foreground/50" />
-          <h2 className="mt-6 text-2xl font-bold">No results found for "{debouncedSearchTerm}"</h2>
+          <h2 className="mt-6 text-2xl font-bold">No results found for "{searchTerm}"</h2>
           <p className="mt-2 text-muted-foreground">Try a different search term.</p>
         </div>
       ) : (
