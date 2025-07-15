@@ -22,7 +22,15 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
             throw new Error(`The streaming provider API returned an error: ${response.statusText}`);
         }
         
-        return response.data;
+        // The scraping API might return a string or non-JSON on error/not found.
+        // Let's ensure we only return if we get a valid object.
+        if (typeof response.data === 'object' && response.data !== null) {
+            return response.data;
+        }
+
+        console.warn(`[fmovies] Received non-JSON response for ${path}:`, response.data);
+        return null;
+
 
     } catch (error: any) {
         if (axios.isAxiosError(error)) {
@@ -79,7 +87,7 @@ export async function getMediaInfo(title: string, year?: number): Promise<{ url:
 export async function getStreamUrl(mediaUrl: string): Promise<Stream[] | null> {
     const data = await fetchFromApi('/details', { link: mediaUrl });
     
-    if (!data || !data.streams || data.streams.length === 0) {
+    if (!data || !data.streams || Object.keys(data.streams).length === 0) {
         return null;
     }
     
