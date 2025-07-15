@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Star, Clock, Calendar, Film, PlayCircle } from 'lucide-react';
@@ -15,13 +16,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
-  if (!process.env.TMDB_API_KEY) {
+  if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-8 max-w-md w-full">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-destructive">TMDB API Key Missing</h1>
-          <p className="mt-2 text-destructive/80">The TMDB_API_KEY environment variable is not configured.</p>
+          <p className="mt-2 text-destructive/80">The NEXT_PUBLIC_TMDB_API_KEY environment variable is not configured.</p>
         </div>
       </div>
     );

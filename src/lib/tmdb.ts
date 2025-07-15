@@ -1,17 +1,17 @@
 
 import type { Movie, Show, Episode, Season } from './types';
 
-const API_KEY = process.env.TMDB_API_KEY;
+const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
 async function fetchFromTMDB(path: string, params: Record<string, string> = {}) {
   if (!API_KEY) {
     // This check is primarily for server-side logs. Client-side will show the UI error.
-    console.error('TMDB_API_KEY environment variable is not set');
+    console.error('NEXT_PUBLIC_TMDB_API_KEY environment variable is not set');
     // In client-side components, we should throw to let react-query handle it.
     if (typeof window !== 'undefined') {
-      throw new Error('TMDB_API_KEY is not configured.');
+      throw new Error('NEXT_PUBLIC_TMDB_API_KEY is not configured.');
     }
     return null;
   }

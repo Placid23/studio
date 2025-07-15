@@ -9,7 +9,7 @@ import { AlertTriangle } from 'lucide-react';
 
 async function getHeroMedia() {
     if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
-        return { error: 'The TMDB_API_KEY environment variable is not configured.' };
+        return { error: 'The NEXT_PUBLIC_TMDB_API_KEY environment variable is not configured.' };
     }
     try {
         const trendingData = await getTrending('movie');
