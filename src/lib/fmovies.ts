@@ -2,38 +2,38 @@
 'use server';
 
 import type { Stream } from '@/app/actions/get-stream-url';
+import axios from 'axios';
 
 // This should point to your local instance of the fmovies-api
 const API_URL = 'http://127.0.0.1:5000';
 
 async function fetchFromApi(path: string, params: Record<string, string> = {}) {
-    const url = new URL(path, API_URL);
-    
-    // Add any query params
-    for (const [key, value] of Object.entries(params)) {
-        url.searchParams.append(key, value);
-    }
+    const url = `${API_URL}${path}`;
     
     try {
-        console.log(`[fmovies] Fetching: ${url.toString()}`);
-        const response = await fetch(url.toString(), {
-            // This API can be slow, so we disable caching and increase timeout if needed
-            // For server components, we use next.revalidate, but for direct fetch, it's about not caching errors.
-            cache: 'no-store'
+        console.log(`[fmovies] Fetching with axios: ${url} with params: ${JSON.stringify(params)}`);
+        const response = await axios.get(url, { 
+            params,
+            timeout: 20000 // 20 second timeout
         });
         
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error(`[fmovies] API Error for path ${path}: ${response.status} ${response.statusText}`, errorBody);
+        if (response.status !== 200) {
+            console.error(`[fmovies] API Error for path ${path}: ${response.status} ${response.statusText}`, response.data);
             throw new Error(`The streaming provider API returned an error: ${response.statusText}`);
         }
         
-        const data = await response.json();
-        return data;
+        return response.data;
 
     } catch (error: any) {
-        console.error(`[fmovies] Network Error on path: ${path}. URL: ${url.toString()}. Error: ${error.message}`);
-        throw new Error(`Failed to connect to the streaming provider API. Is it running at ${API_URL}?`);
+        if (axios.isAxiosError(error)) {
+             console.error(`[fmovies] Axios Error on path: ${path}. URL: ${url}. Error: ${error.message}`);
+             if (error.code === 'ECONNREFUSED' || error.response?.status === 404) {
+                 throw new Error(`Failed to connect to the streaming provider API. Is it running at ${API_URL}?`);
+             }
+        } else {
+            console.error(`[fmovies] Generic Error on path: ${path}. URL: ${url}. Error:`, error);
+        }
+        throw new Error(`An unexpected error occurred while contacting the streaming provider.`);
     }
 }
 
