@@ -6,37 +6,12 @@ import { Info, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
-import { MediaCarousel, MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
-import { getTrending, getPopularMovies, getTopRatedMovies, getUpcomingMovies, getPopularShows, getTopRatedShows } from '@/lib/tmdb';
+import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
+import { getTrending } from '@/lib/tmdb';
 import type { Movie, Show } from '@/lib/types';
 import { Suspense, useEffect, useState } from 'react';
 import Loading from './loading';
-
-async function MediaCarousels() {
-  const [
-    popularMoviesData,
-    topRatedMoviesData,
-    upcomingMoviesData,
-    popularShowsData,
-    topRatedShowsData,
-  ] = await Promise.all([
-    getPopularMovies(),
-    getTopRatedMovies(),
-    getUpcomingMovies(),
-    getPopularShows(),
-    getTopRatedShows(),
-  ]);
-
-  return (
-    <>
-      <MediaCarousel title="Popular Movies" media={popularMoviesData} />
-      <MediaCarousel title="Top Rated Movies" media={topRatedMoviesData} />
-      <MediaCarousel title="Upcoming Movies" media={upcomingMoviesData} />
-      <MediaCarousel title="Popular TV Shows" media={popularShowsData} />
-      <MediaCarousel title="Top Rated TV Shows" media={topRatedShowsData} />
-    </>
-  );
-}
+import { MediaCarousels } from '@/components/media/MediaCarousels';
 
 
 export default function Home() {
