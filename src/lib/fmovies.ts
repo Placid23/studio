@@ -1,15 +1,11 @@
 
 'use server';
 
-import { stripHtml } from "string-strip-html";
-
 // This should point to your local instance of the fmovies-api
-// IMPORTANT: This must be the address of the API, not the proxy.
 const API_URL = 'http://127.0.0.1:5000';
 
 async function fetchFromApi(path: string, params: Record<string, string> = {}) {
-    // This API doesn't use a standard / separator
-    const url = new URL(path, API_URL + "/"); 
+    const url = new URL(path, API_URL);
     
     // Add any query params
     for (const [key, value] of Object.entries(params)) {
@@ -46,7 +42,7 @@ async function fetchFromApi(path: string, params: Record<string, string> = {}) {
  * @returns A URL to the media's detail page on the provider's site.
  */
 export async function getMediaInfo(title: string, year?: number): Promise<{ url: string } | null> {
-    const data = await fetchFromApi('search', { q: title });
+    const data = await fetchFromApi('/search', { keyword: title });
     
     if (!data || !data.results || data.results.length === 0) {
         return null;
@@ -81,7 +77,7 @@ export async function getMediaInfo(title: string, year?: number): Promise<{ url:
  * @returns A direct URL to the video stream (.mp4 or .m3u8).
  */
 export async function getStreamUrl(mediaUrl: string): Promise<string | null> {
-    const data = await fetchFromApi('details', { url: mediaUrl });
+    const data = await fetchFromApi('/details', { link: mediaUrl });
     
     if (!data || !data.stream_url) {
         return null;
