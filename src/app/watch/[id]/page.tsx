@@ -7,7 +7,6 @@ import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { BackButton } from '@/components/layout/BackButton';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 
 async function WatchContent({
   media,
@@ -50,25 +49,15 @@ function WatchPageLoader() {
     )
 }
 
-function WatchPageWrapper({ params, searchParams }: { params: { id: string }; searchParams: { season?: string, episode?: string } }) {
-    // This component is necessary because we need to use useSearchParams on the client,
-    // but the parent needs to be an async component to fetch data.
-    // However, we can't make this a client component directly and await data.
-    // Instead we will pass the searchParams to the page component.
-    return <WatchPage params={params} searchParams={searchParams} />;
-}
-
-
 export default async function WatchPage({ params, searchParams }: { params: { id: string }, searchParams: { [key: string]: string | string[] | undefined } }) {
   const season = searchParams.season as string | undefined;
   const episode = searchParams.episode as string | undefined;
   
-  // Attempt to fetch both movie and show details. One will succeed.
-  const moviePromise = getMovieDetails(params.id);
-  const showPromise = getShowDetails(params.id);
-  
-  const [movie, show] = await Promise.all([moviePromise, showPromise]);
-  const media = movie || show; // One of them will be non-null
+  // Fetch movie and show details sequentially to avoid race condition errors.
+  let media: Movie | Show | null = await getMovieDetails(params.id);
+  if (!media) {
+    media = await getShowDetails(params.id);
+  }
 
   if (!media) {
     notFound();
