@@ -2,7 +2,7 @@
 import axios from 'axios';
 import type { Stream } from '@/app/actions/get-stream-url';
 
-const API_URL = process.env.STREAMING_API_URL || 'http://127.0.0.1:5000';
+const API_URL = process.env.STREAMING_API_URL;
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -12,6 +12,9 @@ const apiClient = axios.create({
 export async function search(
   title: string
 ): Promise<{ url?: string; error?: string }> {
+  if (!API_URL) {
+    return { error: 'STREAMING_API_URL is not configured in your environment variables.' };
+  }
   try {
     const response = await apiClient.get('/search', { params: { keyword: title } });
     if (response.data && response.data.url) {
@@ -30,6 +33,9 @@ export async function search(
 export async function getStream(
   mediaUrl: string
 ): Promise<{ streams?: Stream[]; error?: string }> {
+  if (!API_URL) {
+    return { error: 'STREAMING_API_URL is not configured in your environment variables.' };
+  }
   try {
     const response = await apiClient.get('/stream', { params: { url: mediaUrl } });
      if (response.data && Array.isArray(response.data.streams) && response.data.streams.length > 0) {
