@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import type { Stream } from '@/app/actions/get-stream-url';
 
@@ -12,7 +13,7 @@ export async function search(
   title: string
 ): Promise<{ url?: string; error?: string }> {
   try {
-    const response = await apiClient.get('/search', { params: { title } });
+    const response = await apiClient.get('/search', { params: { keyword: title } });
     if (response.data && response.data.url) {
       return { url: response.data.url };
     }
