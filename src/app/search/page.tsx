@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useTransition, useCallback } from 'react';
@@ -26,15 +27,17 @@ function SearchContent() {
 
   const createQueryString = useCallback(
     (params: Record<string, string>) => {
-      const newSearchParams = new URLSearchParams();
+      const newSearchParams = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(params)) {
         if (value && value !== 'all') {
           newSearchParams.set(key, value);
+        } else {
+          newSearchParams.delete(key);
         }
       }
       return newSearchParams.toString();
     },
-    []
+    [searchParams]
   );
   
   useEffect(() => {
@@ -44,10 +47,8 @@ function SearchContent() {
   useEffect(() => {
     const initialQuery = searchParams.get('query') || '';
     const initialGenre = searchParams.get('genre') || 'all';
-
-    setSearchTerm(initialQuery);
-    setGenre(initialGenre);
     
+    // Only run search if there's an initial query
     if (initialQuery) {
         startTransition(async () => {
             const results = await searchMedia(initialQuery, { genre: initialGenre });
@@ -63,7 +64,7 @@ function SearchContent() {
       query: debouncedSearchTerm,
       genre,
     });
-    // Use replace to avoid polluting browser history on every keystroke
+    
     router.replace(`${pathname}?${queryString}`);
     
     if (debouncedSearchTerm) {
@@ -75,6 +76,10 @@ function SearchContent() {
         setMedia([]);
     }
   }, [debouncedSearchTerm, genre, createQueryString, pathname, router]);
+
+  const handleGenreChange = (newGenre: string) => {
+    setGenre(newGenre);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -91,7 +96,7 @@ function SearchContent() {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Select value={genre} onValueChange={setGenre}>
+          <Select value={genre} onValueChange={handleGenreChange} defaultValue="all">
             <SelectTrigger>
               <SelectValue placeholder="Filter by Genre" />
             </SelectTrigger>
