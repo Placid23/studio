@@ -9,8 +9,6 @@ import { Suspense } from 'react';
 import { getShowDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
-import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
-import { addToWatchlistAction } from './actions';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -98,7 +96,6 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                     Watch Now
                 </Link>
               </Button>
-              <AddToWatchlistButton media={show} addAction={addToWatchlistAction} />
             </div>
           </div>
         </div>

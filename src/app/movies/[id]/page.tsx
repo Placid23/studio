@@ -9,8 +9,6 @@ import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
 import { getMovieDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
-import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
-import { addToWatchlistAction } from './actions';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -104,7 +102,6 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                         Watch Now
                     </Link>
                 </Button>
-               <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
         </div>

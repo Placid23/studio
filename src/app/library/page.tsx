@@ -36,7 +36,7 @@ export default async function LibraryPage() {
       return redirect('/login?message=You must be logged in to view your library.');
     }
     
-    const { data, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url, file_id').order('created_at', { ascending: false });
 
     libraryItems = data;
     fetchError = error;
@@ -66,6 +66,7 @@ export default async function LibraryPage() {
     synopsis: item.synopsis || 'No synopsis available.',
     posterUrl: item.poster_url || 'https://placehold.co/500x750.png',
     backdropUrl: item.backdrop_url || 'https://placehold.co/1920x1080.png',
+    file_id: item.file_id
   })) as (Movie | Show)[];
 
   return (
@@ -79,7 +80,7 @@ export default async function LibraryPage() {
             <MediaCard 
               key={media.supabaseId} 
               media={media} 
-              watchHref={`/watch/${media.supabaseId}`}
+              watchHref={`/watch/${media.id}`}
             />
           ))}
         </div>

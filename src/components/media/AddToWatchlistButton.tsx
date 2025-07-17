@@ -25,10 +25,5 @@ export function AddToWatchlistButton({ media, addAction }: AddToWatchlistButtonP
         });
     };
 
-    return (
-        <Button size="lg" className="bg-accent hover:bg-accent/80 text-accent-foreground" onClick={handleAdd} disabled={isPending}>
-            <PlusCircle className="mr-2 h-6 w-6" />
-            {isPending ? 'Adding...' : 'Add to Library'}
-        </Button>
-    );
+    return null; // This button is disabled as content is managed via Telegram bot.
 }

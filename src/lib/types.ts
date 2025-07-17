@@ -14,6 +14,7 @@ export interface Movie {
   posterUrl: string | null;
   backdropUrl:string | null;
   trailerUrl?: string; // YouTube embed URL
+  file_id?: string; // Telegram file ID
 }
 
 export interface Episode {
@@ -47,4 +48,5 @@ export interface Show {
   trailerUrl?: string; // YouTube embed URL
   cast?: string[];
   seasons?: Season[];
+  file_id?: string; // Telegram file ID
 }
