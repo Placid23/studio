@@ -16,13 +16,11 @@ async function getStreamInfo(tmdbId: string): Promise<{ fileId: string | null; e
       .from('movies')
       .select('file_id')
       .eq('tmdb_id', parseInt(tmdbId))
-      .single();
+      .maybeSingle(); // Use maybeSingle() to allow 0 or 1 row.
 
     if (error) {
       console.error('Supabase error fetching file_id:', error.message);
-      if (error.code === 'PGRST116') { // "No rows found"
-        return { fileId: null };
-      }
+      // We don't need to check for PGRST116 anymore, maybeSingle handles it.
       return { fileId: null, error: `Could not fetch streaming info: ${error.message}` };
     }
 
