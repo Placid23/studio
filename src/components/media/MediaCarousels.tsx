@@ -19,9 +19,9 @@ export async function MediaCarousels() {
 
   return (
     <>
+      <MediaCarousel title="New to Novastream" media={upcomingMoviesData} />
       <MediaCarousel title="Popular Movies" media={popularMoviesData} />
       <MediaCarousel title="Top Rated Movies" media={topRatedMoviesData} />
-      <MediaCarousel title="Upcoming Movies" media={upcomingMoviesData} />
       <MediaCarousel title="Popular TV Shows" media={popularShowsData} />
       <MediaCarousel title="Top Rated TV Shows" media={topRatedShowsData} />
     </>
