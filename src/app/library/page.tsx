@@ -1,3 +1,4 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { MediaCard } from '@/components/media/MediaCard';
 import type { Movie, Show } from '@/lib/types';
