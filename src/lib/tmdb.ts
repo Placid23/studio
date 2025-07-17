@@ -50,7 +50,7 @@ export const getImageUrl = (path: string | null, size: 'w300' | 'w500' | 'w780' 
 function mapTmdbToMovie(tmdbMovie: any): Movie {
     const trailer = tmdbMovie.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
     return {
-        id: String(tmdbMovie.id),
+        tmdbId: String(tmdbMovie.id),
         type: 'movie',
         title: tmdbMovie.title,
         year: tmdbMovie.release_date ? new Date(tmdbMovie.release_date).getFullYear() : 0,
@@ -69,7 +69,7 @@ function mapTmdbToMovie(tmdbMovie: any): Movie {
 function mapTmdbToShow(tmdbShow: any): Show {
     const trailer = tmdbShow.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
     return {
-        id: String(tmdbShow.id),
+        tmdbId: String(tmdbShow.id),
         type: 'show',
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,

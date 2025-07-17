@@ -36,7 +36,7 @@ export default async function LibraryPage() {
       return redirect('/login?message=You must be logged in to view your library.');
     }
     
-    const { data, error } = await supabase.from('movies').select('id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url, file_id').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('movies').select('id, tmdb_id, title, type, poster_url, rating, year, genres, synopsis, backdrop_url, file_id').order('created_at', { ascending: false });
 
     libraryItems = data;
     fetchError = error;
@@ -56,7 +56,7 @@ export default async function LibraryPage() {
   }
 
   const enrichedLibrary = (libraryItems || []).map(item => ({
-    id: String(item.id),
+    tmdbId: String(item.tmdb_id),
     supabaseId: item.id,
     title: item.title,
     type: item.type,
@@ -79,8 +79,8 @@ export default async function LibraryPage() {
           {enrichedLibrary.map((media) => (
             <MediaCard 
               key={media.supabaseId} 
-              media={media} 
-              watchHref={`/watch/${media.id}`}
+              media={media}
+              watchHref={`/watch/${media.tmdbId}`}
             />
           ))}
         </div>

@@ -97,7 +97,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
                 <Button asChild size="lg">
-                    <Link href={`/watch/${movie.id}`}>
+                    <Link href={`/watch/${movie.tmdbId}`}>
                         <PlayCircle className="mr-2 h-6 w-6" />
                         Watch Now
                     </Link>
@@ -112,7 +112,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
         </div>
 
         <Suspense fallback={null}>
-            <SimilarMedia mediaId={movie.id} mediaType="movie" />
+            <SimilarMedia mediaId={movie.tmdbId} mediaType="movie" />
         </Suspense>
       </div>
     </div>

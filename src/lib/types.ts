@@ -1,8 +1,8 @@
 
 export interface Movie {
   type: 'movie';
-  id: string; // TMDB ID
-  supabaseId?: any; // Supabase ID, if in library
+  tmdbId: string; // TMDB ID
+  supabaseId?: any; // Supabase auto-generated ID, if in library
   title: string;
   year: number;
   duration?: number; // in minutes
@@ -36,8 +36,8 @@ export interface Season {
 
 export interface Show {
   type: 'show';
-  id: string; // TMDB ID
-  supabaseId?: any; // Supabase ID, if in library
+  tmdbId: string; // TMDB ID
+  supabaseId?: any; // Supabase auto-generated ID, if in library
   title: string;
   year: number;
   genres: string[];

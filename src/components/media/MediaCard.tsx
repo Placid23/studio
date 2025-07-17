@@ -8,15 +8,16 @@ import { HoldToDeleteButton } from './HoldToDeleteButton';
 interface MediaCardProps {
   media: Movie | Show;
   onRemove?: (id: string) => void;
+  watchHref?: string;
 }
 
-export function MediaCard({ media, onRemove }: MediaCardProps) {
+export function MediaCard({ media, onRemove, watchHref: customWatchHref }: MediaCardProps) {
   const isMovie = media.type === 'movie';
-  const href = isMovie ? `/movies/${media.id}` : `/shows/${media.id}`;
+  const href = isMovie ? `/movies/${media.tmdbId}` : `/shows/${media.tmdbId}`;
   const hint = isMovie ? "movie poster" : "tv show poster";
-  const watchHref = isMovie 
-    ? `/watch/${media.id}` 
-    : `/watch/${media.id}?season=1&episode=1`;
+  const watchHref = customWatchHref || (isMovie 
+    ? `/watch/${media.tmdbId}` 
+    : `/watch/${media.tmdbId}?season=1&episode=1`);
 
 
   return (
@@ -54,7 +55,7 @@ export function MediaCard({ media, onRemove }: MediaCardProps) {
         </div>
       </Link>
       {onRemove && (
-        <HoldToDeleteButton onDelete={() => onRemove(media.id)} />
+        <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} />
       )}
     </div>
   );

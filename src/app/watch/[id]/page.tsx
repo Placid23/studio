@@ -5,7 +5,7 @@ import { BackButton } from '@/components/layout/BackButton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { AlertTriangle } from 'lucide-react';
 
-async function getStreamInfo(id: string): Promise<{ fileId: string | null; error?: string }> {
+async function getStreamInfo(tmdbId: string): Promise<{ fileId: string | null; error?: string }> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return { fileId: null, error: 'Supabase environment variables are not configured.' };
   }
@@ -15,7 +15,7 @@ async function getStreamInfo(id: string): Promise<{ fileId: string | null; error
     const { data, error } = await supabase
       .from('movies')
       .select('file_id')
-      .eq('id', parseInt(id))
+      .eq('tmdb_id', parseInt(tmdbId))
       .single();
 
     if (error) {

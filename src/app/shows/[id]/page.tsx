@@ -91,7 +91,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
             <div className="mt-8 flex items-center gap-4">
               <Button asChild size="lg">
-                <Link href={`/watch/${show.id}?season=1&episode=1`}>
+                <Link href={`/watch/${show.tmdbId}?season=1&episode=1`}>
                     <PlayCircle className="mr-2 h-6 w-6" />
                     Watch Now
                 </Link>
@@ -113,7 +113,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
         </div>
         
         <Suspense fallback={null}>
-            <SimilarMedia mediaId={show.id} mediaType="show" />
+            <SimilarMedia mediaId={show.tmdbId} mediaType="show" />
         </Suspense>
 
       </div>

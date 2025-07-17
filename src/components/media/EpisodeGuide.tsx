@@ -19,10 +19,10 @@ export function EpisodeGuide({ show }: { show: Show }) {
 
   useEffect(() => {
     startTransition(async () => {
-      const fetchedEpisodes = await getEpisodesForSeason(show.id, Number(selectedSeason));
+      const fetchedEpisodes = await getEpisodesForSeason(show.tmdbId, Number(selectedSeason));
       setEpisodes(fetchedEpisodes);
     });
-  }, [selectedSeason, show.id]);
+  }, [selectedSeason, show.tmdbId]);
 
   return (
     <div className="space-y-6">
@@ -45,7 +45,7 @@ export function EpisodeGuide({ show }: { show: Show }) {
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <EpisodeCardSkeleton key={i} />)
           : episodes.map((episode) => (
-            <EpisodeCard key={episode.id} episode={episode} showId={show.id} />
+            <EpisodeCard key={episode.id} episode={episode} showId={show.tmdbId} />
           ))}
       </div>
     </div>

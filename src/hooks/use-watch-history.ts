@@ -37,7 +37,7 @@ export function useWatchHistory() {
 
       const currentHistory = getWatchHistory();
       // Remove if it already exists to avoid duplicates and move it to the front
-      const updatedHistory = currentHistory.filter(item => item.id !== media.id);
+      const updatedHistory = currentHistory.filter(item => item.tmdbId !== media.tmdbId);
       
       const newItem: WatchHistoryItem = {
         ...media,
@@ -60,7 +60,7 @@ export function useWatchHistory() {
   const removeFromWatchHistory = useCallback((mediaId: string) => {
     try {
       const currentHistory = getWatchHistory();
-      const newHistory = currentHistory.filter(item => item.id !== mediaId);
+      const newHistory = currentHistory.filter(item => item.tmdbId !== mediaId);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
       setHistory(newHistory);
     } catch (error) {
