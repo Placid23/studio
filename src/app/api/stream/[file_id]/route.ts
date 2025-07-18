@@ -34,7 +34,7 @@ export async function GET(
         return new NextResponse('Could not retrieve file path from Telegram.', { status: 500 });
     }
 
-    // Step 2: Construct the final file URL and stream it
+    // Step 2: Construct the final file URL and fetch it
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
     
     const videoResponse = await fetch(fileUrl);
@@ -43,29 +43,8 @@ export async function GET(
         return new NextResponse('Could not fetch video file from Telegram.', { status: 500 });
     }
 
-    // Create a new ReadableStream from the response body
-    const readableStream = new ReadableStream({
-        async start(controller) {
-            if (!videoResponse.body) {
-                controller.close();
-                return;
-            }
-            const reader = videoResponse.body.getReader();
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                        break;
-                    }
-                    controller.enqueue(value);
-                }
-            } catch (error) {
-                controller.error(error);
-            } finally {
-                controller.close();
-            }
-        }
-    });
+    // Convert the web stream to a Node.js Readable stream
+    const nodeStream = Readable.fromWeb(videoResponse.body as any);
     
     // Get necessary headers from the original response
     const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
@@ -76,9 +55,11 @@ export async function GET(
     if (contentLength) {
         headers.set('Content-Length', contentLength);
     }
-    headers.set('Accept-Ranges', 'bytes'); // Important for seeking
+    // 'bytes' is crucial for enabling seeking in the video player.
+    headers.set('Accept-Ranges', 'bytes'); 
 
-    return new NextResponse(readableStream, {
+    // Stream the response back to the client
+    return new NextResponse(nodeStream as any, {
         status: 200,
         headers,
     });
