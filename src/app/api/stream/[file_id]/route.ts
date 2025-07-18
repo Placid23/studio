@@ -1,6 +1,6 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
+// This route will now use the default Node.js runtime, which is more robust for streaming.
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +10,7 @@ export async function GET(
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!botToken) {
+    console.error('TELEGRAM_BOT_TOKEN is not configured.');
     return new NextResponse('Telegram Bot Token is not configured.', { status: 500 });
   }
 
@@ -18,6 +19,7 @@ export async function GET(
   }
 
   try {
+    // Step 1: Get the file path from the Telegram Bot API
     const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
     const fileInfoResponse = await fetch(getFileUrl);
 
@@ -29,29 +31,28 @@ export async function GET(
 
     const fileInfo = await fileInfoResponse.json();
     if (!fileInfo.ok || !fileInfo.result.file_path) {
-        return new NextResponse('Could not retrieve file path from Telegram.', { status: 500 });
+      return new NextResponse('Could not retrieve file path from Telegram.', { status: 500 });
     }
     const filePath = fileInfo.result.file_path;
 
+    // Step 2: Construct the actual file URL and fetch the video stream
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-    
     const videoResponse = await fetch(fileUrl);
 
     if (!videoResponse.ok || !videoResponse.body) {
-        return new NextResponse('Could not fetch video file from Telegram.', { status: 500 });
+      return new NextResponse('Could not fetch video file from Telegram.', { status: videoResponse.status });
     }
 
-    const { body, headers } = videoResponse;
-    
-    // Create a new response with the video stream and appropriate headers
-    return new Response(body, {
-        status: 200,
-        headers: {
-            'Content-Type': headers.get('Content-Type') || 'video/mp4',
-            'Content-Length': headers.get('Content-Length') || '',
-            'Accept-Ranges': 'bytes',
-            'Content-Disposition': `inline; filename="${fileId}.mp4"`
-        },
+    // Create a new response by streaming the video body
+    // The ReadableStream from `fetch` is directly compatible with Next.js's Response object in the Node.js runtime.
+    return new Response(videoResponse.body, {
+      status: 200,
+      headers: {
+        'Content-Type': videoResponse.headers.get('Content-Type') || 'video/mp4',
+        'Content-Length': videoResponse.headers.get('Content-Length') || '',
+        'Content-Disposition': `inline; filename="${fileId}.mp4"`,
+        'Accept-Ranges': 'bytes',
+      },
     });
 
   } catch (error: any) {
