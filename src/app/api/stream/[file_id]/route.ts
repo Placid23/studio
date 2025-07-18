@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { Readable } from 'stream';
+
+export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
@@ -17,7 +18,6 @@ export async function GET(
   }
 
   try {
-    // Step 1: Get the file_path from Telegram's getFile method
     const getFileUrl = `https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`;
     const fileInfoResponse = await fetch(getFileUrl);
 
@@ -33,8 +33,6 @@ export async function GET(
     }
     const filePath = fileInfo.result.file_path;
 
-
-    // Step 2: Construct the final file URL and fetch it
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
     
     const videoResponse = await fetch(fileUrl);
@@ -43,25 +41,17 @@ export async function GET(
         return new NextResponse('Could not fetch video file from Telegram.', { status: 500 });
     }
 
-    // Convert the web stream to a Node.js Readable stream
-    const nodeStream = Readable.fromWeb(videoResponse.body as any);
+    const { body, headers } = videoResponse;
     
-    // Get necessary headers from the original response
-    const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
-    const contentLength = videoResponse.headers.get('content-length');
-    
-    const headers = new Headers();
-    headers.set('Content-Type', contentType);
-    if (contentLength) {
-        headers.set('Content-Length', contentLength);
-    }
-    // 'bytes' is crucial for enabling seeking in the video player.
-    headers.set('Accept-Ranges', 'bytes'); 
-
-    // Stream the response back to the client
-    return new NextResponse(nodeStream as any, {
-        status: 200, // Use 200 for a standard stream response
-        headers,
+    // Create a new response with the video stream and appropriate headers
+    return new Response(body, {
+        status: 200,
+        headers: {
+            'Content-Type': headers.get('Content-Type') || 'video/mp4',
+            'Content-Length': headers.get('Content-Length') || '',
+            'Accept-Ranges': 'bytes',
+            'Content-Disposition': `inline; filename="${fileId}.mp4"`
+        },
     });
 
   } catch (error: any) {
