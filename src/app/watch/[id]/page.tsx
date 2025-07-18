@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
