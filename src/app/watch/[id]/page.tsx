@@ -1,36 +1,58 @@
+
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { BackButton } from '@/components/layout/BackButton';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { AlertTriangle } from 'lucide-react';
 
-async function getStreamInfo(tmdbId: string): Promise<{ fileId: string | null; error?: string }> {
+async function getStreamInfo(tmdbId: string, season?: string, episode?: string): Promise<{ fileId: string | null; error?: string }> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return { fileId: null, error: 'Supabase environment variables are not configured.' };
   }
 
   try {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from('movies')
-      .select('file_id')
-      .eq('tmdb_id', parseInt(tmdbId))
-      .maybeSingle();
+    
+    if (season && episode) {
+        // This is a TV Show episode
+        const { data, error } = await supabase
+            .from('tv_episodes')
+            .select('file_id')
+            .eq('tmdb_id', parseInt(tmdbId))
+            .eq('season', parseInt(season))
+            .eq('episode', parseInt(episode))
+            .maybeSingle();
+        
+        if (error) {
+            console.error('Supabase error fetching episode file_id:', error.message);
+            return { fileId: null, error: `Could not fetch streaming info for episode: ${error.message}` };
+        }
+        return { fileId: data?.file_id || null };
 
-    if (error) {
-      console.error('Supabase error fetching file_id:', error.message);
-      return { fileId: null, error: `Could not fetch streaming info: ${error.message}` };
+    } else {
+        // This is a Movie
+        const { data, error } = await supabase
+            .from('movies')
+            .select('file_id')
+            .eq('tmdb_id', parseInt(tmdbId))
+            .maybeSingle();
+
+        if (error) {
+            console.error('Supabase error fetching movie file_id:', error.message);
+            return { fileId: null, error: `Could not fetch streaming info for movie: ${error.message}` };
+        }
+        return { fileId: data?.file_id || null };
     }
 
-    return { fileId: data?.file_id || null };
   } catch (err: any) {
     console.error('Unexpected error fetching stream info:', err.message);
     return { fileId: null, error: 'An unexpected error occurred.' };
   }
 }
 
-export default async function WatchPage({ params }: { params: { id:string } }) {
-  const { fileId, error } = await getStreamInfo(params.id);
+export default async function WatchPage({ params, searchParams }: { params: { id:string }, searchParams: { [key: string]: string | string[] | undefined } }) {
+  const { season, episode } = searchParams;
+  const { fileId, error } = await getStreamInfo(params.id, season as string, episode as string);
 
   if (error) {
       return (
