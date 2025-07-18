@@ -16,11 +16,10 @@ async function getStreamInfo(tmdbId: string): Promise<{ fileId: string | null; e
       .from('movies')
       .select('file_id')
       .eq('tmdb_id', parseInt(tmdbId))
-      .maybeSingle(); // Use maybeSingle() to allow 0 or 1 row.
+      .maybeSingle();
 
     if (error) {
       console.error('Supabase error fetching file_id:', error.message);
-      // We don't need to check for PGRST116 anymore, maybeSingle handles it.
       return { fileId: null, error: `Could not fetch streaming info: ${error.message}` };
     }
 
@@ -64,7 +63,7 @@ export default async function WatchPage({ params }: { params: { id:string } }) {
     );
   }
 
-  // Use the new backend proxy route
+  // Use the Next.js backend proxy route to stream the video.
   const streamUrl = `/api/stream/${fileId}`;
   
   return (
