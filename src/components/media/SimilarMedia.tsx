@@ -3,7 +3,7 @@ import { MediaCarousel } from './MediaCarousel';
 
 interface SimilarMediaProps {
   mediaId: string;
-  mediaType: 'movie' | 'show';
+  mediaType: 'movie' | 'tv';
 }
 
 export async function SimilarMedia({ mediaId, mediaType }: SimilarMediaProps) {

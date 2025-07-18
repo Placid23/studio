@@ -35,7 +35,7 @@ export interface Season {
 }
 
 export interface Show {
-  type: 'show';
+  type: 'tv';
   tmdbId: string; // TMDB ID
   supabaseId?: any; // Supabase auto-generated ID, if in library
   title: string;

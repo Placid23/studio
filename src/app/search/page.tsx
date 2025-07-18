@@ -41,7 +41,14 @@ function SearchContent() {
   );
   
   useEffect(() => {
-    getAvailableGenres('movie').then(setGenres);
+    Promise.all([
+        getAvailableGenres('movie'),
+        getAvailableGenres('tv')
+    ]).then(([movieGenres, tvGenres]) => {
+        const combined = [...movieGenres, ...tvGenres];
+        const uniqueGenres = Array.from(new Map(combined.map(g => [g.id, g])).values());
+        setGenres(uniqueGenres);
+    });
   }, []);
   
   useEffect(() => {

@@ -70,7 +70,7 @@ function mapTmdbToShow(tmdbShow: any): Show {
     const trailer = tmdbShow.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
     return {
         tmdbId: String(tmdbShow.id),
-        type: 'show',
+        type: 'tv',
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,
         genres: tmdbShow.genres?.map((g: any) => g.name) || [],

@@ -17,7 +17,10 @@ export async function searchMedia(
 
   // If a genre filter is applied, filter the search results.
   if (filters.genre && filters.genre !== 'all') {
-    const allGenres = await getGenresFromApi('movie'); // TMDB genres for filtering
+    const movieGenres = await getGenresFromApi('movie');
+    const tvGenres = await getGenresFromApi('tv');
+    const allGenres = [...movieGenres, ...tvGenres];
+
     const genreName = allGenres.find(g => String(g.id) === filters.genre)?.name;
     
     if (genreName) {
