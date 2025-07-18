@@ -28,11 +28,11 @@ export async function GET(
     }
 
     const fileInfo = await fileInfoResponse.json();
-    const filePath = fileInfo.result.file_path;
-
-    if (!filePath) {
+    if (!fileInfo.ok || !fileInfo.result.file_path) {
         return new NextResponse('Could not retrieve file path from Telegram.', { status: 500 });
     }
+    const filePath = fileInfo.result.file_path;
+
 
     // Step 2: Construct the final file URL and fetch it
     const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
@@ -60,7 +60,7 @@ export async function GET(
 
     // Stream the response back to the client
     return new NextResponse(nodeStream as any, {
-        status: 200,
+        status: 200, // Use 200 for a standard stream response
         headers,
     });
 
