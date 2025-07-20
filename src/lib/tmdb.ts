@@ -138,6 +138,9 @@ export async function getTopRatedShows(): Promise<Show[]> {
 
 
 export async function getMovieDetails(id: string): Promise<Movie | null> {
+  if (!id || id === 'undefined') {
+    return null;
+  }
   const data = await fetchFromTMDB(`/movie/${id}`, { append_to_response: 'videos,credits' });
   if (!data) return null;
   return mapTmdbToMovie(data);
