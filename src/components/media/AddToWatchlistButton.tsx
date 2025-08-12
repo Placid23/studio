@@ -25,5 +25,10 @@ export function AddToWatchlistButton({ media, addAction }: AddToWatchlistButtonP
         });
     };
 
-    return null; // This button is disabled as content is managed via Telegram bot.
+    return (
+        <Button onClick={handleAdd} disabled={isPending} variant="outline" size="lg">
+            <PlusCircle className="mr-2 h-6 w-6" />
+            {isPending ? 'Adding...' : 'Add to Library'}
+        </Button>
+    );
 }

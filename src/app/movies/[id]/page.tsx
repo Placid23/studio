@@ -12,6 +12,8 @@ import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
+import { addToWatchlistAction } from './actions';
 
 export default async function MovieDetailPage({ params }: { params: { id: string } }) {
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
@@ -102,6 +104,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                         Watch Now
                     </Link>
                 </Button>
+                <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
         </div>
