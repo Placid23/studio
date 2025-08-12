@@ -1,6 +1,6 @@
--- Create a table for liked songs
-CREATE TABLE liked_songs (
-  id BIGINT PRIMARY KEY, -- Use the Deezer track ID as the primary key
+-- Create the table only if it doesn't exist to prevent errors on re-run.
+CREATE TABLE IF NOT EXISTS liked_songs (
+  id BIGINT NOT NULL, -- The Deezer track ID
   user_id UUID REFERENCES auth.users(id) NOT NULL,
   title TEXT NOT NULL,
   duration INTEGER NOT NULL,
@@ -10,14 +10,23 @@ CREATE TABLE liked_songs (
   album_cover_url TEXT,
   liked_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   
-  -- Prevent a user from liking the same song twice
-  UNIQUE(id, user_id)
+  -- A user can only like a song once.
+  PRIMARY KEY(id, user_id)
 );
 
--- Enable Row Level Security
+-- Add the file_id column only if it doesn't already exist.
+ALTER TABLE liked_songs
+ADD COLUMN IF NOT EXISTS file_id TEXT;
+
+-- Enable Row Level Security if it's not already enabled.
+-- This is safe to run multiple times.
 ALTER TABLE liked_songs ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow users to see and manage their own liked songs
+-- Drop the policy if it exists, to recreate it safely.
+-- This handles cases where you might want to update the policy in the future.
+DROP POLICY IF EXISTS "Users can manage their own liked songs" ON liked_songs;
+
+-- Create policy to allow users to see and manage their own liked songs.
 CREATE POLICY "Users can manage their own liked songs"
 ON liked_songs
 FOR ALL
