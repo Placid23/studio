@@ -43,7 +43,7 @@ const getAccessToken = async (): Promise<string | null> => {
         });
 
         if (!response.ok) {
-            const errorBody = await response.json();
+            const errorBody = await response.text();
             console.error('Failed to get Spotify access token:', errorBody);
             throw new Error(`Spotify token error: ${response.statusText}`);
         }
@@ -81,7 +81,12 @@ async function spotifyFetch(endpoint: string, params: Record<string, string> = {
     });
 
     if (!response.ok) {
-        const errorBody = await response.json();
+        let errorBody;
+        try {
+            errorBody = await response.json();
+        } catch (e) {
+            errorBody = await response.text();
+        }
         console.error(`Failed to fetch from Spotify endpoint ${endpoint}:`, errorBody);
         throw new Error(`Spotify API error: ${response.statusText}`);
     }
