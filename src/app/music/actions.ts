@@ -34,7 +34,7 @@ export async function getLikedSongsAction(): Promise<LikedSong[]> {
       preview: item.preview_url || '',
       artist: { name: item.artist_name },
       album: {
-        id: 0, // Not stored in this table, can be omitted or set to default
+        id: item.album_id,
         title: item.album_title,
         cover_xl: item.album_cover_url || ''
       },
@@ -91,8 +91,10 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
       duration: track.duration,
       preview_url: track.preview,
       artist_name: track.artist.name,
+      album_id: track.album.id,
       album_title: track.album.title,
       album_cover_url: track.album.cover_xl,
+      file_id: null, // Placeholder for full song file
     });
 
     if (insertError) {
