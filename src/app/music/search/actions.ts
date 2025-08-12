@@ -11,13 +11,14 @@ export async function getNewReleasesAction(): Promise<SearchedTrack[]> {
 
     const enrichedTracks = await Promise.all(
         spotifyTracks.map(async (track) => {
-            // Use Spotify data as the base
+            // The Spotify /browse/new-releases endpoint returns Album objects.
+            // We are treating the album as a "track" for simplicity in the UI.
             const baseTrack: SearchedTrack = {
                 mbid: track.id, // Use spotify ID as the unique key for this list
                 title: track.name,
-                artist: track.artists[0].name,
-                album: track.album.name,
-                coverUrl: track.album.images[0]?.url,
+                artist: track.artists[0]?.name || 'Unknown Artist',
+                album: track.name,
+                coverUrl: track.images[0]?.url,
             };
 
             try {

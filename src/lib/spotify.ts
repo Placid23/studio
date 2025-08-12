@@ -63,14 +63,12 @@ const getAccessToken = async (): Promise<string | null> => {
     }
 };
 
+// This represents a Spotify Album object, which is what /browse/new-releases returns
 export interface SpotifyTrack {
   id: string;
   name: string;
   artists: { name: string }[];
-  album: {
-    name: string;
-    images: { url: string }[];
-  };
+  images: { url: string }[];
 }
 
 export async function getNewReleases(): Promise<SpotifyTrack[]> {
