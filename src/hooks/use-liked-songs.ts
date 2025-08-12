@@ -1,76 +1,54 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import type { Track, LikedSong } from '@/lib/types';
 import { useToast } from './use-toast';
+import { getLikedSongsAction, toggleLikeAction } from '@/app/music/actions';
 
-const LIKED_SONGS_KEY = 'novastream-liked-songs';
-
-export function useLikedSongs() {
-  const [likedSongs, setLikedSongs] = useState<LikedSong[]>([]);
+export function useLikedSongs(initialSongs: LikedSong[] = []) {
+  const [likedSongs, setLikedSongs] = useState<LikedSong[]>(initialSongs);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const getLikedSongs = useCallback((): LikedSong[] => {
-    try {
-      const stored = localStorage.getItem(LIKED_SONGS_KEY);
-      if (stored) {
-        return JSON.parse(stored) as LikedSong[];
-      }
-    } catch (error) {
-      console.error("Could not get liked songs from localStorage", error);
-    }
-    return [];
-  }, []);
-
   useEffect(() => {
-    const songs = getLikedSongs().sort((a, b) => b.likedAt - a.likedAt);
-    setLikedSongs(songs);
-  }, [getLikedSongs]);
+    // Fetch initial liked songs on mount
+    getLikedSongsAction().then(songs => {
+        setLikedSongs(songs);
+    });
+  }, []);
 
   const isLiked = useCallback((trackId: number) => {
     return likedSongs.some(song => song.id === trackId);
   }, [likedSongs]);
 
   const toggleLike = useCallback((track: Track) => {
-    try {
-      const currentLiked = getLikedSongs();
-      const existingIndex = currentLiked.findIndex(t => t.id === track.id);
-      let newLiked: LikedSong[];
-      
-      if (existingIndex > -1) {
-        // Unlike the song
-        newLiked = currentLiked.filter(t => t.id !== track.id);
-        toast({
-            title: 'Removed from Liked Songs',
-            description: `"${track.title}" has been removed from your liked songs.`,
-        });
+    startTransition(async () => {
+      // Optimistically update the UI
+      const alreadyLiked = isLiked(track.id);
+      if (alreadyLiked) {
+        setLikedSongs(prev => prev.filter(s => s.id !== track.id));
       } else {
-        // Like the song
-        const newSong: LikedSong = {
-          ...track,
-          type: 'track', // Ensure type is explicitly set
-          likedAt: Date.now(),
-        };
-        newLiked = [newSong, ...currentLiked].slice(0, 50); // Limit to 50 liked songs
-        toast({
-            title: 'Added to Liked Songs',
-            description: `"${track.title}" has been added to your liked songs.`,
-        });
+        const newLikedSong: LikedSong = { ...track, type: 'track', likedAt: Date.now() };
+        setLikedSongs(prev => [newLikedSong, ...prev]);
       }
       
-      localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(newLiked));
-      setLikedSongs(newLiked.sort((a, b) => b.likedAt - a.likedAt));
+      const result = await toggleLikeAction(track);
 
-    } catch (error) {
-      console.error("Could not update liked songs in localStorage", error);
-       toast({
-            title: 'Error',
-            description: `Could not update your liked songs.`,
-            variant: 'destructive',
-       });
-    }
-  }, [getLikedSongs, toast]);
+      toast({
+        title: result.success ? (result.isLiked ? 'Song Liked' : 'Song Unliked') : 'Error',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive',
+      });
+      
+      // If the optimistic update was wrong, revert it by re-fetching from the server
+      if (!result.success) {
+         getLikedSongsAction().then(songs => {
+            setLikedSongs(songs);
+        });
+      }
+    });
+  }, [isLiked, toast]);
 
-  return { likedSongs, isLiked, toggleLike };
+  return { likedSongs, isLiked, toggleLike, isLoading: isPending };
 }
