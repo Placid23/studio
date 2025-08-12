@@ -5,10 +5,11 @@ import { useState, useTransition, useEffect } from 'react';
 import type { SearchedTrack } from '@/lib/musicbrainz';
 import { getNewReleasesAction, addMusicTrackAction } from './actions';
 import { Button } from '@/components/ui/button';
-import { Music, Loader2, PlusCircle, Library, Info } from 'lucide-react';
+import { Music, Loader2, PlusCircle, Library, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { BackButton } from '@/components/layout/BackButton';
+import Link from 'next/link';
 
 export default function MusicSearchPage() {
   const [results, setResults] = useState<SearchedTrack[]>([]);
@@ -40,6 +41,12 @@ export default function MusicSearchPage() {
       <div className="mb-8 space-y-4">
         <h1 className="text-4xl font-black text-primary uppercase tracking-wider">New Releases on Spotify</h1>
          <p className="text-muted-foreground">Fresh tracks, enriched with data from MusicBrainz.</p>
+         <Button asChild variant="outline">
+            <Link href="/library">
+                <Library className="mr-2" />
+                Go to My Library
+            </Link>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -60,12 +67,6 @@ export default function MusicSearchPage() {
               <div className="flex-1">
                 <p className="font-bold text-lg">{track.title}</p>
                 <p className="text-sm text-muted-foreground">{track.artist} - <span className="italic">{track.album}</span></p>
-                 {track.label && (
-                    <p className="text-xs text-muted-foreground/80 flex items-center gap-1 mt-1">
-                        <Info className="w-3 h-3" />
-                        {track.label} {track.releaseCountry && `(${track.releaseCountry})`}
-                    </p>
-                )}
               </div>
               <Button onClick={() => handleAddTrack(track)} disabled={isAdding}>
                 <PlusCircle className="mr-2 h-4 w-4" />

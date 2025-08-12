@@ -2,6 +2,7 @@
 'use server';
 import './env';
 import { Buffer } from 'buffer';
+import type { SearchedTrack } from './musicbrainz';
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
@@ -9,7 +10,7 @@ const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 const API_ENDPOINT = `https://api.spotify.com/v1`;
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.warn("Spotify API credentials are not set. New releases will not be fetched.");
+  console.warn("Spotify API credentials are not set. Music features may be limited.");
 }
 
 // In-memory cache for the access token
@@ -38,7 +39,7 @@ const getAccessToken = async (): Promise<string | null> => {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: 'grant_type=client_credentials',
-            next: { revalidate: 3500 } // Revalidate slightly before expiry
+            cache: 'no-store' // Do not cache the token request itself
         });
 
         if (!response.ok) {
@@ -59,43 +60,82 @@ const getAccessToken = async (): Promise<string | null> => {
 
     } catch (error) {
         console.error('Error fetching Spotify token:', error);
-        return null;
+        throw error;
     }
 };
 
-// This represents a Spotify Album object, which is what /browse/new-releases returns
-export interface SpotifyTrack {
+async function spotifyFetch(endpoint: string, params: Record<string, string> = {}) {
+    const token = await getAccessToken();
+    if (!token) {
+        throw new Error("Could not authenticate with Spotify.");
+    }
+    
+    const url = new URL(`${API_ENDPOINT}${endpoint}`);
+    Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
+
+    const response = await fetch(url.toString(), {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        next: { revalidate: 3600 } // Cache API responses for an hour
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        console.error(`Failed to fetch from Spotify endpoint ${endpoint}:`, errorBody);
+        throw new Error(`Spotify API error: ${response.statusText}`);
+    }
+    return response.json();
+}
+
+export interface SpotifyAlbum {
   id: string;
   name: string;
   artists: { name: string }[];
   images: { url: string }[];
 }
 
-export async function getNewReleases(): Promise<SpotifyTrack[]> {
-    const token = await getAccessToken();
-    if (!token) {
-        return [];
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  album: {
+    name: string;
+    images: { url: string }[];
+  };
+}
+
+export interface SpotifyPlaylist {
+    id: string;
+    name: string;
+    description: string;
+    images: { url: string }[];
+    owner: {
+        display_name: string;
     }
+}
 
-    try {
-        const response = await fetch(`${API_ENDPOINT}/browse/new-releases?country=US&limit=20`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-            next: { revalidate: 3600 } // Cache new releases for an hour
-        });
+export async function getNewReleases(): Promise<SpotifyAlbum[]> {
+    const data = await spotifyFetch(`/browse/new-releases`, { country: 'US', limit: '20' });
+    return data.albums.items;
+}
 
-        if (!response.ok) {
-            const errorBody = await response.json();
-            console.error('Failed to fetch new releases from Spotify:', errorBody);
-            throw new Error(`Spotify API error: ${response.statusText}`);
-        }
+export async function getFeaturedPlaylists(): Promise<SpotifyPlaylist[]> {
+    const data = await spotifyFetch(`/browse/featured-playlists`, { country: 'US', limit: '10' });
+    return data.playlists.items;
+}
 
-        const data = await response.json();
-        return data.albums.items;
+export async function getPlaylistTracks(playlistId: string): Promise<any[]> {
+    const data = await spotifyFetch(`/playlists/${playlistId}/tracks`, { limit: '20' });
+    return data.items;
+}
 
-    } catch (error) {
-        console.error('Error fetching new releases from Spotify:', error);
-        return [];
-    }
+export async function getArtistId(artistName: string): Promise<string | null> {
+    const data = await spotifyFetch(`/search`, { q: artistName, type: 'artist', limit: '1' });
+    return data.artists?.items[0]?.id || null;
+}
+
+export async function getArtistTopTracks(artistId: string): Promise<SpotifyTrack[]> {
+    const data = await spotifyFetch(`/artists/${artistId}/top-tracks`, { market: 'US' });
+    return data.tracks;
 }
