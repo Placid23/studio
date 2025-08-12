@@ -22,8 +22,7 @@ export default async function LibraryPage() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return <SupabaseError />;
   }
-  const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME;
-
+  
   let libraryItems: any[] | null = [];
   let fetchError: any = null;
 
@@ -91,13 +90,7 @@ export default async function LibraryPage() {
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Clapperboard className="w-16 h-16 text-muted-foreground/50" />
           <h2 className="mt-6 text-2xl font-bold">Your Library is Empty</h2>
-          {botUsername ? (
-            <p className="mt-2 text-muted-foreground">
-              Content you upload via the <Link href={`https://t.me/${botUsername}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-semibold">Telegram bot</Link> will appear here.
-            </p>
-          ) : (
-             <p className="mt-2 text-muted-foreground">Content you upload via the Telegram bot will appear here.</p>
-          )}
+          <p className="mt-2 text-muted-foreground">Content you add to your library will appear here.</p>
         </div>
       )}
     </div>
