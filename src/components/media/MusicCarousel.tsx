@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -65,53 +66,66 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
     let image = '/img/placeholder.png';
     let titleText = '';
     let subtitleText = '';
-    let externalLink = '#';
+    let link = '#';
     let previewUrl = null;
+    let isExternal = true;
 
     if (item.type === 'album') {
       image = item.cover_xl || item.cover_big || item.cover_medium;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
-      externalLink = item.link || item.tracklist || '#';
+      link = `/music/album/${item.id}`;
+      isExternal = false;
     } else if (item.type === 'track') {
       image = item.album?.cover_xl || item.album?.cover_big;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
-      externalLink = item.link || '#';
+      link = `/music/album/${item.album.id}`;
       previewUrl = item.preview;
+      isExternal = false;
     } else if (item.type === 'artist') {
       image = item.picture_xl || item.picture_big || item.picture_medium;
       titleText = item.name;
       subtitleText = item.nb_fan ? `${item.nb_fan.toLocaleString()} fans` : '';
-      externalLink = item.link || '#';
+      link = item.link || '#'; // Artists can remain external for now
     } else if (item.type === 'genre') {
         image = item.picture_xl || item.picture_big;
         titleText = item.name;
-        externalLink = `https://www.deezer.com/genre/${item.id}`;
+        link = item.link ? `https://www.deezer.com/genre/${item.id}` : '#';
     }
+    
+    const cardContent = (
+      <div 
+        onMouseEnter={() => playPreview(previewUrl)}
+        onMouseLeave={stopPreview}
+        className="carousel-card bg-card/80 rounded-lg p-3 transition-colors hover:bg-card h-full flex flex-col"
+      >
+        <div className="w-full aspect-square relative rounded-md overflow-hidden bg-muted/20 img-container">
+          <Image src={image || '/img/placeholder.png'} alt={titleText} fill sizes="20vw" style={{ objectFit: 'cover' }} />
+          {previewUrl && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <PlayCircle className="w-16 h-16 text-white/80" />
+              </div>
+          )}
+        </div>
+        <div className="mt-3 text-center flex-grow flex flex-col justify-center">
+          <div className="font-bold text-sm truncate text-foreground">{titleText}</div>
+          <div className="text-xs text-muted-foreground truncate">{subtitleText}</div>
+        </div>
+      </div>
+    );
 
     return (
-      <div key={item.id || idx} className="group relative">
-        <div 
-          onMouseEnter={() => playPreview(previewUrl)}
-          onMouseLeave={stopPreview}
-          className="carousel-card bg-card/80 rounded-lg p-3 transition-colors hover:bg-card"
-        >
-          <a href={externalLink} target="_blank" rel="noreferrer" className="block">
-            <div className="w-full aspect-square relative rounded-md overflow-hidden bg-muted/20 img-container">
-              <Image src={image || '/img/placeholder.png'} alt={titleText} fill sizes="20vw" style={{ objectFit: 'cover' }} />
-              {previewUrl && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <PlayCircle className="w-16 h-16 text-white/80" />
-                  </div>
-              )}
-            </div>
-            <div className="mt-3 text-center">
-              <div className="font-bold text-sm truncate text-foreground">{titleText}</div>
-              <div className="text-xs text-muted-foreground truncate">{subtitleText}</div>
-            </div>
+      <div key={item.id || idx} className="group relative h-full">
+         {isExternal ? (
+          <a href={link} target="_blank" rel="noreferrer" className="block h-full">
+            {cardContent}
           </a>
-        </div>
+        ) : (
+          <Link href={link} className="block h-full">
+            {cardContent}
+          </Link>
+        )}
       </div>
     );
   };

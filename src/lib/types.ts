@@ -1,4 +1,5 @@
 
+
 export interface Movie {
   type: 'movie';
   tmdbId: string; // TMDB ID
@@ -49,4 +50,31 @@ export interface Show {
   cast?: string[];
   seasons?: Season[];
   file_id?: string; // Path to video file in Supabase Storage
+}
+
+// Music Types
+export interface Album {
+  id: number;
+  title: string;
+  cover_xl: string;
+  link: string;
+  artist: {
+    id: number;
+    name: string;
+    picture_xl: string;
+  };
+  release_date: string;
+  tracks: {
+    data: Track[];
+  }
+}
+
+export interface Track {
+    id: number;
+    title: string;
+    duration: number;
+    preview: string;
+    artist: {
+        name: string;
+    };
 }

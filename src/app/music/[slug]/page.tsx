@@ -1,5 +1,7 @@
+
 import { deezerGet } from '@/lib/deezer';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { BackButton } from '@/components/layout/BackButton';
@@ -28,44 +30,59 @@ function renderCard(item: any) {
     let image = '/img/placeholder.png';
     let titleText = '';
     let subtitleText = '';
-    let externalLink = '#';
+    let link = '#';
+    let isExternal = true;
 
     if (item.type === 'album') {
         image = item.cover_xl || item.cover_big || item.cover_medium;
         titleText = item.title;
         subtitleText = item.artist?.name || '';
-        externalLink = item.link || item.tracklist || '#';
+        link = `/music/album/${item.id}`;
+        isExternal = false;
     } else if (item.type === 'track') {
         image = item.album?.cover_xl || item.album?.cover_big;
         titleText = item.title;
         subtitleText = item.artist?.name || '';
-        externalLink = item.link || '#';
+        link = `/music/album/${item.album.id}`;
+        isExternal = false;
     } else if (item.type === 'artist') {
         image = item.picture_xl || item.picture_big || item.picture_medium;
         titleText = item.name;
         subtitleText = item.nb_fan ? `${item.nb_fan.toLocaleString()} fans` : 'Artist';
-        externalLink = item.link || '#';
+        link = item.link || '#';
     } else if (item.type === 'genre') {
         image = item.picture_xl || item.picture_big;
         titleText = item.name;
         subtitleText = 'Genre';
-        externalLink = `https://www.deezer.com/genre/${item.id}`;
+        link = `https://www.deezer.com/genre/${item.id}`;
     }
+    
+    const cardContent = (
+         <Card className="overflow-hidden h-full transition-all duration-300 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl">
+            <CardContent className="p-0">
+                <div className="aspect-square relative img-container">
+                    <Image src={image} alt={titleText} fill sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw" className="object-cover transition-transform group-hover:scale-105" />
+                </div>
+                <div className="p-3">
+                    <p className="font-semibold text-sm truncate">{titleText}</p>
+                    <p className="text-xs text-muted-foreground truncate">{subtitleText}</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
-        <a key={item.id} href={externalLink} target="_blank" rel="noreferrer" className="block group">
-            <Card className="overflow-hidden h-full transition-all duration-300 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl">
-                <CardContent className="p-0">
-                    <div className="aspect-square relative img-container">
-                        <Image src={image} alt={titleText} fill sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw" className="object-cover transition-transform group-hover:scale-105" />
-                    </div>
-                    <div className="p-3">
-                        <p className="font-semibold text-sm truncate">{titleText}</p>
-                        <p className="text-xs text-muted-foreground truncate">{subtitleText}</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </a>
+        <div key={item.id} className="block group h-full">
+            {isExternal ? (
+                <a href={link} target="_blank" rel="noreferrer" className="h-full">
+                    {cardContent}
+                </a>
+            ) : (
+                <Link href={link} className="h-full">
+                   {cardContent}
+                </Link>
+            )}
+        </div>
     );
 }
 
