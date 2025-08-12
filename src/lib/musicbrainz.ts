@@ -81,7 +81,14 @@ export async function getCoverArt(releaseId: string): Promise<string | undefined
 
     const data = await res.json();
     const frontImage = data.images?.find((img: any) => img.front);
-    return frontImage?.thumbnails?.small || frontImage?.image; // Prefer small thumbnail, fallback to full image
+    let imageUrl = frontImage?.thumbnails?.small || frontImage?.image; // Prefer small thumbnail, fallback to full image
+    
+    // Normalize to HTTPS to avoid mixed content issues and satisfy next/image config
+    if (imageUrl && imageUrl.startsWith('http://')) {
+      imageUrl = imageUrl.replace('http://', 'https://');
+    }
+
+    return imageUrl;
   } catch(e) {
       // Errors are expected if no cover art exists.
       return undefined;
