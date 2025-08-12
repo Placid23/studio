@@ -1,6 +1,6 @@
 
 'use server';
-import './env';
+
 import { Buffer } from 'buffer';
 import type { SearchedTrack } from './musicbrainz';
 
