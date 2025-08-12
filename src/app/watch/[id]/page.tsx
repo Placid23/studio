@@ -29,11 +29,24 @@ export default async function WatchPage({
 
   try {
     if (season && episode) {
-      // It's a TV show episode
+      // It's a TV show episode. First, get the show title from the 'movies' table.
+      const { data: showData, error: showError } = await supabase
+        .from('movies')
+        .select('title')
+        .eq('tmdb_id', id)
+        .eq('type', 'tv')
+        .single();
+      
+      if (showError || !showData) {
+        console.error('Error fetching TV show for episode:', showError);
+        notFound();
+      }
+
+      // Now, find the specific episode in the 'tv_episodes' table.
       const { data, error } = await supabase
         .from('tv_episodes')
         .select('file_id, title, season, episode')
-        .eq('tmdb_id', id)
+        .eq('title', showData.title)
         .eq('season', season)
         .eq('episode', episode)
         .single();
@@ -44,6 +57,7 @@ export default async function WatchPage({
       }
       fileId = data.file_id;
       title = `${data.title} S${String(data.season).padStart(2, '0')}E${String(data.episode).padStart(2, '0')}`;
+
     } else {
       // It's a movie
       const { data, error } = await supabase
