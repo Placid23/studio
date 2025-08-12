@@ -60,7 +60,7 @@ export function useLikedSongs() {
       }
       
       localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(newLiked));
-      setLikedSongs(newLiked);
+      setLikedSongs(newLiked.sort((a, b) => b.likedAt - a.likedAt));
 
     } catch (error) {
       console.error("Could not update liked songs in localStorage", error);

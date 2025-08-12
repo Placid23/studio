@@ -77,7 +77,6 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
     let link = '#';
     let previewUrl = null;
     let isExternal = true;
-    let isTrack = false;
     let isLikeable = false;
 
     if (item.type === 'album') {
@@ -94,7 +93,6 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
       previewUrl = item.preview;
       isExternal = false;
       isLikeable = true;
-      isTrack = true;
     } else if (item.type === 'artist') {
       image = item.picture_xl || item.picture_big || item.picture_medium;
       titleText = item.name;
