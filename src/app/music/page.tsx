@@ -1,8 +1,28 @@
-
+import { deezerGet } from '@/lib/deezer';
+import { MusicCarousel } from '@/components/media/MusicCarousel';
 import { Music } from 'lucide-react';
+import { Suspense } from 'react';
+import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
+
+async function MusicData() {
+  const [albumsData, tracksData, artistsData, genresData] = await Promise.all([
+    deezerGet('chart/0/albums'),
+    deezerGet('chart/0/tracks'),
+    deezerGet('chart/0/artists'),
+    deezerGet('genre'),
+  ]);
+
+  return (
+    <>
+      <MusicCarousel title="Top Albums" items={albumsData?.data || []} seeAllLink="/music/top-albums" />
+      <MusicCarousel title="Top Tracks" items={tracksData?.data || []} seeAllLink="/music/top-tracks" />
+      <MusicCarousel title="Top Artists" items={artistsData?.data || []} seeAllLink="/music/top-artists" />
+      <MusicCarousel title="Genres" items={genresData?.data || []} seeAllLink="/music/genres" />
+    </>
+  );
+}
 
 export default async function MusicPage() {
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center gap-4 mb-8">
@@ -11,11 +31,17 @@ export default async function MusicPage() {
           Discover Music
         </h1>
       </div>
-      
-      <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
-        <Music className="w-16 h-16 text-muted-foreground/50" />
-        <h2 className="mt-6 text-2xl font-bold">Music Feature Coming Soon</h2>
-        <p className="mt-2 text-muted-foreground">We're working on a new and improved music experience.</p>
+      <div className="flex flex-col gap-12">
+        <Suspense fallback={
+          <>
+            <MediaCarouselSkeleton />
+            <MediaCarouselSkeleton />
+            <MediaCarouselSkeleton />
+            <MediaCarouselSkeleton />
+          </>
+        }>
+          <MusicData />
+        </Suspense>
       </div>
     </div>
   );
