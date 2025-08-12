@@ -13,7 +13,7 @@ interface HomePageClientProps {
 }
 
 export function HomePageClient({ heroMedia, children }: HomePageClientProps) {
-  const heroLink = heroMedia.type === 'movie' ? `/movies/${heroMedia.id}` : `/shows/${heroMedia.id}`;
+  const heroLink = heroMedia.type === 'movie' ? `/movies/${heroMedia.tmdbId}` : `/shows/${heroMedia.tmdbId}`;
 
   return (
     <div className="flex flex-col">
