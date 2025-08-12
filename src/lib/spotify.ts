@@ -1,6 +1,6 @@
 
 'use server';
-
+import './env';
 import { Buffer } from 'buffer';
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
