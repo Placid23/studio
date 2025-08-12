@@ -1,17 +1,22 @@
 
 import Link from 'next/link';
 import type { Movie, Show } from '@/lib/types';
-import { Star, PlayCircle } from 'lucide-react';
+import { Star, PlayCircle, PlusCircle } from 'lucide-react';
 import { ImageLoader } from './ImageLoader';
 import { HoldToDeleteButton } from './HoldToDeleteButton';
+import { Button } from '../ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { addMediaToLibraryAction } from '@/app/search/actions';
+import { useTransition } from 'react';
 
 interface MediaCardProps {
   media: Movie | Show;
   onRemove?: (id: string) => void;
   watchHref?: string;
+  showAddButton?: boolean;
 }
 
-export function MediaCard({ media, onRemove, watchHref: customWatchHref }: MediaCardProps) {
+export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAddButton = false }: MediaCardProps) {
   const isMovie = media.type === 'movie';
   const href = isMovie ? `/movies/${media.tmdbId}` : `/shows/${media.tmdbId}`;
   const hint = isMovie ? "movie poster" : "tv show poster";
@@ -19,6 +24,19 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref }: Media
     ? `/watch/${media.tmdbId}` 
     : `/watch/${media.tmdbId}?season=1&episode=1`);
 
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
+  const handleAdd = () => {
+    startTransition(async () => {
+      const result = await addMediaToLibraryAction(media);
+      toast({
+        title: result.success ? 'Success' : 'Error',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive',
+      });
+    });
+  };
 
   return (
     <div className="group relative w-full flex-shrink-0">
@@ -56,6 +74,17 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref }: Media
       </Link>
       {onRemove && (
         <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} />
+      )}
+      {showAddButton && (
+        <Button 
+            onClick={handleAdd} 
+            disabled={isPending}
+            variant="outline" 
+            size="sm" 
+            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90"
+        >
+            <PlusCircle className="mr-2 h-4 w-4" /> {isPending ? 'Adding...' : 'Add'}
+        </Button>
       )}
     </div>
   );
