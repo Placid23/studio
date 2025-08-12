@@ -7,13 +7,15 @@ import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
 import { LikedSongsCarousel } from '@/components/media/LikedSongsCarousel';
 import { getLikedSongsAction } from './actions';
 import { createClient } from '@/lib/supabase/server';
+import type { Track } from '@/lib/types';
 
 async function MusicData() {
-    const [albumsData, tracksData, artistsData, genresData] = await Promise.all([
+    const [albumsData, tracksData, artistsData, genresData, christianData] = await Promise.all([
       deezerGet('chart/0/albums', { limit: '20' }),
       deezerGet('chart/0/tracks', { limit: '20' }),
       deezerGet('chart/0/artists', { limit: '20' }),
       deezerGet('genre', { limit: '20' }),
+      deezerGet('playlist/1116114261/tracks', {limit: '20'}), // Deezer's "Christian & Gospel" playlist
     ]);
 
     const musicData = {
@@ -21,12 +23,14 @@ async function MusicData() {
       tracks: tracksData?.data || [],
       artists: artistsData?.data || [],
       genres: genresData?.data || [],
+      christian: christianData?.data || [],
     };
 
     return (
         <>
             <MusicCarousel title="Top Albums" items={musicData.albums} seeAllLink="/music/top-albums" />
             <MusicCarousel title="Top Tracks" items={musicData.tracks} seeAllLink="/music/top-tracks" />
+            <MusicCarousel title="Christian Music" items={musicData.christian} />
             <MusicCarousel title="Top Artists" items={musicData.artists} seeAllLink="/music/top-artists" />
             <MusicCarousel title="Genres" items={musicData.genres} seeAllLink="/music/genres" />
         </>

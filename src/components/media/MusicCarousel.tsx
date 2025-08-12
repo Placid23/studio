@@ -27,7 +27,7 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
 
   const settings = {
     dots: false,
-    infinite: false,
+    infinite: true, // Enable infinite loop
     speed: 500,
     slidesToShow: 6,
     slidesToScroll: 3,

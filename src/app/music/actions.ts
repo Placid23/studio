@@ -104,3 +104,24 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
     return { success: true, isLiked: true, message: `Added "${track.title}" to your liked songs.` };
   }
 }
+
+// A simple (and not very reliable) way to search YouTube without an API key.
+// This is suitable for a demo but not for production.
+export async function searchYoutubeVideo(query: string): Promise<string | null> {
+    const searchUrl = new URL('https://www.youtube.com/results');
+    searchUrl.searchParams.set('search_query', query);
+    try {
+        const response = await fetch(searchUrl.toString());
+        if (!response.ok) {
+            return null;
+        }
+        const html = await response.text();
+        // This is a brittle regex to find the first videoId.
+        const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+        return match ? match[1] : null;
+
+    } catch (error) {
+        console.error('Error searching YouTube:', error);
+        return null;
+    }
+}
