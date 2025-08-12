@@ -1,10 +1,11 @@
 
 import { getMusicTracks, getSignedUrl } from './actions';
-import { Music, Download } from 'lucide-react';
-import { ImageLoader } from '@/components/media/ImageLoader';
+import { Music, PlusCircle } from 'lucide-react';
 import { MusicTrackList } from '@/components/media/MusicTrackList';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-export const revalidate = 60; // Revalidate every 60 seconds
+export const revalidate = 0;
 
 async function MusicPage() {
   const tracks = await getMusicTracks();
@@ -17,8 +18,14 @@ async function MusicPage() {
           No Music Found
         </h1>
         <p className="mt-2 text-muted-foreground">
-          There are currently no tracks in the library. Add some to get started.
+          There are currently no tracks in the library.
         </p>
+         <Button asChild className="mt-6">
+            <Link href="/music/search">
+                <PlusCircle className="mr-2" />
+                Search & Add Music
+            </Link>
+        </Button>
       </div>
     );
   }
@@ -38,11 +45,19 @@ async function MusicPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 animate-in fade-in-50 duration-500">
-      <div className="flex items-center gap-4 text-primary mb-8">
-        <Music className="w-12 h-12" />
-        <h1 className="text-4xl font-black uppercase tracking-wider">
-          Music Library
-        </h1>
+      <div className="flex items-center justify-between gap-4 text-primary mb-8">
+        <div className="flex items-center gap-4">
+            <Music className="w-12 h-12" />
+            <h1 className="text-4xl font-black uppercase tracking-wider">
+            Music Library
+            </h1>
+        </div>
+        <Button asChild>
+            <Link href="/music/search">
+                <PlusCircle className="mr-2" />
+                Search & Add Music
+            </Link>
+        </Button>
       </div>
       <MusicTrackList tracks={signedTracks} />
     </div>
