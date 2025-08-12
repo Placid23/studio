@@ -49,7 +49,7 @@ async function MusicData() {
             recommendationsData
         ] = await Promise.all([
             spotifyGet('browse/new-releases', { country, limit: 20 }).then(d => d.albums.items).catch(() => []),
-            spotifyGet('browse/featured-playlists', { country, limit: 12 }).then(d => d.playlists.items).catch(() => []),
+            spotifyGet('browse/featured-playlists', { limit: 12 }).then(d => d.playlists.items).catch(() => []),
             spotifyGet('playlists/37i9dQZEVXbMDoHDwVN2tF').then(d => d.tracks.items.map((i: any) => i.track)).catch(() => []),
             spotifyGet('recommendations', { limit: 20, seed_artists: '4NHQUGzhtTLFvgF5SZesLK' }).then(d => d.tracks).catch(() => []), // Seed artist: Post Malone
         ]);
