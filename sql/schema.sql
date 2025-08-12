@@ -1,6 +1,3 @@
-
--- This script is designed to be idempotent, meaning it can be run multiple times without causing errors.
-
 -- Create the table only if it doesn't exist to prevent errors on re-run.
 CREATE TABLE IF NOT EXISTS liked_songs (
   id BIGINT NOT NULL, -- The Deezer track ID
@@ -26,17 +23,7 @@ ALTER TABLE liked_songs
 ADD COLUMN IF NOT EXISTS file_id TEXT;
 
 -- Enable Row Level Security if it's not already enabled.
-DO $$
-BEGIN
-  -- The following command is not idempotent by itself, so we wrap it.
-  -- We check the system catalog to see if RLS is already enabled.
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_class WHERE relname = 'liked_songs' AND relrowsecurity = 't'
-  ) THEN
-    EXECUTE 'ALTER TABLE liked_songs ENABLE ROW LEVEL SECURITY';
-  END IF;
-END
-$$;
+ALTER TABLE liked_songs ENABLE ROW LEVEL SECURITY;
 
 -- Drop the policy if it exists, to recreate it safely.
 -- This handles cases where you might want to update the policy in the future.
