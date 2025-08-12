@@ -49,7 +49,8 @@ function renderCard(item: any) {
         image = item.picture_xl || item.picture_big || item.picture_medium;
         titleText = item.name;
         subtitleText = item.nb_fan ? `${item.nb_fan.toLocaleString()} fans` : 'Artist';
-        link = item.link || '#';
+        link = `/music/artist/${item.id}`;
+        isExternal = false;
     } else if (item.type === 'genre') {
         image = item.picture_xl || item.picture_big;
         titleText = item.name;
@@ -94,7 +95,7 @@ export default async function SeeAllMusicPage({ params }: { params: { slug: stri
   }
 
   const { title, endpoint } = SLUG_MAP[slug as keyof typeof SLUG_MAP];
-  const data = await deezerGet(endpoint);
+  const data = await deezerGet(endpoint, {limit: '50'});
   const items = data?.data || [];
 
   return (

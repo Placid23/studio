@@ -69,6 +69,13 @@ export interface Album {
   }
 }
 
+export interface Artist {
+    id: number;
+    name: string;
+    picture_xl: string;
+    nb_fan: number;
+}
+
 export interface Track {
     id: number;
     title: string;
@@ -76,5 +83,10 @@ export interface Track {
     preview: string;
     artist: {
         name: string;
+    };
+    album: {
+        id: number;
+        title: string;
+        cover_xl: string;
     };
 }

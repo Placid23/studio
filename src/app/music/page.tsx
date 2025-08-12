@@ -6,10 +6,10 @@ import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
 
 async function MusicData() {
   const [albumsData, tracksData, artistsData, genresData] = await Promise.all([
-    deezerGet('chart/0/albums'),
-    deezerGet('chart/0/tracks'),
-    deezerGet('chart/0/artists'),
-    deezerGet('genre'),
+    deezerGet('chart/0/albums', { limit: '20' }),
+    deezerGet('chart/0/tracks', { limit: '20' }),
+    deezerGet('chart/0/artists', { limit: '20' }),
+    deezerGet('genre', { limit: '20' }),
   ]);
 
   return (

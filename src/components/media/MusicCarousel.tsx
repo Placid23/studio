@@ -80,14 +80,15 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
       image = item.album?.cover_xl || item.album?.cover_big;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
-      link = `/music/album/${item.album.id}`;
+      link = `/music/album/${item.album.id}`; // A track click still goes to the album detail page
       previewUrl = item.preview;
       isExternal = false;
     } else if (item.type === 'artist') {
       image = item.picture_xl || item.picture_big || item.picture_medium;
       titleText = item.name;
       subtitleText = item.nb_fan ? `${item.nb_fan.toLocaleString()} fans` : '';
-      link = item.link || '#'; // Artists can remain external for now
+      link = `/music/artist/${item.id}`;
+      isExternal = false;
     } else if (item.type === 'genre') {
         image = item.picture_xl || item.picture_big;
         titleText = item.name;
@@ -138,7 +139,7 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
             </h2>
             {seeAllLink && (
               <Button asChild variant="link" className="text-primary hover:text-primary/80">
-                <Link href={seeAllLink}>See all</Link>
+                <Link href={seeAllLink}>{seeAllLink.split('/').pop()?.replace('-', ' ')}</Link>
               </Button>
             )}
         </div>
