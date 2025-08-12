@@ -6,8 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Slider from 'react-slick';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle, Heart } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLikedSongs } from '@/hooks/use-liked-songs';
 
 function SkeletonCard() {
   return (
@@ -22,6 +23,7 @@ function SkeletonCard() {
 export function MusicCarousel({ title, items = [], seeAllLink }: { title: string; items: any[]; seeAllLink?: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const scrollRef = useRef<Slider>(null);
+  const { isLiked, toggleLike } = useLikedSongs();
 
   const settings = {
     dots: false,
@@ -62,6 +64,12 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
     audioRef.current.currentTime = 0;
   };
 
+  const handleLikeClick = (e: React.MouseEvent, item: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleLike(item);
+  };
+
   const renderCard = (item: any, idx: number) => {
     let image = '/img/placeholder.png';
     let titleText = '';
@@ -69,6 +77,8 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
     let link = '#';
     let previewUrl = null;
     let isExternal = true;
+    let isTrack = false;
+    let isLikeable = false;
 
     if (item.type === 'album') {
       image = item.cover_xl || item.cover_big || item.cover_medium;
@@ -76,13 +86,15 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
       subtitleText = item.artist?.name || '';
       link = `/music/album/${item.id}`;
       isExternal = false;
-    } else if (item.type === 'track') {
+    } else if (item.type === 'track' || (item.album && item.artist)) {
       image = item.album?.cover_xl || item.album?.cover_big;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
       link = `/music/album/${item.album.id}`; // A track click still goes to the album detail page
       previewUrl = item.preview;
       isExternal = false;
+      isLikeable = true;
+      isTrack = true;
     } else if (item.type === 'artist') {
       image = item.picture_xl || item.picture_big || item.picture_medium;
       titleText = item.name;
@@ -95,6 +107,8 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
         link = item.link ? `https://www.deezer.com/genre/${item.id}` : '#';
     }
     
+    const liked = isLikeable && isLiked(item.id);
+
     const cardContent = (
       <div 
         onMouseEnter={() => playPreview(previewUrl)}
@@ -108,6 +122,16 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
                   <PlayCircle className="w-16 h-16 text-white/80" />
               </div>
           )}
+           {isLikeable && (
+             <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => handleLikeClick(e, item)}
+                className="absolute top-1 right-1 z-10 bg-black/30 hover:bg-black/50 opacity-0 group-hover:opacity-100"
+              >
+                <Heart className={`h-5 w-5 ${liked ? 'text-red-500 fill-current' : 'text-white/80'}`} />
+              </Button>
+           )}
         </div>
         <div className="mt-3 text-center flex-grow flex flex-col justify-center">
           <div className="font-bold text-sm truncate text-foreground">{titleText}</div>

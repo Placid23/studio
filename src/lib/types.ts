@@ -1,5 +1,6 @@
 
 
+
 export interface Movie {
   type: 'movie';
   tmdbId: string; // TMDB ID
@@ -89,4 +90,9 @@ export interface Track {
         title: string;
         cover_xl: string;
     };
+    type?: 'track';
+}
+
+export interface LikedSong extends Track {
+    likedAt: number;
 }
