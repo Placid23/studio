@@ -1,21 +1,52 @@
-import { Music, HardHat } from 'lucide-react';
 
-export default function MusicPage() {
-  return (
-    <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center text-center h-[calc(100vh-8rem)] animate-in fade-in-50 duration-500">
-      <div className="flex items-center gap-4 text-primary">
-        <Music className="w-16 h-16" />
-        <h1 className="text-4xl font-black uppercase tracking-wider">
-          Music
+import { getMusicTracks, getSignedUrl } from './actions';
+import { Music, Download } from 'lucide-react';
+import { ImageLoader } from '@/components/media/ImageLoader';
+import { MusicTrackList } from '@/components/media/MusicTrackList';
+
+export const revalidate = 60; // Revalidate every 60 seconds
+
+async function MusicPage() {
+  const tracks = await getMusicTracks();
+
+  if (!tracks || tracks.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center text-center h-[calc(100vh-8rem)]">
+        <Music className="w-16 h-16 text-primary" />
+        <h1 className="mt-6 text-4xl font-black uppercase tracking-wider">
+          No Music Found
         </h1>
-      </div>
-      <div className="mt-8 p-8 bg-card/50 rounded-xl flex flex-col items-center max-w-md w-full">
-        <HardHat className="w-12 h-12 text-muted-foreground/80 mb-4" />
-        <h2 className="text-2xl font-bold">Coming Soon!</h2>
         <p className="mt-2 text-muted-foreground">
-          This section is currently under construction. Check back later for music streaming and downloads.
+          There are currently no tracks in the library. Add some to get started.
         </p>
       </div>
+    );
+  }
+
+  // Pre-sign all the URLs on the server
+  const signedTracks = await Promise.all(
+    tracks.map(async (track) => {
+      const { signedUrl, error } = await getSignedUrl(track.file_id);
+      if (error) {
+        console.error(`Failed to sign URL for track ${track.id}: ${error}`);
+        return { ...track, audioUrl: '', cover_url: track.cover_url || 'https://placehold.co/128x128.png' };
+      }
+      return { ...track, audioUrl: signedUrl, cover_url: track.cover_url || 'https://placehold.co/128x128.png' };
+    })
+  );
+
+
+  return (
+    <div className="container mx-auto px-4 py-8 animate-in fade-in-50 duration-500">
+      <div className="flex items-center gap-4 text-primary mb-8">
+        <Music className="w-12 h-12" />
+        <h1 className="text-4xl font-black uppercase tracking-wider">
+          Music Library
+        </h1>
+      </div>
+      <MusicTrackList tracks={signedTracks} />
     </div>
   );
 }
+
+export default MusicPage;

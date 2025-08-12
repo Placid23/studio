@@ -50,3 +50,17 @@ export interface Show {
   seasons?: Season[];
   file_id?: string; // Path to video file in Supabase Storage
 }
+
+export interface MusicTrack {
+  id: number;
+  title: string;
+  artist: string | null;
+  album: string | null;
+  cover_url: string | null;
+  file_id: string; // Path to audio file in Supabase Storage
+  created_at: string;
+}
+
+export interface PlayableTrack extends MusicTrack {
+    audioUrl: string;
+}
