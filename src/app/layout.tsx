@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { PwaInstallPrompt } from '@/components/layout/PwaInstallPrompt';
 import { SplashProvider } from '@/components/layout/SplashProvider';
-import { MusicProvider } from '@/components/providers/MusicProvider';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,13 +32,11 @@ export default function RootLayout({
           storageKey="novastream-theme"
         >
           <SplashProvider>
-            <MusicProvider>
               <div className="relative flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-1 pb-24">{children}</main>
                 <Footer />
               </div>
-            </MusicProvider>
           </SplashProvider>
           <Toaster />
           <PwaInstallPrompt />
