@@ -1,8 +1,6 @@
 
 'use server';
 
-import type { MusicTrack } from './types';
-
 const MUSICBRAINZ_API_BASE = 'https://musicbrainz.org/ws/2';
 const COVERART_API_BASE = 'https://coverartarchive.org';
 
@@ -32,7 +30,34 @@ export interface SearchedTrack {
   album: string;
   releaseId?: string;
   coverUrl?: string;
+  label?: string;
+  releaseCountry?: string;
 }
+
+export async function searchMusicbrainzRelease(artist: string, release: string): Promise<SearchedTrack | null> {
+    if (!artist || !release) return null;
+
+    const query = `artist:"${artist}" AND release:"${release}"`;
+    const url = `${MUSICBRAINZ_API_BASE}/release/?query=${encodeURIComponent(query)}&limit=1&fmt=json`;
+    const data = await fetcher(url);
+
+    const rel = data.releases?.[0];
+    if (!rel) return null;
+
+    const coverUrl = await getCoverArt(rel.id).catch(() => undefined);
+    
+    return {
+        mbid: rel.id,
+        title: rel.title, // This might differ slightly from spotify, that's okay
+        artist: rel['artist-credit']?.[0]?.name || artist,
+        album: rel.title,
+        coverUrl: coverUrl,
+        releaseId: rel.id,
+        label: rel['label-info']?.[0]?.label?.name,
+        releaseCountry: rel.country,
+    }
+}
+
 
 export async function searchMusicbrainz(query: string): Promise<SearchedTrack[]> {
   if (!query) return [];
