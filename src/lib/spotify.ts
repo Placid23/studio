@@ -1,131 +1,59 @@
 
 import { Buffer } from 'buffer';
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
-const API_ENDPOINT = `https://api.spotify.com/v1`;
+let cachedToken: string | null = null;
+let tokenExpiresAt: number = 0; // timestamp in ms
 
-if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.warn("Spotify API credentials are not set in .env.local. Music features will be disabled.");
+export async function getAccessToken() {
+  const now = Date.now();
+  if (cachedToken && now < tokenExpiresAt - 60000) { // refresh 60s early
+    return cachedToken;
+  }
+
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET must be set in env');
+  }
+
+  const resp = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+    },
+    body: 'grant_type=client_credentials',
+    cache: 'no-store'
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error('Failed to fetch Spotify token:', text);
+    throw new Error('Failed to fetch Spotify token: ' + resp.status + ' ' + text);
+  }
+
+  const data = await resp.json();
+  cachedToken = data.access_token;
+  tokenExpiresAt = Date.now() + data.expires_in * 1000;
+  return cachedToken;
 }
 
-// In-memory cache for the access token
-let accessToken: {
-    token: string;
-    expiresAt: number;
-} | null = null;
+export async function spotifyGet(endpoint: string, params: Record<string, any> = {}) {
+  const token = await getAccessToken();
+  const url = new URL(`https://api.spotify.com/v1/${endpoint}`);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+  });
 
-const getAccessToken = async (): Promise<string | null> => {
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-        return null;
-    }
-    
-    if (accessToken && accessToken.expiresAt > Date.now()) {
-        return accessToken.token;
-    }
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 3600 } // Revalidate every hour
+  });
 
-    const authHeader = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-
-    try {
-        const response = await fetch(TOKEN_ENDPOINT, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${authHeader}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'grant_type=client_credentials',
-            cache: 'no-store' // Do not cache the token request itself
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error('Failed to get Spotify access token:', { status: response.status, body: errorBody });
-            throw new Error(`Spotify token error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const expiresIn = data.expires_in * 1000; // convert to milliseconds
-        
-        accessToken = {
-            token: data.access_token,
-            expiresAt: Date.now() + expiresIn - (5 * 60 * 1000), // Refresh 5 mins before expiry
-        };
-        
-        return accessToken.token;
-
-    } catch (error) {
-        console.error('Error fetching Spotify token:', error);
-        throw error;
-    }
-};
-
-async function spotifyFetch(endpoint: string, params: Record<string, string> = {}) {
-    const token = await getAccessToken();
-    if (!token) {
-        throw new Error("Could not authenticate with Spotify.");
-    }
-    
-    const url = new URL(`${API_ENDPOINT}${endpoint}`);
-    Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
-
-    const response = await fetch(url.toString(), {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        next: { revalidate: 3600 } // Cache API responses for an hour
-    });
-
-    if (!response.ok) {
-        let errorBody;
-        try {
-            errorBody = await response.json();
-        } catch (e) {
-            errorBody = await response.text();
-        }
-        console.error(`Failed to fetch from Spotify endpoint ${endpoint}:`, { status: response.status, body: errorBody });
-        throw new Error(`Spotify API error: ${response.statusText}`);
-    }
-    return response.json();
-}
-
-export interface SpotifyArtist {
-    id: string;
-    name: string;
-}
-
-export interface SpotifyImage {
-    url: string;
-    height: number;
-    width: number;
-}
-
-export interface SpotifyAlbum {
-  album_type: string;
-  total_tracks: number;
-  id: string;
-  images: SpotifyImage[];
-  name: string;
-  release_date: string;
-  artists: SpotifyArtist[];
-  external_urls: {
-    spotify: string;
-  };
-}
-
-export interface SpotifyTrack {
-  id: string;
-  name: string;
-  artists: SpotifyArtist[];
-  album: SpotifyAlbum;
-  duration_ms: number;
-  explicit: boolean;
-  external_urls: {
-    spotify: string;
-  };
-}
-
-export async function getNewReleases(): Promise<SpotifyAlbum[]> {
-    const data = await spotifyFetch(`/browse/new-releases`, { country: 'US', limit: '20' });
-    return data.albums.items;
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`Spotify API error for ${endpoint}:`, text);
+    throw new Error(`Spotify API error ${res.status}: ${text}`);
+  }
+  return res.json();
 }

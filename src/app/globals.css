@@ -1,3 +1,6 @@
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -180,4 +183,23 @@
     hsl(var(--card) / 0) 100%
   );
   animation: shimmer-loader-animation 1.5s infinite;
+}
+
+/* Slick Carousel Styles */
+.slick-slide { 
+  padding: 0 8px; 
+}
+.slick-list {
+  margin: 0 -8px;
+}
+.carousel-card { 
+  transition: transform .15s ease, box-shadow .15s ease; 
+}
+.carousel-card:hover { 
+  transform: translateY(-6px) scale(1.02); 
+  @apply shadow-lg;
+}
+
+.slick-prev:before, .slick-next:before {
+  color: hsl(var(--primary));
 }
