@@ -87,7 +87,7 @@ async function spotifyFetch(endpoint: string, params: Record<string, string> = {
         } catch (e) {
             errorBody = await response.text();
         }
-        console.error(`Failed to fetch from Spotify endpoint ${endpoint}:`, errorBody);
+        console.error(`Failed to fetch from Spotify endpoint ${endpoint}:`, { status: response.status, body: errorBody });
         throw new Error(`Spotify API error: ${response.statusText}`);
     }
     return response.json();
@@ -141,6 +141,6 @@ export async function getArtistId(artistName: string): Promise<string | null> {
 }
 
 export async function getArtistTopTracks(artistId: string): Promise<SpotifyTrack[]> {
-    const data = await spotifyFetch(`/artists/${artistId}/top-tracks`, { market: 'US' });
+    const data = await spotifyFetch(`/artists/${artistId}/top-tracks`, { country: 'US' });
     return data.tracks;
 }
