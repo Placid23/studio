@@ -15,10 +15,12 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
     let title: string = 'Content';
     let mediaType: 'video' | 'audio' = 'video';
     let audioTrack: Track | null = null;
+    let bucket: 'videos' | 'songs' = 'videos';
 
     try {
         if (type === 'music') {
             mediaType = 'audio';
+            bucket = 'songs';
             const { data, error } = await supabase
                 .from('liked_songs')
                 .select('file_id, title, artist_name, album_title, album_cover_url, duration, album_id, id')
@@ -27,7 +29,7 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
             
             if (error || !data) {
                 console.error('Error fetching liked song:', error);
-                return { error: 'Could not find this song in your liked songs.', fileId: null, title, mediaType, audioTrack };
+                return { error: 'Could not find this song in your liked songs.', fileId: null, title, mediaType, audioTrack, bucket };
             }
             
             fileId = data.file_id;
@@ -44,6 +46,8 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
 
         } else if (season && episode) {
             // It's a TV show episode
+            mediaType = 'video';
+            bucket = 'videos';
             const { data: showData, error: showError } = await supabase
                 .from('movies')
                 .select('title')
@@ -67,6 +71,8 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
 
         } else {
             // It's a movie
+            mediaType = 'video';
+            bucket = 'videos';
             const { data, error } = await supabase
                 .from('movies')
                 .select('file_id, title')
@@ -79,14 +85,14 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
         }
     } catch (e: any) {
         console.error('Error fetching media details:', e.message);
-        return { error: e.message, fileId: null, title, mediaType, audioTrack };
+        return { error: e.message, fileId: null, title, mediaType, audioTrack, bucket };
     }
 
     if (!fileId) {
-        return { error: 'This item does not have a playable file associated with it in your library.', fileId: null, title, mediaType, audioTrack };
+        return { error: 'This item does not have a playable file associated with it in your library.', fileId: null, title, mediaType, audioTrack, bucket };
     }
     
-    return { fileId, title, mediaType, audioTrack, error: null };
+    return { fileId, title, mediaType, audioTrack, bucket, error: null };
 }
 
 
@@ -107,13 +113,13 @@ export default async function WatchPage({
   }
 
   const { id } = params;
-  const { fileId, title, mediaType, audioTrack, error } = await getMediaDetails(id, searchParams);
+  const { fileId, title, mediaType, audioTrack, bucket, error } = await getMediaDetails(id, searchParams);
 
   if (!fileId || error) {
     return (
-        <div className="bg-black text-white min-h-screen h-screen flex flex-col relative">
+        <div className="bg-background text-foreground min-h-screen h-screen flex flex-col relative">
             <header className="absolute top-0 left-0 p-4 z-20 w-full bg-gradient-to-b from-black/70 to-transparent">
-                <BackButton className="border-white/30 bg-black/20 hover:bg-white/10 text-white backdrop-blur-sm" />
+                <BackButton className="border-border bg-background/20 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm" />
             </header>
             <main className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center justify-center text-center p-4 h-full">
@@ -126,22 +132,22 @@ export default async function WatchPage({
     );
   }
 
-  const bucket = mediaType === 'video' ? 'videos' : 'songs';
   const { data: signedUrlData, error: signedUrlError } = await supabase.storage
     .from(bucket)
     .createSignedUrl(fileId, 60 * 60); // URL is valid for 1 hour
 
   if (signedUrlError || !signedUrlData) {
      return (
-        <div className="bg-black text-white min-h-screen h-screen flex flex-col relative">
+        <div className="bg-background text-foreground min-h-screen h-screen flex flex-col relative">
             <header className="absolute top-0 left-0 p-4 z-20 w-full bg-gradient-to-b from-black/70 to-transparent">
-                <BackButton className="border-white/30 bg-black/20 hover:bg-white/10 text-white backdrop-blur-sm" />
+                <BackButton className="border-border bg-background/20 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm" />
             </header>
             <main className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center justify-center text-center p-4 h-full">
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold">Streaming Error</h1>
                 <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the content. {signedUrlError?.message}</p>
+                 <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{fileId}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
                 </div>
             </main>
         </div>
