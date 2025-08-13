@@ -25,6 +25,7 @@ export async function Header() {
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
     { href: '/shows', label: 'TV Shows' },
+    { href: '/anime', label: 'Anime' },
     { href: '/music', label: 'Music' },
     { href: '/library', label: 'My Library' },
     { href: '/search', label: 'Search' },
