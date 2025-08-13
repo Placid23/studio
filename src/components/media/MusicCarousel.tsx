@@ -89,7 +89,8 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
       image = item.album?.cover_xl || item.album?.cover_big;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
-      link = `/music/album/${item.album.id}`; // A track click still goes to the album detail page
+      // Liked songs should go to the new track detail page
+      link = item.likedAt ? `/music/track/${item.id}` : `/music/album/${item.album.id}`;
       previewUrl = item.preview;
       isExternal = false;
       isLikeable = true;

@@ -53,9 +53,9 @@ function VideoPlayerDialog({ track, open, onOpenChange }: { track: Track | null;
     )
 }
 
-export function AudioPlayer({ tracks }: { tracks: Track[] }) {
-    const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+export function AudioPlayer({ tracks, autoPlay = false }: { tracks: Track[], autoPlay?: boolean }) {
+    const [currentTrackIndex, setCurrentTrackIndex] = useState<number | null>(autoPlay ? 0 : null);
+    const [isPlaying, setIsPlaying] = useState(autoPlay);
     const [progress, setProgress] = useState(0);
     const [videoTrack, setVideoTrack] = useState<Track | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -64,6 +64,13 @@ export function AudioPlayer({ tracks }: { tracks: Track[] }) {
     const { isLiked, toggleLike } = useLikedSongs();
 
     const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
+
+    useEffect(() => {
+        if (autoPlay && tracks.length > 0) {
+            setCurrentTrackIndex(0);
+            setIsPlaying(true);
+        }
+    }, [autoPlay, tracks]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -141,15 +148,16 @@ export function AudioPlayer({ tracks }: { tracks: Track[] }) {
                             <Button variant="ghost" size="icon" onClick={() => setVideoTrack(track)}>
                                 <Youtube className="h-5 w-5" />
                             </Button>
-                            <Button variant="ghost" size="icon" disabled className="ml-2 opacity-50 cursor-not-allowed">
-                                <Music2 className="h-5 w-5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => toggleLike(track)} className="ml-2">
-                                <Heart className={`h-5 w-5 ${liked ? 'text-red-500 fill-current' : 'text-muted-foreground'}`} />
-                            </Button>
-                            <span className="ml-4 text-sm text-muted-foreground w-16 text-right">
-                                {formatDuration(track.duration)}
-                            </span>
+                            {track.type === 'track' && ( // Only show like button for actual tracks
+                                <Button variant="ghost" size="icon" onClick={() => toggleLike(track)} className="ml-2">
+                                    <Heart className={`h-5 w-5 ${liked ? 'text-red-500 fill-current' : 'text-muted-foreground'}`} />
+                                </Button>
+                            )}
+                            {track.duration > 0 && (
+                                <span className="ml-4 text-sm text-muted-foreground w-16 text-right">
+                                    {formatDuration(track.duration)}
+                                </span>
+                            )}
                         </div>
                     );
                 })}
