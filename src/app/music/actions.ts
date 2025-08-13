@@ -94,7 +94,9 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
       album_id: track.album.id,
       album_title: track.album.title,
       album_cover_url: track.album.cover_xl,
-      file_id: null,
+      // file_id will be updated separately by an admin process
+      // This action only handles "liking" from the public catalog
+      file_id: null, 
     });
 
     if (insertError) {

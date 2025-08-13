@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { AudioPlayer } from '@/components/media/AudioPlayer';
+import type { Track } from '@/lib/types';
 
 export default async function PlaySongPage({ params }: { params: { file_id: string } }) {
   const supabase = createClient();
@@ -16,6 +17,18 @@ export default async function PlaySongPage({ params }: { params: { file_id: stri
   }
 
   const { file_id } = params;
+
+  // Fetch the song's metadata from your `liked_songs` table using the file_id
+  const { data: songMetadata, error: metadataError } = await supabase
+    .from('liked_songs')
+    .select('id, title, artist_name, album_title, album_cover_url, duration')
+    .eq('file_id', file_id)
+    .single();
+
+  if (metadataError || !songMetadata) {
+      // This could happen if the file_id is invalid or doesn't exist in the table
+      return notFound();
+  }
 
   const { data: signedUrlData, error: signedUrlError } = await supabase.storage
     .from('songs') // Assuming your bucket is named 'songs'
@@ -32,24 +45,23 @@ export default async function PlaySongPage({ params }: { params: { file_id: stri
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold">Streaming Error</h1>
                 <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the song. {signedUrlError?.message}</p>
+
                 </div>
             </main>
         </div>
     );
   }
   
-  // We need track metadata to display something meaningful in the player
-  // This part is tricky without knowing which song the file_id belongs to.
-  // For now, we'll just show a generic player.
-  const genericTrack = {
-    id: Date.now(),
-    title: "Now Playing",
-    artist: { name: "Your Library" },
-    album: { id: 0, title: "", cover_xl: ""},
-    duration: 0, // We don't know the duration until it loads
-    preview: signedUrlData.signedUrl, // Use the full signed URL as the "preview"
+  // Use the fetched metadata to create a full Track object for the player
+  const fullTrack: Track = {
+    id: songMetadata.id,
+    title: songMetadata.title,
+    artist: { name: songMetadata.artist_name },
+    album: { id: 0, title: songMetadata.album_title, cover_xl: songMetadata.album_cover_url || ''}, // album id isn't strictly needed here
+    duration: songMetadata.duration,
+    preview: signedUrlData.signedUrl, // Use the full signed URL as the "preview" for the player
     type: 'track'
-  } as const;
+  };
 
 
   return (
@@ -59,9 +71,8 @@ export default async function PlaySongPage({ params }: { params: { file_id: stri
             Now Playing
         </h1>
         <div className="max-w-2xl mx-auto">
-            <AudioPlayer tracks={[genericTrack]} autoPlay />
+            <AudioPlayer tracks={[fullTrack]} autoPlay />
         </div>
     </div>
   );
 }
-
