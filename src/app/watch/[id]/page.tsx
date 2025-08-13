@@ -16,85 +16,82 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
     let mediaType: 'video' | 'audio' = 'video';
     let audioTrack: Track | null = null;
     let bucket: 'videos' | 'songs' = 'videos';
+    let error: string | null = null;
 
     try {
         if (type === 'music') {
             mediaType = 'audio';
             bucket = 'songs';
-            const { data, error } = await supabase
+            const { data: likedSong, error: songError } = await supabase
                 .from('liked_songs')
                 .select('file_id, title, artist_name, album_title, album_cover_url, duration, album_id, id')
                 .eq('id', id)
                 .single();
             
-            if (error || !data) {
-                console.error('Error fetching liked song:', error);
-                return { error: 'Could not find this song in your liked songs.', fileId: null, title, mediaType, audioTrack, bucket };
+            if (songError || !likedSong) {
+                throw songError || new Error('This song is not in your liked songs or could not be found.');
             }
             
-            fileId = data.file_id;
-            title = data.title;
+            fileId = likedSong.file_id;
+            title = likedSong.title;
             audioTrack = {
-                id: data.id,
-                title: data.title,
-                artist: { name: data.artist_name },
-                album: { id: data.album_id || 0, title: data.album_title, cover_xl: data.album_cover_url || ''},
-                duration: data.duration,
+                id: likedSong.id,
+                title: likedSong.title,
+                artist: { name: likedSong.artist_name },
+                album: { id: likedSong.album_id || 0, title: likedSong.album_title || '', cover_xl: likedSong.album_cover_url || ''},
+                duration: likedSong.duration,
                 preview: '', // The full URL will be added later
                 type: 'track'
             };
 
-        } else if (season && episode) {
-            // It's a TV show episode
-            mediaType = 'video';
-            bucket = 'videos';
-            const { data: showData, error: showError } = await supabase
-                .from('movies')
-                .select('title')
-                .eq('tmdb_id', id)
-                .eq('type', 'tv')
-                .single();
-            
-            if (showError || !showData) throw showError || new Error('Show not found');
+        } else { // It's a movie or TV show
+             mediaType = 'video';
+             bucket = 'videos';
 
-            const { data, error } = await supabase
-                .from('tv_episodes')
-                .select('file_id, title, season, episode')
-                .eq('show_tmdb_id', id)
-                .eq('season', season)
-                .eq('episode', episode)
-                .single();
-            
-            if (error || !data) throw error || new Error('Episode not found');
-            fileId = data.file_id;
-            title = `${showData.title} S${String(data.season).padStart(2, '0')}E${String(data.episode).padStart(2, '0')}`;
-
-        } else {
-            // It's a movie
-            mediaType = 'video';
-            bucket = 'videos';
-            const { data, error } = await supabase
+             const { data: movieData, error: movieError } = await supabase
                 .from('movies')
-                .select('file_id, title')
+                .select('title, file_id')
                 .eq('tmdb_id', id)
                 .single();
 
-            if (error || !data) throw error || new Error('Movie not found');
-            fileId = data.file_id;
-            title = data.title;
+            if (movieError || !movieData) {
+                throw movieError || new Error("This title hasn't been added to your library yet.");
+            }
+            
+            title = movieData.title;
+
+            if (season && episode) { // TV Show Episode
+                 const { data: episodeData, error: episodeError } = await supabase
+                    .from('tv_episodes')
+                    .select('file_id, title, season, episode')
+                    .eq('show_tmdb_id', id)
+                    .eq('season', season)
+                    .eq('episode', episode)
+                    .single();
+
+                if (episodeError || !episodeData?.file_id) {
+                    throw episodeError || new Error(`Episode S${season}E${episode} not found in your library.`);
+                }
+                fileId = episodeData.file_id;
+                title = `${movieData.title} S${String(episodeData.season).padStart(2, '0')}E${String(episodeData.episode).padStart(2, '0')}`;
+            } else { // Movie
+                 if (!movieData.file_id) {
+                    throw new Error("This movie is in your library, but a video file hasn't been linked to it yet.");
+                }
+                fileId = movieData.file_id;
+            }
         }
     } catch (e: any) {
         console.error('Error fetching media details:', e.message);
-        return { error: e.message, fileId: null, title, mediaType, audioTrack, bucket };
-    }
-
-    if (!fileId) {
-        return { error: 'This item does not have a playable file associated with it in your library.', fileId: null, title, mediaType, audioTrack, bucket };
+        error = e.message;
     }
     
-    return { fileId, title, mediaType, audioTrack, bucket, error: null };
+    if (!fileId && !error) {
+        error = 'This item does not have a playable file associated with it in your library.';
+    }
+    
+    return { fileId, title, mediaType, audioTrack, bucket, error };
 }
-
 
 export default async function WatchPage({
   params,
@@ -124,7 +121,7 @@ export default async function WatchPage({
             <main className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center justify-center text-center p-4 h-full">
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
-                <h1 className="text-2xl font-bold">Media Not Found</h1>
+                <h1 className="text-2xl font-bold">Media Not Playable</h1>
                 <p className="text-muted-foreground max-w-md">{error || 'This item could not be found in your library.'}</p>
                 </div>
             </main>
@@ -133,13 +130,14 @@ export default async function WatchPage({
   }
 
   // If fileId is a full URL, extract the path. Otherwise, use it as is.
-  // This makes the system resilient to different data formats in the database.
   let filePath = fileId;
   try {
     const url = new URL(fileId);
-    // The path is everything after `/object/sign/` or `/object/public/`
-    // Splitting by the bucket name is a reliable way to get the file path.
-    filePath = url.pathname.split(`/${bucket}/`)[1];
+    // The path is everything after the bucket name
+    const pathParts = url.pathname.split(`/${bucket}/`);
+    if (pathParts.length > 1) {
+       filePath = decodeURIComponent(pathParts[1]);
+    }
   } catch (e) {
     // Not a valid URL, so we assume it's already a file path.
   }
@@ -159,7 +157,7 @@ export default async function WatchPage({
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold">Streaming Error</h1>
                 <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the content. {signedUrlError?.message}</p>
-                 <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{filePath}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
+                <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{filePath}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
                 </div>
             </main>
         </div>

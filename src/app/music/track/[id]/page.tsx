@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Music, PlayCircle } from 'lucide-react';
 import { SimilarSongs } from '@/components/media/SimilarSongs';
 import { createClient } from '@/lib/supabase/server';
+import { DownloadButton } from '@/components/media/DownloadButton';
 
 async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: string | null, fileId: string | null }> {
     const trackData = await deezerGet(`track/${id}`);
@@ -65,14 +66,23 @@ export default async function TrackDetailPage({ params }: { params: { id: string
                         <span className="text-xl font-bold">{track.artist.name}</span>
                     </div>
                     <p className="text-muted-foreground mt-2">From the album: <Link href={`/music/album/${track.album.id}`} className="hover:underline text-foreground">{track.album.title}</Link></p>
-                    {fileId && (
-                         <Button asChild size="lg" className="mt-8">
-                            <Link href={`/watch/${track.id}?type=music`}>
-                                <PlayCircle className="mr-2 h-6 w-6" />
-                                Play Full Song
-                            </Link>
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-4 mt-8 flex-wrap">
+                        {fileId && (
+                            <Button asChild size="lg">
+                                <Link href={`/watch/${track.id}?type=music`}>
+                                    <PlayCircle className="mr-2 h-6 w-6" />
+                                    Play Full Song
+                                </Link>
+                            </Button>
+                        )}
+                        {fileId && (
+                            <DownloadButton
+                                filePath={fileId}
+                                bucket="songs"
+                                fileName={`${track.artist.name} - ${track.title}.mp3`}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
 

@@ -16,6 +16,14 @@ import { EpisodeGuide } from '@/components/media/EpisodeGuide';
 import type { Show } from '@/lib/types';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
+import { DownloadButton } from '@/components/media/DownloadButton';
+import { createClient } from '@/lib/supabase/server';
+
+async function getLibraryItem(tmdbId: string) {
+    const supabase = createClient();
+    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).single();
+    return data;
+}
 
 export default async function ShowDetailPage({ params }: { params: { id: string } }) {
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
@@ -35,6 +43,8 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
   if (!show) {
     notFound();
   }
+
+  const libraryItem = await getLibraryItem(params.id);
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -91,7 +101,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
               ))}
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
-            <div className="mt-8 flex items-center gap-4">
+            <div className="mt-8 flex items-center gap-4 flex-wrap">
               <Button asChild size="lg">
                 <Link href={`/watch/${show.tmdbId}?season=1&episode=1`}>
                     <PlayCircle className="mr-2 h-6 w-6" />
@@ -99,6 +109,13 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
                 </Link>
               </Button>
               <AddToWatchlistButton media={show} addAction={addToWatchlistAction} />
+              {libraryItem?.file_id && (
+                  <DownloadButton 
+                      filePath={libraryItem.file_id}
+                      bucket="videos"
+                      fileName={`${show.title}.mp4`}
+                  />
+              )}
             </div>
           </div>
         </div>
