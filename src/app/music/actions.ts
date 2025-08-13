@@ -26,7 +26,7 @@ export async function getLikedSongsAction(): Promise<LikedSong[]> {
     return [];
   }
   
-  // Map Supabase data to LikedSong type
+  // Map Supabase data to the correct nested LikedSong type
   return data.map(item => ({
       id: item.id,
       title: item.title,
@@ -94,7 +94,7 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
       album_id: track.album.id,
       album_title: track.album.title,
       album_cover_url: track.album.cover_xl,
-      file_id: null, // Placeholder for full song file
+      file_id: null,
     });
 
     if (insertError) {

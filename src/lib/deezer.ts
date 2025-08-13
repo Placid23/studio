@@ -1,3 +1,4 @@
+
 'use server';
 
 const BASE_URL = 'https://api.deezer.com';
@@ -25,7 +26,7 @@ export async function deezerGet(path: string, params: Record<string, string> = {
     }
 
     const data = await res.json();
-    // Deezer returns an empty object for not-found items, so we check for that and the explicit error property.
+    
     if (data.error || (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0)) {
         const errorMessage = data.error ? data.error.message : 'No data found for this resource.';
         console.error(`Deezer API returned an error for ${path}:`, data.error || 'Empty response');
@@ -35,7 +36,7 @@ export async function deezerGet(path: string, params: Record<string, string> = {
     return data;
   } catch (error) {
     console.error(`Failed to fetch from Deezer path ${path}:`, error);
-    // Return a structured error for any other failures
+    
     return { error: { message: (error as Error).message || 'Unknown fetch error' } };
   }
 }
