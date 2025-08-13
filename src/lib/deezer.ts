@@ -5,8 +5,9 @@ const BASE_URL = 'https://api.deezer.com';
 
 export async function deezerGet(path: string, params: Record<string, string> = {}) {
   if (!path || path.endsWith('null') || path.endsWith('undefined')) {
-    console.error(`Attempted to fetch from Deezer with an invalid path: ${path}`);
-    return { error: { message: 'Invalid ID provided' } };
+    const errorMessage = `Attempted to fetch from Deezer with an invalid path: ${path}`;
+    console.error(errorMessage);
+    return { error: { message: errorMessage } };
   }
   
   const url = new URL(`${BASE_URL}/${path}`);
@@ -27,7 +28,8 @@ export async function deezerGet(path: string, params: Record<string, string> = {
 
     const data = await res.json();
     
-    if (data.error || (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0)) {
+    // Check for Deezer's explicit error format OR an empty object for a single resource request.
+    if (data.error || (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0 && !path.startsWith('chart'))) {
         const errorMessage = data.error ? data.error.message : 'No data found for this resource.';
         console.error(`Deezer API returned an error for ${path}:`, data.error || 'Empty response');
         return { error: { message: errorMessage } };
