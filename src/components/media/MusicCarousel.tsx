@@ -27,16 +27,16 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
 
   const settings = {
     dots: false,
-    infinite: true, // Enable infinite loop
+    infinite: items.length > 5, // Enable infinite loop only if there are enough items
     speed: 500,
     slidesToShow: 6,
     slidesToScroll: 3,
     arrows: false,
     responsive: [
-      { breakpoint: 1280, settings: { slidesToShow: 5 } },
-      { breakpoint: 1024, settings: { slidesToShow: 4 } },
-      { breakpoint: 768, settings: { slidesToShow: 3 } },
-      { breakpoint: 640, settings: { slidesToShow: 2 } },
+      { breakpoint: 1280, settings: { slidesToShow: 5, slidesToScroll: 2 } },
+      { breakpoint: 1024, settings: { slidesToShow: 4, slidesToScroll: 2 } },
+      { breakpoint: 768, settings: { slidesToShow: 3, slidesToScroll: 1 } },
+      { breakpoint: 640, settings: { slidesToShow: 2, slidesToScroll: 1 } },
     ],
   };
   
@@ -89,7 +89,6 @@ export function MusicCarousel({ title, items = [], seeAllLink }: { title: string
       image = item.album?.cover_xl || item.album?.cover_big;
       titleText = item.title;
       subtitleText = item.artist?.name || '';
-      // Liked songs should go to the new track detail page
       link = item.likedAt ? `/music/track/${item.id}` : `/music/album/${item.album.id}`;
       previewUrl = item.preview;
       isExternal = false;
