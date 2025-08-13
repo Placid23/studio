@@ -66,40 +66,42 @@ export function AudioPlayer({ tracks }: { tracks: Track[] }) {
     const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
 
     useEffect(() => {
-        if (isPlaying) {
-            audioRef.current?.play();
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isPlaying && currentTrack?.preview) {
+            if (audio.src !== currentTrack.preview) {
+                audio.src = currentTrack.preview;
+            }
+            audio.play().catch(e => console.error("Error playing audio", e));
+
             intervalRef.current = setInterval(() => {
-                if (audioRef.current) {
-                    setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
+                if (audio.duration) {
+                    setProgress((audio.currentTime / audio.duration) * 100);
                 }
             }, 1000);
         } else {
-            audioRef.current?.pause();
+            audio.pause();
             clearInterval(intervalRef.current);
         }
         return () => clearInterval(intervalRef.current);
-    }, [isPlaying, currentTrackIndex]);
-    
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.src = currentTrack?.preview || '';
-            if (isPlaying) {
-                audioRef.current.play().catch(e => console.error("Error playing audio", e));
-            }
-        }
-    }, [currentTrack, isPlaying]);
+    }, [isPlaying, currentTrack]);
 
     const handlePlayPause = (index: number) => {
+        const track = tracks[index];
+        if (!track || !track.preview) return; 
+
         if (index === currentTrackIndex) {
             setIsPlaying(!isPlaying);
         } else {
             setCurrentTrackIndex(index);
             setIsPlaying(true);
+            setProgress(0);
         }
     };
 
     const handleScrub = (value: number[]) => {
-        if (audioRef.current) {
+        if (audioRef.current?.duration) {
             const newTime = (value[0] / 100) * audioRef.current.duration;
             audioRef.current.currentTime = newTime;
             setProgress(value[0]);
@@ -113,10 +115,11 @@ export function AudioPlayer({ tracks }: { tracks: Track[] }) {
                 <audio ref={audioRef} onEnded={() => setIsPlaying(false)} onLoadedMetadata={() => setProgress(0)} />
                 {tracks.map((track, index) => {
                     const liked = isLiked(track.id);
+                    const hasPreview = !!track.preview;
                     return (
                         <div key={track.id} className="flex items-center p-3 rounded-lg bg-card/50 hover:bg-card transition-colors group">
-                            <Button variant="ghost" size="icon" onClick={() => handlePlayPause(index)}>
-                                {currentTrackIndex === index && isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                            <Button variant="ghost" size="icon" onClick={() => handlePlayPause(index)} disabled={!hasPreview}>
+                                {currentTrackIndex === index && isPlaying ? <Pause className="h-5 w-5" /> : <Play className={`h-5 w-5 ${!hasPreview ? 'text-muted-foreground/50' : ''}`} />}
                             </Button>
                             <div className="ml-4 flex-grow">
                                 <p className="font-semibold text-foreground">{track.title}</p>
