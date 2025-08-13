@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -18,10 +19,24 @@ interface MediaCardProps {
 }
 
 export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAddButton = false }: MediaCardProps) {
-  const isMovie = media.type === 'movie';
-  const href = isMovie ? `/movies/${media.tmdbId}` : `/shows/${media.tmdbId}`;
-  const hint = isMovie ? "movie poster" : "tv show poster";
-  const watchHref = customWatchHref || (isMovie 
+  let href = '';
+  let hint = '';
+  switch (media.type) {
+    case 'movie':
+      href = `/movies/${media.tmdbId}`;
+      hint = 'movie poster';
+      break;
+    case 'tv':
+      href = `/shows/${media.tmdbId}`;
+      hint = 'tv show poster';
+      break;
+    case 'anime':
+      href = `/anime/${media.tmdbId}`;
+      hint = 'anime poster';
+      break;
+  }
+  
+  const watchHref = customWatchHref || (media.type === 'movie'
     ? `/watch/${media.tmdbId}` 
     : `/watch/${media.tmdbId}?season=1&episode=1`);
 

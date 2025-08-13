@@ -2,6 +2,7 @@
 
 
 
+
 export interface Movie {
   type: 'movie';
   tmdbId: string; // TMDB ID
@@ -38,7 +39,7 @@ export interface Season {
 }
 
 export interface Show {
-  type: 'tv';
+  type: 'tv' | 'anime';
   tmdbId: string; // TMDB ID
   supabaseId?: any; // Supabase auto-generated ID, if in library
   title: string;

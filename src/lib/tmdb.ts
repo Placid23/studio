@@ -68,9 +68,11 @@ function mapTmdbToMovie(tmdbMovie: any): Movie {
 
 function mapTmdbToShow(tmdbShow: any): Show {
     const trailer = tmdbShow.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
+    const type = (tmdbShow.genres?.some((g: any) => g.id === 16)) ? 'anime' : 'tv';
+
     return {
         tmdbId: String(tmdbShow.id),
-        type: 'tv',
+        type: type,
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,
         genres: tmdbShow.genres?.map((g: any) => g.name) || [],
@@ -88,6 +90,17 @@ function mapTmdbToShow(tmdbShow: any): Show {
             poster_path: s.poster_path,
         })) || []
     };
+}
+
+export async function getPopularAnime(): Promise<Show[]> {
+    const data = await fetchFromTMDB('/discover/tv', {
+      with_genres: '16', // Animation genre ID
+      with_keywords: '210024|287501', // Japanimation | aniplex
+      sort_by: 'popularity.desc',
+      'air_date.gte': new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().split('T')[0] // last 5 years
+    });
+    if (!data?.results) return [];
+    return data.results.map(mapTmdbToShow);
 }
 
 
@@ -127,13 +140,13 @@ export async function getPopularShows(region?: string): Promise<Show[]> {
     const params = region ? { region } : {};
     const data = await fetchFromTMDB('/tv/popular', params);
     if (!data?.results) return [];
-    return data.results.map(mapTmdbToShow);
+    return data.results.map(mapTmdbToShow).filter(show => show.type === 'tv');
 }
 
 export async function getTopRatedShows(): Promise<Show[]> {
     const data = await fetchFromTMDB('/tv/top_rated');
     if (!data?.results) return [];
-    return data.results.map(mapTmdbToShow);
+    return data.results.map(mapTmdbToShow).filter(show => show.type === 'tv');
 }
 
 
