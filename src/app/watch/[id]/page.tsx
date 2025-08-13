@@ -132,9 +132,21 @@ export default async function WatchPage({
     );
   }
 
+  // If fileId is a full URL, extract the path. Otherwise, use it as is.
+  // This makes the system resilient to different data formats in the database.
+  let filePath = fileId;
+  try {
+    const url = new URL(fileId);
+    // The path is everything after `/object/sign/` or `/object/public/`
+    // Splitting by the bucket name is a reliable way to get the file path.
+    filePath = url.pathname.split(`/${bucket}/`)[1];
+  } catch (e) {
+    // Not a valid URL, so we assume it's already a file path.
+  }
+  
   const { data: signedUrlData, error: signedUrlError } = await supabase.storage
     .from(bucket)
-    .createSignedUrl(fileId, 60 * 60); // URL is valid for 1 hour
+    .createSignedUrl(filePath, 60 * 60); // URL is valid for 1 hour
 
   if (signedUrlError || !signedUrlData) {
      return (
@@ -147,7 +159,7 @@ export default async function WatchPage({
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold">Streaming Error</h1>
                 <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the content. {signedUrlError?.message}</p>
-                 <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{fileId}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
+                 <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{filePath}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
                 </div>
             </main>
         </div>
