@@ -67,7 +67,7 @@ export default async function TrackDetailPage({ params }: { params: { id: string
                     <p className="text-muted-foreground mt-2">From the album: <Link href={`/music/album/${track.album.id}`} className="hover:underline text-foreground">{track.album.title}</Link></p>
                     {fileId && (
                          <Button asChild size="lg" className="mt-8">
-                            <Link href={`/play/${fileId}`}>
+                            <Link href={`/watch/${track.id}?type=music`}>
                                 <PlayCircle className="mr-2 h-6 w-6" />
                                 Play Full Song
                             </Link>
