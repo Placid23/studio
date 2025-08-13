@@ -21,7 +21,7 @@ export default async function PlaySongPage({ params }: { params: { file_id: stri
   // Fetch the song's metadata from your `liked_songs` table using the file_id
   const { data: songMetadata, error: metadataError } = await supabase
     .from('liked_songs')
-    .select('id, title, artist_name, album_title, album_cover_url, duration')
+    .select('id, title, artist_name, album_title, album_cover_url, duration, album_id')
     .eq('file_id', file_id)
     .single();
 
@@ -57,7 +57,7 @@ export default async function PlaySongPage({ params }: { params: { file_id: stri
     id: songMetadata.id,
     title: songMetadata.title,
     artist: { name: songMetadata.artist_name },
-    album: { id: 0, title: songMetadata.album_title, cover_xl: songMetadata.album_cover_url || ''}, // album id isn't strictly needed here
+    album: { id: songMetadata.album_id || 0, title: songMetadata.album_title, cover_xl: songMetadata.album_cover_url || ''},
     duration: songMetadata.duration,
     preview: signedUrlData.signedUrl, // Use the full signed URL as the "preview" for the player
     type: 'track'

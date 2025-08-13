@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,9 +23,8 @@ export function PwaInstallPrompt() {
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      // Check if the app is already installed, or if the prompt has already been shown in this session
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      if (isStandalone || (window.navigator as any).standalone || sessionStorage.getItem('pwa-prompt-shown')) {
+      if (isStandalone || (window.navigator as any).standalone) {
         return;
       }
       setInstallPromptEvent(event as BeforeInstallPromptEvent);
@@ -40,15 +40,16 @@ export function PwaInstallPrompt() {
   useEffect(() => {
     if (installPromptEvent) {
       const toastId = 'pwa-install-toast';
-      sessionStorage.setItem('pwa-prompt-shown', 'true');
       toast({
         id: toastId,
         title: 'Install NovaStream App',
-        description: 'Get a full-screen experience on your device.',
+        description: 'Get a full-screen experience with background audio.',
         duration: Infinity, // Keep the toast visible until dismissed or action is taken
         action: (
           <Button
             onClick={async () => {
+              if (!installPromptEvent) return;
+              
               installPromptEvent.prompt();
               const { outcome } = await installPromptEvent.userChoice;
               if (outcome === 'accepted') {
