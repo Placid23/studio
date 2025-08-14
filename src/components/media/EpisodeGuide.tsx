@@ -9,7 +9,9 @@ import { Skeleton } from '../ui/skeleton';
 import { ImageLoader } from './ImageLoader';
 import Link from 'next/link';
 import { Button } from '../ui/button';
-import { PlayCircle } from 'lucide-react';
+import { PlayCircle, Download, Loader2 } from 'lucide-react';
+import { downloadAnimeEpisodeAction } from '@/app/anime/[id]/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export function EpisodeGuide({ show }: { show: Show }) {
   const seasons = show.seasons?.filter(s => s.season_number > 0) || [];
@@ -45,17 +47,31 @@ export function EpisodeGuide({ show }: { show: Show }) {
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <EpisodeCardSkeleton key={i} />)
           : episodes.map((episode) => (
-            <EpisodeCard key={episode.id} episode={episode} showId={show.tmdbId} />
+            <EpisodeCard key={episode.id} episode={episode} show={show} />
           ))}
       </div>
     </div>
   );
 }
 
-function EpisodeCard({ episode, showId }: { episode: Episode; showId: string; }) {
+function EpisodeCard({ episode, show }: { episode: Episode; show: Show; }) {
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
+  const handleDownload = () => {
+    startTransition(async () => {
+      const result = await downloadAnimeEpisodeAction(show, episode);
+      toast({
+        title: result.success ? 'Success' : 'Error',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive'
+      });
+    });
+  };
+
   return (
     <div className="bg-card/60 rounded-lg overflow-hidden flex flex-col group">
-      <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
+      <Link href={`/watch/${show.tmdbId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
         <div className="relative aspect-video img-container">
           <ImageLoader
             src={episode.still_path!}
@@ -75,11 +91,17 @@ function EpisodeCard({ episode, showId }: { episode: Episode; showId: string; })
           E{episode.episode_number}: {episode.name}
         </h3>
         <p className="text-muted-foreground text-sm mt-2 flex-1 line-clamp-3">{episode.synopsis}</p>
-        <Button asChild variant="secondary" className="mt-4 w-full">
-           <Link href={`/watch/${showId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
-              <PlayCircle className="mr-2 h-4 w-4" /> Play
-            </Link>
-        </Button>
+        <div className="mt-4 w-full flex items-center gap-2">
+            <Button asChild variant="secondary" className="flex-1">
+               <Link href={`/watch/${show.tmdbId}?season=${episode.season_number}&episode=${episode.episode_number}`}>
+                  <PlayCircle className="mr-2 h-4 w-4" /> Play
+                </Link>
+            </Button>
+             <Button variant="outline" className="flex-1" onClick={handleDownload} disabled={isPending}>
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Download
+            </Button>
+        </div>
       </div>
     </div>
   );
@@ -94,7 +116,10 @@ function EpisodeCardSkeleton() {
         <Skeleton className="h-4 w-full mt-3" />
         <Skeleton className="h-4 w-full mt-2" />
         <Skeleton className="h-4 w-1/2 mt-2" />
-        <Skeleton className="h-10 w-full mt-4" />
+        <div className="flex items-center gap-2 mt-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
       </div>
     </div>
   );

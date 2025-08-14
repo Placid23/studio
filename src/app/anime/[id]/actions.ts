@@ -2,7 +2,7 @@
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
-import type { Show } from "@/lib/types";
+import type { Show, Episode } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
 export async function addToWatchlistAction(show: Show): Promise<{ success: boolean; message: string }> {
@@ -40,4 +40,29 @@ export async function addToWatchlistAction(show: Show): Promise<{ success: boole
     revalidatePath('/library');
     revalidatePath('/anime');
     return { success: true, message: `${show.title} has been added to your library.` };
+}
+
+
+export async function downloadAnimeEpisodeAction(show: Show, episode: Episode): Promise<{ success: boolean; message: string; data: any; }> {
+    const downloadData = {
+        title: show.title,
+        season: episode.season_number,
+        episode: episode.episode_number,
+    };
+
+    // In a real application, you would trigger your backend service here.
+    // For example, by making a POST request to your Python/Flask server.
+    // await fetch('https://your-python-backend.com/download', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(downloadData),
+    // });
+    
+    console.log("Initiating download for:", downloadData);
+
+    return { 
+        success: true, 
+        message: `Download initiated for ${show.title} S${episode.season_number}E${episode.episode_number}.`,
+        data: downloadData
+    };
 }
