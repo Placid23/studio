@@ -26,7 +26,8 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
                 .from('liked_songs')
                 .select('file_id, title, artist_name, album_title, album_cover_url, duration, album_id, id')
                 .eq('id', id)
-                .single();
+                .limit(1)
+                .maybeSingle();
             
             if (songError || !likedSong) {
                 throw songError || new Error('This song is not in your liked songs or could not be found.');
@@ -52,7 +53,8 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
                 .from('movies')
                 .select('title, file_id')
                 .eq('tmdb_id', id)
-                .single();
+                .limit(1)
+                .maybeSingle();
 
             if (movieError || !movieData) {
                 throw movieError || new Error("This title hasn't been added to your library yet.");
@@ -67,7 +69,8 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
                     .eq('show_tmdb_id', id)
                     .eq('season', season)
                     .eq('episode', episode)
-                    .single();
+                    .limit(1)
+                    .maybeSingle();
 
                 if (episodeError || !episodeData?.file_id) {
                     throw episodeError || new Error(`Episode S${season}E${episode} not found in your library.`);

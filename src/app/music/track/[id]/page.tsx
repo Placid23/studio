@@ -29,13 +29,13 @@ async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: s
             .from('liked_songs')
             .select('file_id')
             .eq('id', track.id)
-            .single();
+            .limit(1)
+            .maybeSingle();
         if (likedSongData && likedSongData.file_id) {
             fileId = likedSongData.file_id;
         }
     } catch(e) {
         // Ignore error if song is not in library, which is expected.
-        // The .single() method throws if no row is found.
     }
 
     return { track, youtubeId, fileId };

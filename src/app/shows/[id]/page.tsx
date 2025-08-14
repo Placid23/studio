@@ -21,7 +21,7 @@ import { createClient } from '@/lib/supabase/server';
 
 async function getLibraryItem(tmdbId: string) {
     const supabase = createClient();
-    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).single();
+    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
     return data;
 }
 
@@ -133,7 +133,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
         </div>
         
         <Suspense fallback={null}>
-            <SimilarMedia mediaId={show.tmdbId} mediaType="show" />
+            <SimilarMedia mediaId={show.tmdbId} mediaType="tv" />
         </Suspense>
 
       </div>

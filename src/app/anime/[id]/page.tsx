@@ -21,7 +21,7 @@ import { createClient } from '@/lib/supabase/server';
 
 async function getLibraryItem(tmdbId: string) {
     const supabase = createClient();
-    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).single();
+    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
     return data;
 }
 
