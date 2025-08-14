@@ -50,13 +50,40 @@ export async function downloadAnimeEpisodeAction(show: Show, episode: Episode): 
         episode: episode.episode_number,
     };
 
+    // THIS IS THE LINK:
     // In a real application, you would trigger your backend service here.
-    // For example, by making a POST request to your Python/Flask server.
-    // await fetch('https://your-python-backend.com/download', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(downloadData),
-    // });
+    // The `fetch` call below sends the structured anime data to your Python server's API endpoint.
+    // Your Python server would then receive this data, run the Selenium script,
+    // and handle the download process.
+
+    /*
+    try {
+      const response = await fetch('https://your-python-backend.com/download', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            // You might add an API key here for security
+            // 'Authorization': `Bearer ${process.env.YOUR_PYTHON_BACKEND_API_KEY}`
+        },
+        body: JSON.stringify(downloadData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend request failed: ${response.statusText}`);
+      }
+      
+      const result = await response.json(); // Or handle streaming response
+      console.log("Response from Python backend:", result);
+
+    } catch (error) {
+        console.error("Error communicating with Python backend:", error);
+        return { 
+            success: false, 
+            message: `Could not start download: ${(error as Error).message}`,
+            data: downloadData
+        };
+    }
+    */
     
     console.log("Initiating download for:", downloadData);
 
