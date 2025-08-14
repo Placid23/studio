@@ -4,11 +4,11 @@ import { getPopularMovies, getTopRatedMovies, getPopularShows, getTopRatedShows,
 
 export async function MediaCarousels() {
   const [
-    popularMoviesData,
-    topRatedMoviesData,
-    popularShowsData,
-    topRatedShowsData,
-    upcomingMoviesData
+    popularMovies,
+    topRatedMovies,
+    popularShows,
+    topRatedShows,
+    upcomingMovies
   ] = await Promise.all([
     getPopularMovies(),
     getTopRatedMovies(),
@@ -19,11 +19,11 @@ export async function MediaCarousels() {
 
   return (
     <>
-      <MediaCarousel title="New to Novastream" media={upcomingMoviesData} />
-      <MediaCarousel title="Popular Movies" media={popularMoviesData} />
-      <MediaCarousel title="Top Rated Movies" media={topRatedMoviesData} />
-      <MediaCarousel title="Popular TV Shows" media={popularShowsData} />
-      <MediaCarousel title="Top Rated TV Shows" media={topRatedShowsData} />
+      <MediaCarousel title="New to Novastream" media={upcomingMovies.results} />
+      <MediaCarousel title="Popular Movies" media={popularMovies.results} />
+      <MediaCarousel title="Top Rated Movies" media={topRatedMovies.results} />
+      <MediaCarousel title="Popular TV Shows" media={popularShows.results} />
+      <MediaCarousel title="Top Rated TV Shows" media={topRatedShows.results} />
     </>
   );
 }

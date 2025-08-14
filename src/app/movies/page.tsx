@@ -3,6 +3,9 @@ import { MediaCard } from '@/components/media/MediaCard';
 import type { Movie } from '@/lib/types';
 import { getPopularMovies } from '@/lib/tmdb';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function TmdbError() {
   return (
@@ -16,16 +19,49 @@ function TmdbError() {
   )
 }
 
-export default async function MoviesPage() {
+function PaginationControls({ currentPage, totalPages, basePath }: { currentPage: number, totalPages: number, basePath: string }) {
+    const prevPage = currentPage > 1 ? currentPage - 1 : null;
+    const nextPage = currentPage < totalPages ? currentPage + 1 : null;
+
+    return (
+        <div className="flex items-center justify-center gap-4 mt-8">
+            {prevPage ? (
+                 <Button asChild variant="outline">
+                    <Link href={`${basePath}?page=${prevPage}`}>
+                        <ChevronLeft />
+                        Previous
+                    </Link>
+                </Button>
+            ) : <Button variant="outline" disabled><ChevronLeft /> Previous</Button>}
+           
+            <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages > 500 ? 500 : totalPages}</span>
+
+            {nextPage && (currentPage < 500) ? (
+                 <Button asChild variant="outline">
+                    <Link href={`${basePath}?page=${nextPage}`}>
+                        Next
+                        <ChevronRight />
+                    </Link>
+                </Button>
+            ) : <Button variant="outline" disabled>Next <ChevronRight /></Button>}
+        </div>
+    )
+}
+
+export default async function MoviesPage({ searchParams }: { searchParams: { page?: string } }) {
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return <TmdbError />;
   }
 
+  const currentPage = Number(searchParams?.page) || 1;
   let movies: Movie[] = [];
+  let totalPages = 0;
   let fetchError: string | null = null;
 
   try {
-    movies = await getPopularMovies();
+    const popularMovies = await getPopularMovies(currentPage);
+    movies = popularMovies.results;
+    totalPages = popularMovies.total_pages;
   } catch (e: any) {
     fetchError = e.message || "An unknown error occurred.";
   }
@@ -37,11 +73,14 @@ export default async function MoviesPage() {
       </h1>
       {fetchError && <p className="text-destructive">Error loading movies: {fetchError}</p>}
       {movies.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {movies.map((movie) => (
-            <MediaCard key={movie.tmdbId} media={movie} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {movies.map((movie) => (
+              <MediaCard key={movie.tmdbId} media={movie} />
+            ))}
+          </div>
+          <PaginationControls currentPage={currentPage} totalPages={totalPages} basePath="/movies" />
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl">
           <Clapperboard className="w-16 h-16 text-muted-foreground/50" />

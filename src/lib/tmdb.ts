@@ -19,7 +19,7 @@ async function fetchFromTMDB(path: string, params: Record<string, string> = {}) 
   const url = new URL(`${BASE_URL}${path}`);
   url.searchParams.append('api_key', API_KEY);
   Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
+    if (value) url.searchParams.append(key, value);
   });
 
   try {
@@ -92,15 +92,19 @@ function mapTmdbToShow(tmdbShow: any): Show {
     };
 }
 
-export async function getPopularAnime(): Promise<Show[]> {
+export async function getPopularAnime(page: number = 1): Promise<{results: Show[], total_pages: number}> {
     const data = await fetchFromTMDB('/discover/tv', {
       with_genres: '16', // Animation genre ID
       with_keywords: '210024|287501', // Japanimation | aniplex
       sort_by: 'popularity.desc',
-      'air_date.gte': new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().split('T')[0] // last 5 years
+      'air_date.gte': new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().split('T')[0], // last 5 years
+      page: String(page)
     });
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToShow);
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToShow),
+        total_pages: data.total_pages
+    };
 }
 
 
@@ -117,36 +121,51 @@ export async function getTrending(mediaType: 'movie' | 'tv' = 'movie'): Promise<
     }).filter(Boolean) as (Movie | Show)[];
 }
 
-export async function getPopularMovies(region?: string): Promise<Movie[]> {
-    const params = region ? { region } : {};
+export async function getPopularMovies(page: number = 1, region?: string): Promise<{results: Movie[], total_pages: number}> {
+    const params = { region: region || '', page: String(page) };
     const data = await fetchFromTMDB('/movie/popular', params);
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToMovie);
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return { 
+        results: data.results.map(mapTmdbToMovie),
+        total_pages: data.total_pages
+    };
 }
 
-export async function getTopRatedMovies(): Promise<Movie[]> {
-    const data = await fetchFromTMDB('/movie/top_rated');
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToMovie);
+export async function getTopRatedMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
+    const data = await fetchFromTMDB('/movie/top_rated', { page: String(page) });
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToMovie),
+        total_pages: data.total_pages
+    };
 }
 
-export async function getUpcomingMovies(): Promise<Movie[]> {
-    const data = await fetchFromTMDB('/movie/upcoming');
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToMovie);
+export async function getUpcomingMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
+    const data = await fetchFromTMDB('/movie/upcoming', { page: String(page) });
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToMovie),
+        total_pages: data.total_pages
+    };
 }
 
-export async function getPopularShows(region?: string): Promise<Show[]> {
-    const params = region ? { region } : {};
+export async function getPopularShows(page: number = 1, region?: string): Promise<{results: Show[], total_pages: number}> {
+    const params = { region: region || '', page: String(page) };
     const data = await fetchFromTMDB('/tv/popular', params);
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToShow).filter(show => show.type === 'tv');
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToShow).filter(show => show.type === 'tv'),
+        total_pages: data.total_pages
+    };
 }
 
-export async function getTopRatedShows(): Promise<Show[]> {
-    const data = await fetchFromTMDB('/tv/top_rated');
-    if (!data?.results) return [];
-    return data.results.map(mapTmdbToShow).filter(show => show.type === 'tv');
+export async function getTopRatedShows(page: number = 1): Promise<{results: Show[], total_pages: number}> {
+    const data = await fetchFromTMDB('/tv/top_rated', { page: String(page) });
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToShow).filter(show => show.type === 'tv'),
+        total_pages: data.total_pages
+    };
 }
 
 
