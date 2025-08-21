@@ -7,7 +7,7 @@ import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
 import { LikedSongsCarousel } from '@/components/media/LikedSongsCarousel';
 import { getLikedSongsAction } from './actions';
 import { createClient } from '@/lib/supabase/server';
-import type { Track } from '@/lib/types';
+import { MusicSearch } from '@/components/media/MusicSearch';
 
 async function MusicData() {
     const [albumsData, tracksData, artistsData, genresData, christianData] = await Promise.all([
@@ -52,7 +52,10 @@ export default async function MusicPage() {
                     Discover Music
                 </h1>
             </div>
-            <div className="flex flex-col gap-12">
+            
+            <MusicSearch />
+
+            <div className="flex flex-col gap-12 mt-12">
                 {user && <LikedSongsCarousel initialSongs={initialLikedSongs} />}
                 <Suspense fallback={
                     <>

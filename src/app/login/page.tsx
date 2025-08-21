@@ -7,39 +7,43 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useTransition } from 'react';
 
 
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
+  const [isPending, startTransition] = useTransition();
 
-  const signIn = async (formData: FormData) => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        router.push('/login?message=Supabase is not configured.');
+  const signIn = (formData: FormData) => {
+    startTransition(async () => {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+          router.push('/login?message=Supabase is not configured.');
+          return;
+      }
+
+      const email = formData.get('email') as string;
+      const password = formData.get('password') as string;
+      const supabase = createClient();
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        router.push(`/login?message=Could not authenticate user: ${error.message}`);
         return;
-    }
+      }
 
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const supabase = createClient();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      router.push('/');
+      router.refresh();
     });
-
-    if (error) {
-      router.push(`/login?message=Could not authenticate user: ${error.message}`);
-      return;
-    }
-
-    router.push('/');
-    router.refresh();
   };
   
   const cardVariants = {
@@ -73,11 +77,11 @@ export default function Login() {
             <form action={signIn} className="grid gap-4">
               <motion.div variants={itemVariants} custom={2} className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={isPending} />
               </motion.div>
               <motion.div variants={itemVariants} custom={3} className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
+                <Input id="password" name="password" type="password" required disabled={isPending} />
               </motion.div>
               
               {message && (
@@ -91,8 +95,9 @@ export default function Login() {
               )}
 
               <motion.div variants={itemVariants} custom={5}>
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isPending ? 'Logging in...' : 'Login'}
                 </Button>
               </motion.div>
             </form>

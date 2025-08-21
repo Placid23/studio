@@ -29,7 +29,7 @@ export async function deezerGet(path: string, params: Record<string, string> = {
     const data = await res.json();
     
     // Check for Deezer's explicit error format OR an empty object for a single resource request.
-    if (data.error || (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0 && !path.startsWith('chart'))) {
+    if (data.error || (typeof data === 'object' && data !== null && !Array.isArray(data) && Object.keys(data).length === 0 && !path.startsWith('chart') && !path.startsWith('search'))) {
         const errorMessage = data.error ? data.error.message : 'No data found for this resource.';
         console.error(`Deezer API returned an error for ${path}:`, data.error || 'Empty response');
         return { error: { message: errorMessage } };
@@ -41,4 +41,25 @@ export async function deezerGet(path: string, params: Record<string, string> = {
     
     return { error: { message: (error as Error).message || 'Unknown fetch error' } };
   }
+}
+
+// Search for tracks, albums, and artists
+export async function searchDeezer(query: string) {
+    const res = await deezerGet('search', { q: query });
+    if (res.error) {
+        return { track: { data: [] }, album: { data: [] }, artist: { data: [] } };
+    }
+    // The search endpoint returns all types in the `data` array.
+    // We need to fetch more specific results.
+    const [tracks, albums, artists] = await Promise.all([
+        deezerGet('search/track', { q: query, limit: '8' }),
+        deezerGet('search/album', { q: query, limit: '8' }),
+        deezerGet('search/artist', { q: query, limit: '8' })
+    ]);
+    
+    return {
+        track: tracks,
+        album: albums,
+        artist: artists
+    };
 }
