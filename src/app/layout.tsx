@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { PwaInstallPrompt } from '@/components/layout/PwaInstallPrompt';
 import { SplashProvider } from '@/components/layout/SplashProvider';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           <Toaster />
           <PwaInstallPrompt />
         </ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
