@@ -4,15 +4,14 @@
  * Automates downloading movies from fzmovies.live using Puppeteer
  *
  * Usage:
- *   node movie_downloader.js --site "https://fzmovies.live" --query "Fast and Furious 5" --out "ff5.mkv" --headless false --chrome-path "/path/to/chrome"
+ *   node movie_downloader.js --site "https://fzmovies.live" --query "Fast and Furious 5" --out "ff5.mkv" --headless false
  */
 
 import fs from "fs";
 import path from "path";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
-import puppeteer from "puppeteer-core";
-import chromium from "chrome-aws-lambda";
+import puppeteer from "puppeteer";
 
 // CLI arguments
 const argv = yargs(hideBin(process.argv))
@@ -20,7 +19,6 @@ const argv = yargs(hideBin(process.argv))
   .option("query", { type: "string", demandOption: true })
   .option("out", { type: "string", demandOption: true })
   .option("headless", { type: "boolean", default: false })
-  .option("chrome-path", { type: "string", description: "Path to local Chrome executable" })
   .help()
   .argv;
 
@@ -49,12 +47,16 @@ function waitForDownload(fileName, folder) {
     }, CONFIG.maxWait * 2); // Give double the max wait time for download completion
 
     const interval = setInterval(() => {
-      const files = fs.readdirSync(folder);
-      const targetFile = files.find(f => f === fileName && !f.endsWith('.crdownload'));
-      if (targetFile) {
-        clearInterval(interval);
-        clearTimeout(timeout);
-        resolve(path.join(folder, targetFile));
+      try {
+        const files = fs.readdirSync(folder);
+        const targetFile = files.find(f => f === fileName && !f.endsWith('.crdownload'));
+        if (targetFile) {
+          clearInterval(interval);
+          clearTimeout(timeout);
+          resolve(path.join(folder, targetFile));
+        }
+      } catch (e) {
+        // Ignore errors if folder doesn't exist yet, etc.
       }
     }, 1000);
   });
@@ -64,18 +66,9 @@ function waitForDownload(fileName, folder) {
 async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
-    const executablePath = argv['chrome-path'] || await chromium.executablePath;
-
-    if (!executablePath) {
-        throw new Error("Could not find a Chrome or Chromium executable. Please set CHROME_PATH environment variable for local development or ensure chrome-aws-lambda is installed correctly.");
-    }
-
     browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: executablePath,
       headless: argv.headless,
-      ignoreHTTPSErrors: true,
+      args: ["--no-sandbox"],
     });
 
     const page = await browser.newPage();
@@ -118,6 +111,7 @@ async function downloadMovie(site, query, outPath) {
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
+      if (!nextPageUrl) throw new Error("Could not determine next page URL.");
       await page.goto(nextPageUrl, { waitUntil: "domcontentloaded", timeout: CONFIG.maxWait });
 
       // Wait for either final or next intermediate link
@@ -137,8 +131,9 @@ async function downloadMovie(site, query, outPath) {
 
       nextPageUrl = await page.evaluate(el => {
         const onclick = el.getAttribute('onclick');
+        if (!onclick) return null;
         const match = onclick.match(/window\.location\.href=["']([^"']+)["']/);
-        return new URL(match[1], window.location.href).href;
+        return match ? new URL(match[1], window.location.href).href : null;
       }, intermediateLink);
     }
 

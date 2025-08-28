@@ -21,16 +21,13 @@ export async function downloadMovieAction(movieName: string, year: number): Prom
     const sanitizedYear = String(year).replace(/[^0-9]/g, '');
     const outputFileName = `${sanitizedMovieName.replace(/\s/g, '_')}_${sanitizedYear}.mp4`;
 
-    const chromePath = process.env.CHROME_PATH;
-    const chromePathArg = chromePath ? `--chrome-path "${chromePath}"` : '';
-
-    const command = `node movie_downloader.js --site "https://fzmovies.live" --query "${sanitizedMovieName} ${sanitizedYear}" --out "${outputFileName}" --headless=true ${chromePathArg}`;
+    const command = `node movie_downloader.js --site "https://fzmovies.live" --query "${sanitizedMovieName} ${sanitizedYear}" --out "${outputFileName}" --headless=true`;
 
     console.log(`Executing command: ${command}`);
 
     try {
         // We are executing a local script. This requires the server environment
-        // to have Node.js, Puppeteer, and a compatible Chrome/Chromium installed.
+        // to have Node.js and Puppeteer installed.
         const { stdout, stderr } = await execAsync(command, { 
             timeout: 300000, // 5 minute timeout
         });
