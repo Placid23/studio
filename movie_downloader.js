@@ -73,7 +73,7 @@ async function downloadMovie(site, query, outPath) {
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
       executablePath: executablePath,
-      headless: chromium.headless,
+      headless: argv.headless,
       ignoreHTTPSErrors: true,
     });
 
