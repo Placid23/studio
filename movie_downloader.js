@@ -4,7 +4,7 @@
  * Automates downloading movies from fzmovies.live using Puppeteer
  *
  * Usage:
- *   node movie_downloader.js --site "https://fzmovies.live" --query "Fast and Furious 5" --out "ff5.mkv" --headless false
+ *   node movie_downloader.js --query "Fast and Furious 5" --out "ff5.mkv" --headless false
  */
 
 import fs from "fs";
@@ -18,7 +18,7 @@ const argv = yargs(hideBin(process.argv))
   .option("site", { type: "string", demandOption: true })
   .option("query", { type: "string", demandOption: true })
   .option("out", { type: "string", demandOption: true })
-  .option("headless", { type: "boolean", default: false })
+  .option("headless", { type: "boolean", default: true })
   .help()
   .argv;
 
@@ -66,9 +66,21 @@ function waitForDownload(fileName, folder) {
 async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
+    // Robust arguments for running in a containerized environment
+    const launchArgs = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process', // Only for some environments, but can help
+        '--disable-gpu'
+    ];
+
     browser = await puppeteer.launch({
       headless: argv.headless,
-      args: ["--no-sandbox"],
+      args: launchArgs,
     });
 
     const page = await browser.newPage();
