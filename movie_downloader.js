@@ -30,8 +30,8 @@ const CONFIG = {
   maxWait: 30000
 };
 
-// Chrome path - You may need to change this depending on your server setup
-const CHROME_PATH = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
+// Use environment variable for Chrome path, essential for production servers.
+const CHROME_PATH = process.env.CHROME_PATH;
 const DOWNLOADS_FOLDER = path.resolve(process.cwd(), 'downloads');
 
 // Ensure downloads folder exists
@@ -62,6 +62,10 @@ function waitForDownload(fileName, folder) {
 
 // Main download function
 async function downloadMovie(site, query, outPath) {
+  if (!CHROME_PATH) {
+      throw new Error("The CHROME_PATH environment variable is not set. Puppeteer cannot find a browser.");
+  }
+  
   const browser = await puppeteer.launch({
     headless: argv.headless,
     executablePath: CHROME_PATH,
