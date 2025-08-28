@@ -12,6 +12,7 @@ import path from "path";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import puppeteer from "puppeteer-core";
+import chromium from "chrome-aws-lambda";
 
 // CLI arguments
 const argv = yargs(hideBin(process.argv))
@@ -30,8 +31,6 @@ const CONFIG = {
   maxWait: 30000
 };
 
-// Use environment variable for Chrome path, essential for production servers.
-const CHROME_PATH = process.env.CHROME_PATH;
 const DOWNLOADS_FOLDER = path.resolve(process.cwd(), 'downloads');
 
 // Ensure downloads folder exists
@@ -62,25 +61,30 @@ function waitForDownload(fileName, folder) {
 
 // Main download function
 async function downloadMovie(site, query, outPath) {
-  if (!CHROME_PATH) {
-      throw new Error("The CHROME_PATH environment variable is not set. Puppeteer cannot find a browser.");
-  }
-  
-  const browser = await puppeteer.launch({
-    headless: argv.headless,
-    executablePath: CHROME_PATH,
-    args: ["--no-sandbox"]
-  });
-
-  const page = await browser.newPage();
-
-  const client = await page.target().createCDPSession();
-  await client.send("Page.setDownloadBehavior", {
-    behavior: "allow",
-    downloadPath: DOWNLOADS_FOLDER
-  });
-
+  let browser = null;
   try {
+    const executablePath = await chromium.executablePath || process.env.CHROME_PATH;
+
+    if (!executablePath) {
+        throw new Error("Could not find a Chrome or Chromium executable. Please set CHROME_PATH environment variable for local development.");
+    }
+
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath,
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
+    });
+
+    const page = await browser.newPage();
+
+    const client = await page.target().createCDPSession();
+    await client.send("Page.setDownloadBehavior", {
+      behavior: "allow",
+      downloadPath: DOWNLOADS_FOLDER
+    });
+
     // Step 1: Go to site and search
     await page.goto(site, { waitUntil: "domcontentloaded", timeout: CONFIG.maxWait });
     await page.waitForSelector(CONFIG.searchBoxSelector, { timeout: CONFIG.maxWait });
@@ -143,11 +147,11 @@ async function downloadMovie(site, query, outPath) {
     await waitForDownload(fileName, DOWNLOADS_FOLDER);
 
     console.log("Download completed:", path.join(DOWNLOADS_FOLDER, fileName));
-    await browser.close();
 
-  } catch (err) {
-    await browser.close();
-    throw err;
+  } finally {
+    if (browser !== null) {
+      await browser.close();
+    }
   }
 }
 
