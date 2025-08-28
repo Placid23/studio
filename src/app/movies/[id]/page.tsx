@@ -1,7 +1,7 @@
 
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Clock, Calendar, Film, PlayCircle } from 'lucide-react';
+import { Star, Clock, Calendar, Film, PlayCircle, Download, Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
@@ -14,8 +14,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
-import { DownloadButton } from '@/components/media/DownloadButton';
 import { createClient } from '@/lib/supabase/server';
+import { DownloadMovieButton } from '@/components/media/DownloadMovieButton';
 
 async function getLibraryItem(tmdbId: string) {
     const supabase = createClient();
@@ -115,12 +115,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                     </Link>
                 </Button>
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
-                <DownloadButton 
-                    filePath={libraryItem?.file_id || ''}
-                    bucket="videos"
-                    fileName={`${movie.title}.mp4`}
-                    disabled={!libraryItem?.file_id}
-                />
+                <DownloadMovieButton movieName={movie.title} movieYear={movie.year} />
             </div>
           </div>
         </div>
