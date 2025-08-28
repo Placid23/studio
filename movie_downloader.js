@@ -4,7 +4,7 @@
  * Automates downloading movies from fzmovies.live using Puppeteer
  *
  * Usage:
- *   node movie_downloader.js --site "https://fzmovies.live" --query "Fast and Furious 5" --out "ff5.mkv" --headless false
+ *   node movie_downloader.js --site "https://fzmovies.live" --query "Fast and Furious 5" --out "ff5.mkv" --headless false --chrome-path "/path/to/chrome"
  */
 
 import fs from "fs";
@@ -20,6 +20,7 @@ const argv = yargs(hideBin(process.argv))
   .option("query", { type: "string", demandOption: true })
   .option("out", { type: "string", demandOption: true })
   .option("headless", { type: "boolean", default: false })
+  .option("chrome-path", { type: "string", description: "Path to local Chrome executable" })
   .help()
   .argv;
 
@@ -44,16 +45,16 @@ function waitForDownload(fileName, folder) {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
         clearInterval(interval);
-        reject(new Error(`Download timed out after ${CONFIG.maxWait / 1000} seconds.`));
+        reject(new Error(`Download timed out for ${fileName} after ${CONFIG.maxWait / 1000} seconds.`));
     }, CONFIG.maxWait * 2); // Give double the max wait time for download completion
 
     const interval = setInterval(() => {
       const files = fs.readdirSync(folder);
-      // Look for file without .crdownload extension
-      if (files.some(f => f === fileName && !f.endsWith('.crdownload'))) {
+      const targetFile = files.find(f => f === fileName && !f.endsWith('.crdownload'));
+      if (targetFile) {
         clearInterval(interval);
         clearTimeout(timeout);
-        resolve();
+        resolve(path.join(folder, targetFile));
       }
     }, 1000);
   });
@@ -63,10 +64,10 @@ function waitForDownload(fileName, folder) {
 async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
-    const executablePath = await chromium.executablePath || process.env.CHROME_PATH;
+    const executablePath = argv['chrome-path'] || await chromium.executablePath;
 
     if (!executablePath) {
-        throw new Error("Could not find a Chrome or Chromium executable. Please set CHROME_PATH environment variable for local development.");
+        throw new Error("Could not find a Chrome or Chromium executable. Please set CHROME_PATH environment variable for local development or ensure chrome-aws-lambda is installed correctly.");
     }
 
     browser = await puppeteer.launch({
@@ -144,9 +145,9 @@ async function downloadMovie(site, query, outPath) {
     console.log(`Download triggered for ${path.basename(outPath)}. Waiting for file to complete...`);
 
     const fileName = path.basename(outPath);
-    await waitForDownload(fileName, DOWNLOADS_FOLDER);
+    const downloadedFilePath = await waitForDownload(fileName, DOWNLOADS_FOLDER);
 
-    console.log("Download completed:", path.join(DOWNLOADS_FOLDER, fileName));
+    console.log("Download completed:", downloadedFilePath);
 
   } finally {
     if (browser !== null) {
