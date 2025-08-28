@@ -115,13 +115,12 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                     </Link>
                 </Button>
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
-                {libraryItem?.file_id && (
-                    <DownloadButton 
-                        filePath={libraryItem.file_id}
-                        bucket="videos"
-                        fileName={`${movie.title}.mp4`}
-                    />
-                )}
+                <DownloadButton 
+                    filePath={libraryItem?.file_id || ''}
+                    bucket="videos"
+                    fileName={`${movie.title}.mp4`}
+                    disabled={!libraryItem?.file_id}
+                />
             </div>
           </div>
         </div>

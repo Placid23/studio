@@ -10,13 +10,23 @@ interface DownloadButtonProps {
     filePath: string;
     bucket: 'videos' | 'songs';
     fileName: string;
+    disabled?: boolean;
 }
 
-export function DownloadButton({ filePath, bucket, fileName }: DownloadButtonProps) {
+export function DownloadButton({ filePath, bucket, fileName, disabled = false }: DownloadButtonProps) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
     const handleDownload = () => {
+        if (disabled || !filePath) {
+            toast({
+                title: 'Download Not Available',
+                description: 'This item has not been added to the server yet.',
+                variant: 'destructive'
+            });
+            return;
+        }
+
         startTransition(async () => {
             const result = await downloadFileAction(filePath, bucket, fileName);
 
@@ -41,7 +51,7 @@ export function DownloadButton({ filePath, bucket, fileName }: DownloadButtonPro
     };
 
     return (
-        <Button onClick={handleDownload} disabled={isPending} size="lg" variant="outline">
+        <Button onClick={handleDownload} disabled={isPending || disabled} size="lg" variant="outline">
             {isPending ? (
                 <>
                     <Loader2 className="mr-2 h-6 w-6 animate-spin" />
