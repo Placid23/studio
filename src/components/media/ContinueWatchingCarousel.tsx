@@ -18,9 +18,9 @@ export function ContinueWatchingCarousel() {
   }
   
   const handleRemove = (id: string) => {
-      const itemToRemove = history.find(item => item.id === id);
+      const itemToRemove = history.find(item => item.tmdbId === id);
       if (itemToRemove) {
-          removeFromWatchHistory(itemToRemove.id);
+          removeFromWatchHistory(itemToRemove.tmdbId);
       }
   }
 
