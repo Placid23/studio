@@ -74,7 +74,7 @@ async function downloadMovie(site, query, outPath) {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--single-process', // Only for some environments, but can help
+        // '--single-process', // This can cause issues in some environments.
         '--disable-gpu'
     ];
 
