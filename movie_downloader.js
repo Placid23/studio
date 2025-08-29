@@ -2,7 +2,7 @@
  * movie_downloader.js
  *
  * Automates downloading movies from a specified site using Puppeteer.
- * Designed to run in serverless environments using chrome-aws-lambda.
+ * Designed to run in serverless environments using @sparticuz/chromium.
  */
 
 import fs from "fs";
@@ -10,7 +10,7 @@ import path from "path";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
 import puppeteer from "puppeteer-core";
-import chromium from "chrome-aws-lambda";
+import chromium from "@sparticuz/chromium";
 
 // CLI arguments
 const argv = yargs(hideBin(process.argv))
@@ -65,10 +65,10 @@ function waitForDownload(fileName, folder) {
 async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
-    const executablePath = await chromium.executablePath;
+    const executablePath = await chromium.executablePath();
     
     if (!executablePath) {
-        throw new Error('Could not find a Chromium executable. The chrome-aws-lambda package may be missing or failed to install correctly.');
+        throw new Error('Could not find a Chromium executable. The @sparticuz/chromium package may be missing or failed to install correctly.');
     }
 
     browser = await puppeteer.launch({
