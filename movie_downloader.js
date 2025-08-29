@@ -105,45 +105,40 @@ async function downloadMovie(site, query, outPath) {
       searchResults[0].click(),
     ]);
 
-    // Step 3: Click 720p download option
+    // Step 3: Click 720p download option, which starts the redirect chain
     await page.waitForSelector(CONFIG.qualityLinkSelector, { timeout: CONFIG.maxWait });
-    const qualityLink = await page.$(CONFIG.qualityLinkSelector);
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: CONFIG.maxWait }),
+        page.click(CONFIG.qualityLinkSelector),
+    ]);
 
-    const onclickAttr = await page.evaluate(el => el.getAttribute('onclick'), qualityLink);
-    let nextPageUrl;
-    if (onclickAttr && onclickAttr.includes('window.location.href')) {
-      const match = onclickAttr.match(/window\.location\.href=["']([^"']+)["']/);
-      if (match) nextPageUrl = new URL(match[1], page.url()).href;
-    } else {
-      nextPageUrl = await page.evaluate(el => el.href, qualityLink);
-    }
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
-      if (!nextPageUrl) throw new Error("Could not determine next page URL.");
-      await page.goto(nextPageUrl, { waitUntil: "domcontentloaded", timeout: CONFIG.maxWait });
-
-      // Wait for either final or next intermediate link
+      // Wait for either the final download link or the next intermediate link
       await page.waitForFunction(() => {
         return document.querySelector('a[href*="dlink.php"]') ||
                document.querySelector('a[onclick*="window.location.href"]');
       }, { timeout: CONFIG.maxWait });
 
+      // Check if the final download link is on the page
       const finalLink = await page.$('a[href*="dlink.php"]');
       if (finalLink) {
         await finalLink.click();
-        break; // download triggered
+        break; // Download has been triggered
       }
 
+      // If not, find the next intermediate link and click it
       const intermediateLink = await page.$('a[onclick*="window.location.href"]');
-      if (!intermediateLink) throw new Error("Cannot find final download link or next intermediate link");
-
-      nextPageUrl = await page.evaluate(el => {
-        const onclick = el.getAttribute('onclick');
-        if (!onclick) return null;
-        const match = onclick.match(/window\.location\.href=["']([^"']+)["']/);
-        return match ? new URL(match[1], window.location.href).href : null;
-      }, intermediateLink);
+      if (intermediateLink) {
+         await Promise.all([
+            page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: CONFIG.maxWait }),
+            intermediateLink.click(),
+        ]);
+      } else {
+        // This case should not be reached if the waitForFunction succeeds
+        throw new Error("Cannot find final download link or next intermediate link.");
+      }
     }
 
     console.log(`Download triggered for ${path.basename(outPath)}. Waiting for file to complete...`);
