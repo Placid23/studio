@@ -1,7 +1,8 @@
 
+
 import { MediaCarousel } from '@/components/media/MediaCarousel';
 import { getPopularMovies, getTopRatedMovies, getPopularShows, getTopRatedShows, getUpcomingMovies, getEroticMovies, getPopularAnime } from '@/lib/tmdb';
-import { getChart } from '@/lib/deezer';
+import { deezerGet } from '@/lib/deezer';
 import { MusicCarousel } from './MusicCarousel';
 
 export async function MediaCarousels() {
@@ -14,7 +15,7 @@ export async function MediaCarousels() {
     eroticMovies,
     popularAnime,
     topTracks,
-    christianMusic
+    christianMusicData
   ] = await Promise.all([
     getPopularMovies(),
     getTopRatedMovies(),
@@ -23,8 +24,8 @@ export async function MediaCarousels() {
     getUpcomingMovies(),
     getEroticMovies(),
     getPopularAnime(),
-    getChart('tracks'),
-    getChart('albums', 100).then(albums => albums.filter((a: any) => a.genres?.data?.some((g:any) => g.name.includes('Christian'))).slice(0, 20))
+    deezerGet('chart/0/tracks', { limit: '20' }),
+    deezerGet('playlist/1116114261/tracks', {limit: '20'}), // Deezer's "Christian & Gospel" playlist
   ]);
 
   return (
@@ -35,8 +36,8 @@ export async function MediaCarousels() {
       <MediaCarousel title="Popular TV Shows" media={popularShows.results} />
       <MediaCarousel title="Top Rated TV Shows" media={topRatedShows.results} />
       <MediaCarousel title="Popular Anime" media={popularAnime.results} />
-      <MusicCarousel title="Top Music" items={topTracks} />
-      <MusicCarousel title="Christian Music" items={christianMusic} />
+      <MusicCarousel title="Top Music" items={topTracks?.data || []} />
+      <MusicCarousel title="Christian Music" items={christianMusicData?.data || []} />
       <MediaCarousel title="Adult 18+ Movies" media={eroticMovies.results} />
     </>
   );
