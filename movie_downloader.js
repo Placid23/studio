@@ -1,17 +1,16 @@
 /**
  * movie_downloader.js
  *
- * Automates downloading movies from fzmovies.live using Puppeteer
- *
- * Usage:
- *   node movie_downloader.js --query "Fast and Furious 5" --out "ff5.mkv" --headless false
+ * Automates downloading movies from a specified site using Puppeteer.
+ * Designed to run in serverless environments using chrome-aws-lambda.
  */
 
 import fs from "fs";
 import path from "path";
 import yargs from "yargs/yargs";
 import { hideBin } from "yargs/helpers";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "chrome-aws-lambda";
 
 // CLI arguments
 const argv = yargs(hideBin(process.argv))
@@ -66,21 +65,18 @@ function waitForDownload(fileName, folder) {
 async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
-    // Robust arguments for running in a containerized environment
-    const launchArgs = [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        // '--single-process', // This can cause issues in some environments.
-        '--disable-gpu'
-    ];
+    const executablePath = await chromium.executablePath;
+    
+    if (!executablePath) {
+        throw new Error('Could not find a Chromium executable. The chrome-aws-lambda package may be missing or failed to install correctly.');
+    }
 
     browser = await puppeteer.launch({
-      headless: argv.headless,
-      args: launchArgs,
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath,
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
