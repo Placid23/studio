@@ -68,26 +68,38 @@ function waitForDownload(fileName, folder) {
   });
 }
 
-// Helper: Safe click with retry + debug logs
-async function safeClick(page, selector, label = selector) {
+// Utility: always get latest active page
+async function getActivePage(browser) {
+  const pages = await browser.pages();
+  return pages[pages.length - 1];
+}
+
+// Utility: log current page URL
+async function logPageUrl(browser, label) {
+  const currentPage = await getActivePage(browser);
+  console.log(`🔗 [${label}] ${currentPage.url()}`);
+}
+
+// Safe click wrapper with retry and URL logging
+async function safeClick(browser, selector, label = selector) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
+      const currentPage = await getActivePage(browser);
       console.log(`➡ Waiting for ${label} (attempt ${attempt})`);
-      await page.waitForSelector(selector, { timeout: CONFIG.maxWait });
-      const el = await page.$(selector);
-      console.log(`✅ Found ${label}, clicking...`);
+      await currentPage.waitForSelector(selector, { timeout: CONFIG.maxWait });
+      const el = await currentPage.$(selector);
       await Promise.all([
-        page.waitForNavigation({
+        currentPage.waitForNavigation({
           waitUntil: "networkidle2",
           timeout: CONFIG.maxWait,
         }),
         el.click(),
       ]);
-      console.log(`➡ Navigation complete after clicking ${label}, URL: ${page.url()}`);
+      await logPageUrl(browser, `After clicking ${label}`);
       return;
     } catch (err) {
       console.warn(
-        `⚠ Failed click on ${label} (attempt ${attempt})... ${err.message}`
+        `⚠ Failed click on ${label} (attempt ${attempt}) -> ${err.message}`
       );
       if (attempt === 3) throw err;
     }
@@ -130,14 +142,15 @@ async function downloadMovie(site, query, outPath) {
           }
         } else {
           console.log("🔄 Switching to new main page:", url);
-          currentPage = newPage; // switch context
+          currentPage = newPage;
+          await logPageUrl(browser, "Switched to new page");
         }
       }
     });
 
     // Handle frame detachments
     currentPage.on("framedetached", () => {
-      console.warn("⚠ Frame detached! Retrying on new active page...");
+      console.warn("⚠ Frame detached! Will retry on new active page...");
     });
 
     const client = await currentPage.target().createCDPSession();
@@ -147,12 +160,11 @@ async function downloadMovie(site, query, outPath) {
     });
 
     // Step 1: Go to site and search
-    console.log(`➡ Navigating to site: ${site}`);
     await currentPage.goto(site, {
       waitUntil: "networkidle2",
       timeout: CONFIG.maxWait,
     });
-    console.log(`✅ Arrived at ${currentPage.url()}`);
+    await logPageUrl(browser, "Opened site");
 
     await currentPage.waitForSelector(CONFIG.searchBoxSelector, {
       timeout: CONFIG.maxWait,
@@ -160,24 +172,25 @@ async function downloadMovie(site, query, outPath) {
     const searchBox = await currentPage.$(CONFIG.searchBoxSelector);
     await searchBox.click({ clickCount: 3 });
     await searchBox.type(query, { delay: 80 });
-    console.log(`🔍 Searching for "${query}"...`);
     await currentPage.keyboard.press("Enter");
     await currentPage.waitForNavigation({
       waitUntil: "networkidle2",
       timeout: CONFIG.maxWait,
     });
-    console.log(`✅ Search results page loaded: ${currentPage.url()}`);
+    await logPageUrl(browser, "After search");
 
     // Step 2: Click first movie result
-    await safeClick(currentPage, CONFIG.resultsListSelector, "first search result");
+    await safeClick(browser, CONFIG.resultsListSelector, "first search result");
 
     // Step 3: Click 720p download option
-    await safeClick(currentPage, CONFIG.qualityLinkSelector, "720p quality option");
+    await safeClick(browser, CONFIG.qualityLinkSelector, "720p option");
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
-      console.log("➡ Looking for final or intermediate download link...");
-      await currentPage.waitForFunction(
+      const pageNow = await getActivePage(browser);
+      await logPageUrl(browser, "Intermediate step");
+
+      await pageNow.waitForFunction(
         () => {
           return (
             document.querySelector('a[href*="dlink.php"]') ||
@@ -187,28 +200,35 @@ async function downloadMovie(site, query, outPath) {
         { timeout: CONFIG.maxWait }
       );
 
-      const finalLink = await currentPage.$('a[href*="dlink.php"]');
+      const finalLink = await pageNow.$('a[href*="dlink.php"]');
       if (finalLink) {
-        console.log("✅ Found final dlink.php link, clicking...");
+        // This is a direct download link, no navigation expected
         await finalLink.click();
+        await logPageUrl(browser, "After clicking final dlink.php");
         break;
       }
 
-      const intermediateLink = await currentPage.$(
+      const intermediateLink = await pageNow.$(
         'a[onclick*="window.location.href"]'
       );
       if (intermediateLink) {
-        console.log("➡ Found intermediate redirect link, clicking...");
-        await safeClick(currentPage, 'a[onclick*="window.location.href"]', "intermediate link");
+        await Promise.all([
+          pageNow.waitForNavigation({
+            waitUntil: "networkidle2",
+            timeout: CONFIG.maxWait,
+          }),
+          intermediateLink.click(),
+        ]);
+        await logPageUrl(browser, "After intermediate link");
       } else {
         throw new Error(
-          "❌ Cannot find final download link or next intermediate link."
+          "Cannot find final download link or next intermediate link."
         );
       }
     }
 
     console.log(
-      `⬇ Download triggered for ${path.basename(
+      `⬇️ Download triggered for ${path.basename(
         outPath
       )}. Waiting for file to complete...`
     );
@@ -234,7 +254,7 @@ async function downloadMovie(site, query, outPath) {
     const query = argv.query;
     const out = path.join(DOWNLOADS_FOLDER, argv.out);
 
-    console.log(`🎬 Starting search for "${query}"...`);
+    console.log(`🎬 Searching for "${query}"...`);
     await downloadMovie(site, query, out);
     console.log(`🎉 Successfully downloaded "${query}" to ${out}`);
   } catch (err) {
