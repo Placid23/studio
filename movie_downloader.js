@@ -36,25 +36,6 @@ if (!fs.existsSync(DOWNLOADS_FOLDER)) {
   fs.mkdirSync(DOWNLOADS_FOLDER, { recursive: true });
 }
 
-// ✅ Safe click helper to avoid "frame detached" errors
-async function safeClick(page, selector) {
-  await page.waitForSelector(selector, { timeout: CONFIG.maxWait });
-  const el = await page.$(selector);
-  try {
-    await Promise.all([
-        page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait }),
-        el.click(),
-    ]);
-  } catch (e) {
-    // some clicks dont result in navigation
-    if (e instanceof puppeteer.errors.TimeoutError) {
-        // ignore
-    } else {
-        throw e;
-    }
-  }
-}
-
 // Helper: Wait until a file exists and is fully downloaded
 function waitForDownload(fileName, folder) {
   return new Promise((resolve, reject) => {
@@ -62,7 +43,9 @@ function waitForDownload(fileName, folder) {
       clearInterval(interval);
       reject(
         new Error(
-          `Download timed out for ${fileName} after ${CONFIG.maxWait / 1000} seconds.`
+          `Download timed out for ${fileName} after ${
+            CONFIG.maxWait / 1000
+          } seconds.`
         )
       );
     }, CONFIG.maxWait * 2);
@@ -85,6 +68,32 @@ function waitForDownload(fileName, folder) {
   });
 }
 
+// Helper: Safe click with retry + debug logs
+async function safeClick(page, selector, label = selector) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`➡ Waiting for ${label} (attempt ${attempt})`);
+      await page.waitForSelector(selector, { timeout: CONFIG.maxWait });
+      const el = await page.$(selector);
+      console.log(`✅ Found ${label}, clicking...`);
+      await Promise.all([
+        page.waitForNavigation({
+          waitUntil: "networkidle2",
+          timeout: CONFIG.maxWait,
+        }),
+        el.click(),
+      ]);
+      console.log(`➡ Navigation complete after clicking ${label}, URL: ${page.url()}`);
+      return;
+    } catch (err) {
+      console.warn(
+        `⚠ Failed click on ${label} (attempt ${attempt})... ${err.message}`
+      );
+      if (attempt === 3) throw err;
+    }
+  }
+}
+
 // Main download function
 async function downloadMovie(site, query, outPath) {
   let browser = null;
@@ -105,60 +114,70 @@ async function downloadMovie(site, query, outPath) {
       ignoreHTTPSErrors: true,
     });
 
-    const page = await browser.newPage();
+    let currentPage = await browser.newPage();
 
-    // 🛡 Close unwanted popups / ad redirects
+    // Handle unwanted popups / redirect hijacks
     browser.on("targetcreated", async (target) => {
       const newPage = await target.page();
-      if (newPage && !newPage.url().includes("fzmovies")) {
-        console.log("Closing popup:", newPage.url());
-        try {
+      if (newPage) {
+        const url = newPage.url();
+        if (!url.includes("fzmovies")) {
+          console.log("❌ Closing popup:", url);
+          try {
             await newPage.close();
-        } catch(e) {
-            console.log("Could not close popup, it may have already been closed.")
+          } catch(e) {
+            console.warn("Could not close popup, it may have already been closed.")
+          }
+        } else {
+          console.log("🔄 Switching to new main page:", url);
+          currentPage = newPage; // switch context
         }
       }
     });
 
-    const client = await page.target().createCDPSession();
+    // Handle frame detachments
+    currentPage.on("framedetached", () => {
+      console.warn("⚠ Frame detached! Retrying on new active page...");
+    });
+
+    const client = await currentPage.target().createCDPSession();
     await client.send("Page.setDownloadBehavior", {
       behavior: "allow",
       downloadPath: DOWNLOADS_FOLDER,
     });
 
     // Step 1: Go to site and search
-    await page.goto(site, {
+    console.log(`➡ Navigating to site: ${site}`);
+    await currentPage.goto(site, {
       waitUntil: "networkidle2",
       timeout: CONFIG.maxWait,
     });
+    console.log(`✅ Arrived at ${currentPage.url()}`);
 
-    await page.waitForSelector(CONFIG.searchBoxSelector, {
+    await currentPage.waitForSelector(CONFIG.searchBoxSelector, {
       timeout: CONFIG.maxWait,
     });
-    const searchBox = await page.$(CONFIG.searchBoxSelector);
+    const searchBox = await currentPage.$(CONFIG.searchBoxSelector);
     await searchBox.click({ clickCount: 3 });
     await searchBox.type(query, { delay: 80 });
-    await page.keyboard.press("Enter");
-    await page.waitForNavigation({
+    console.log(`🔍 Searching for "${query}"...`);
+    await currentPage.keyboard.press("Enter");
+    await currentPage.waitForNavigation({
       waitUntil: "networkidle2",
       timeout: CONFIG.maxWait,
     });
+    console.log(`✅ Search results page loaded: ${currentPage.url()}`);
 
     // Step 2: Click first movie result
-    await page.waitForSelector(CONFIG.resultsListSelector, {
-      timeout: CONFIG.maxWait,
-    });
-    const searchResults = await page.$$(CONFIG.resultsListSelector);
-    if (!searchResults.length) throw new Error("No search results found.");
-
-    await safeClick(page, CONFIG.resultsListSelector);
+    await safeClick(currentPage, CONFIG.resultsListSelector, "first search result");
 
     // Step 3: Click 720p download option
-    await safeClick(page, CONFIG.qualityLinkSelector);
+    await safeClick(currentPage, CONFIG.qualityLinkSelector, "720p quality option");
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
-      await page.waitForFunction(
+      console.log("➡ Looking for final or intermediate download link...");
+      await currentPage.waitForFunction(
         () => {
           return (
             document.querySelector('a[href*="dlink.php"]') ||
@@ -168,26 +187,28 @@ async function downloadMovie(site, query, outPath) {
         { timeout: CONFIG.maxWait }
       );
 
-      const finalLink = await page.$('a[href*="dlink.php"]');
+      const finalLink = await currentPage.$('a[href*="dlink.php"]');
       if (finalLink) {
+        console.log("✅ Found final dlink.php link, clicking...");
         await finalLink.click();
         break;
       }
 
-      const intermediateLink = await page.$(
+      const intermediateLink = await currentPage.$(
         'a[onclick*="window.location.href"]'
       );
       if (intermediateLink) {
-        await safeClick(page, 'a[onclick*="window.location.href"]');
+        console.log("➡ Found intermediate redirect link, clicking...");
+        await safeClick(currentPage, 'a[onclick*="window.location.href"]', "intermediate link");
       } else {
         throw new Error(
-          "Cannot find final download link or next intermediate link."
+          "❌ Cannot find final download link or next intermediate link."
         );
       }
     }
 
     console.log(
-      `Download triggered for ${path.basename(
+      `⬇ Download triggered for ${path.basename(
         outPath
       )}. Waiting for file to complete...`
     );
@@ -198,7 +219,7 @@ async function downloadMovie(site, query, outPath) {
       DOWNLOADS_FOLDER
     );
 
-    console.log("Download completed:", downloadedFilePath);
+    console.log("✅ Download completed:", downloadedFilePath);
   } finally {
     if (browser !== null) {
       await browser.close();
@@ -213,11 +234,11 @@ async function downloadMovie(site, query, outPath) {
     const query = argv.query;
     const out = path.join(DOWNLOADS_FOLDER, argv.out);
 
-    console.log(`Searching for "${query}"...`);
+    console.log(`🎬 Starting search for "${query}"...`);
     await downloadMovie(site, query, out);
-    console.log(`Successfully downloaded "${query}" to ${out}`);
+    console.log(`🎉 Successfully downloaded "${query}" to ${out}`);
   } catch (err) {
-    console.error("Error:", err.message || err);
+    console.error("❌ Error:", err.message || err);
     process.exit(1);
   }
 })();
