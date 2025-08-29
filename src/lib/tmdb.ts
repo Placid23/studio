@@ -133,7 +133,7 @@ export async function getPopularMovies(page: number = 1, region?: string): Promi
 
 export async function getEroticMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
     const data = await fetchFromTMDB('/discover/movie', { 
-        with_genres: '27', // Use a genre like Horror as a proxy if no direct adult genre is available
+        with_keywords: '10194', // "erotic movie" keyword ID
         include_adult: 'true',
         page: String(page),
         sort_by: 'popularity.desc'
