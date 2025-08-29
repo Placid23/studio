@@ -67,9 +67,11 @@ async function downloadMovie(site, query, outPath) {
   let browser = null;
   try {
     const executablePath = await chromium.executablePath();
-    
+
     if (!executablePath) {
-        throw new Error('Could not find a Chromium executable. The @sparticuz/chromium package may be missing or failed to install correctly.');
+      throw new Error(
+        "Could not find a Chromium executable. The @sparticuz/chromium package may be missing or failed to install correctly."
+      );
     }
 
     browser = await puppeteer.launch({
@@ -85,40 +87,45 @@ async function downloadMovie(site, query, outPath) {
     const client = await page.target().createCDPSession();
     await client.send("Page.setDownloadBehavior", {
       behavior: "allow",
-      downloadPath: DOWNLOADS_FOLDER
+      downloadPath: DOWNLOADS_FOLDER,
     });
 
     // Step 1: Go to site and search
-    await page.goto(site, { waitUntil: "domcontentloaded", timeout: CONFIG.maxWait });
-    await page.waitForSelector(CONFIG.searchBoxSelector, { timeout: CONFIG.maxWait });
+    await page.goto(site, {
+      waitUntil: "domcontentloaded",
+      timeout: CONFIG.maxWait,
+    });
+
+    await page.waitForSelector(CONFIG.searchBoxSelector, {
+      timeout: CONFIG.maxWait,
+    });
     const searchBox = await page.$(CONFIG.searchBoxSelector);
     await searchBox.click({ clickCount: 3 });
     await searchBox.type(query, { delay: 80 });
     await page.keyboard.press("Enter");
+    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait });
 
     // Step 2: Click first movie result
     await page.waitForSelector(CONFIG.resultsListSelector, { timeout: CONFIG.maxWait });
     const searchResults = await page.$$(CONFIG.resultsListSelector);
     if (!searchResults.length) throw new Error("No search results found.");
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: CONFIG.maxWait }),
-      searchResults[0].click(),
-    ]);
 
-    // Step 3: Click 720p download option, which starts the redirect chain
+    await searchResults[0].click();
+    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait });
+
+    // Step 3: Click 720p download option
     await page.waitForSelector(CONFIG.qualityLinkSelector, { timeout: CONFIG.maxWait });
-    await Promise.all([
-        page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: CONFIG.maxWait }),
-        page.click(CONFIG.qualityLinkSelector),
-    ]);
-
+    await page.click(CONFIG.qualityLinkSelector);
+    await page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait });
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
       // Wait for either the final download link or the next intermediate link
       await page.waitForFunction(() => {
-        return document.querySelector('a[href*="dlink.php"]') ||
-               document.querySelector('a[onclick*="window.location.href"]');
+        return (
+          document.querySelector('a[href*="dlink.php"]') ||
+          document.querySelector('a[onclick*="window.location.href"]')
+        );
       }, { timeout: CONFIG.maxWait });
 
       // Check if the final download link is on the page
@@ -131,17 +138,16 @@ async function downloadMovie(site, query, outPath) {
       // If not, find the next intermediate link and click it
       const intermediateLink = await page.$('a[onclick*="window.location.href"]');
       if (intermediateLink) {
-         await Promise.all([
-            page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: CONFIG.maxWait }),
-            intermediateLink.click(),
-        ]);
+        await intermediateLink.click();
+        await page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait });
       } else {
-        // This case should not be reached if the waitForFunction succeeds
         throw new Error("Cannot find final download link or next intermediate link.");
       }
     }
 
-    console.log(`Download triggered for ${path.basename(outPath)}. Waiting for file to complete...`);
+    console.log(
+      `Download triggered for ${path.basename(outPath)}. Waiting for file to complete...`
+    );
 
     const fileName = path.basename(outPath);
     const downloadedFilePath = await waitForDownload(fileName, DOWNLOADS_FOLDER);
