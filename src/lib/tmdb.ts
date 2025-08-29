@@ -131,6 +131,21 @@ export async function getPopularMovies(page: number = 1, region?: string): Promi
     };
 }
 
+export async function getEroticMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
+    const data = await fetchFromTMDB('/discover/movie', { 
+        with_genres: '27', // Use a genre like Horror as a proxy if no direct adult genre is available
+        include_adult: 'true',
+        page: String(page),
+        sort_by: 'popularity.desc'
+    });
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return { 
+        results: data.results.map(mapTmdbToMovie),
+        total_pages: data.total_pages
+    };
+}
+
+
 export async function getTopRatedMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
     const data = await fetchFromTMDB('/movie/top_rated', { page: String(page) });
     if (!data?.results) return { results: [], total_pages: 0 };

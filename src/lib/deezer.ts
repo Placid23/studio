@@ -43,6 +43,11 @@ export async function deezerGet(path: string, params: Record<string, string> = {
   }
 }
 
+export async function getChart(type: 'tracks' | 'albums' | 'artists' = 'tracks', limit: number = 20) {
+    const data = await deezerGet(`chart/0/${type}`, { limit: String(limit) });
+    return data?.data || [];
+}
+
 // Search for tracks, albums, and artists
 export async function searchDeezer(query: string) {
     const res = await deezerGet('search', { q: query });
