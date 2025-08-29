@@ -36,6 +36,25 @@ if (!fs.existsSync(DOWNLOADS_FOLDER)) {
   fs.mkdirSync(DOWNLOADS_FOLDER, { recursive: true });
 }
 
+// ✅ Safe click helper to avoid "frame detached" errors
+async function safeClick(page, selector) {
+  await page.waitForSelector(selector, { timeout: CONFIG.maxWait });
+  const el = await page.$(selector);
+  try {
+    await Promise.all([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: CONFIG.maxWait }),
+        el.click(),
+    ]);
+  } catch (e) {
+    // some clicks dont result in navigation
+    if (e instanceof puppeteer.errors.TimeoutError) {
+        // ignore
+    } else {
+        throw e;
+    }
+  }
+}
+
 // Helper: Wait until a file exists and is fully downloaded
 function waitForDownload(fileName, folder) {
   return new Promise((resolve, reject) => {
@@ -43,9 +62,7 @@ function waitForDownload(fileName, folder) {
       clearInterval(interval);
       reject(
         new Error(
-          `Download timed out for ${fileName} after ${
-            CONFIG.maxWait / 1000
-          } seconds.`
+          `Download timed out for ${fileName} after ${CONFIG.maxWait / 1000} seconds.`
         )
       );
     }, CONFIG.maxWait * 2);
@@ -95,7 +112,11 @@ async function downloadMovie(site, query, outPath) {
       const newPage = await target.page();
       if (newPage && !newPage.url().includes("fzmovies")) {
         console.log("Closing popup:", newPage.url());
-        await newPage.close();
+        try {
+            await newPage.close();
+        } catch(e) {
+            console.log("Could not close popup, it may have already been closed.")
+        }
       }
     });
 
@@ -130,21 +151,10 @@ async function downloadMovie(site, query, outPath) {
     const searchResults = await page.$$(CONFIG.resultsListSelector);
     if (!searchResults.length) throw new Error("No search results found.");
 
-    await searchResults[0].click();
-    await page.waitForNavigation({
-      waitUntil: "networkidle2",
-      timeout: CONFIG.maxWait,
-    });
+    await safeClick(page, CONFIG.resultsListSelector);
 
     // Step 3: Click 720p download option
-    await page.waitForSelector(CONFIG.qualityLinkSelector, {
-      timeout: CONFIG.maxWait,
-    });
-    await page.click(CONFIG.qualityLinkSelector);
-    await page.waitForNavigation({
-      waitUntil: "networkidle2",
-      timeout: CONFIG.maxWait,
-    });
+    await safeClick(page, CONFIG.qualityLinkSelector);
 
     // Step 4: Follow intermediate pages until final dlink.php
     while (true) {
@@ -168,11 +178,7 @@ async function downloadMovie(site, query, outPath) {
         'a[onclick*="window.location.href"]'
       );
       if (intermediateLink) {
-        await intermediateLink.click();
-        await page.waitForNavigation({
-          waitUntil: "networkidle2",
-          timeout: CONFIG.maxWait,
-        });
+        await safeClick(page, 'a[onclick*="window.location.href"]');
       } else {
         throw new Error(
           "Cannot find final download link or next intermediate link."
