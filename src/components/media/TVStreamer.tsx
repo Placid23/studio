@@ -42,15 +42,17 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('search');
       setError(null);
       try {
-        const res = await fetch(`/api/fztv?action=search&query=${encodeURIComponent(showName)}`);
+        const res = await fetch('/api/fztv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'search', query: showName }),
+        });
         const data = await res.json();
         if (data.error || data.length === 0) throw new Error(data.error || 'TV show not found.');
         
-        // Find the best match
         const bestMatch = data.find((r: SearchResult) => r.title.toLowerCase().includes(showName.toLowerCase())) || data[0];
         setSearchResult(bestMatch);
         
-        // Automatically fetch seasons for the best match
         await fetchSeasons(bestMatch.url);
 
       } catch (err: any) {
@@ -69,7 +71,11 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('seasons');
     setError(null);
     try {
-      const res = await fetch(`/api/fztv?action=seasons&url=${encodeURIComponent(url)}`);
+      const res = await fetch('/api/fztv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'seasons', url }),
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSeasons(data);
@@ -82,7 +88,7 @@ export function TVStreamer({ showName }: { showName: string }) {
   };
 
   const fetchEpisodes = async (url: string) => {
-    if (activeSeasonUrl === url) { // Already open, do nothing
+    if (activeSeasonUrl === url) {
       return;
     }
     setActiveSeasonUrl(url);
@@ -92,7 +98,11 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('episodes');
     setError(null);
     try {
-      const res = await fetch(`/api/fztv?action=episodes&url=${encodeURIComponent(url)}`);
+      const res = await fetch('/api/fztv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'episodes', url }),
+      });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setEpisodes(data);
@@ -110,16 +120,15 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('links');
       setError(null);
       try {
-        const res = await fetch(`/api/fztv?action=download&url=${encodeURIComponent(url)}`);
+        const res = await fetch('/api/fztv', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'download', url }),
+        });
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
-        // Instead of resolving the final link here, we will use the proxy
-        const proxiedLinks = data.map((link: DownloadLink) => ({
-            ...link,
-            url: link.url // Keep original for download, proxy for stream
-        }))
-        setDownloadLinks(proxiedLinks);
+        setDownloadLinks(data);
       } catch (err: any) {
         setError(err.message);
         toast({ title: 'Error', description: `Could not get download links: ${err.message}`, variant: 'destructive' });
