@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
 import { createClient } from '@/lib/supabase/server';
-import { DownloadMovieButton } from '@/components/media/DownloadMovieButton';
 
 async function getLibraryItem(tmdbId: string) {
     const supabase = createClient();
@@ -115,7 +114,6 @@ export default async function MovieDetailPage({ params }: { params: { id: string
                     </Link>
                 </Button>
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
-                <DownloadMovieButton movieName={movie.title} movieYear={movie.year} />
             </div>
           </div>
         </div>
