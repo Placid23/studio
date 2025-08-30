@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { PlayCircle, Download, Loader2, AlertCircle } from "lucide-react";
@@ -62,8 +62,14 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
   const handleDownload = async (quality: '720p' | '1080p') => {
     const resolvedUrl = await resolveAndSetUrl(quality);
     if (resolvedUrl) {
-      // Trigger download by navigating to the proxy URL
-      window.location.href = resolvedUrl;
+      // Trigger download by creating a temporary link
+      const link = document.createElement('a');
+      link.href = resolvedUrl;
+      const fileName = mediaName.replace(/ /g, '_') + '.mp4';
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -112,11 +118,11 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
             <DropdownMenuContent>
                 <DropdownMenuLabel>Stream</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleStream('720p')}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStream('1080p')} disabled>1080p (Coming Soon)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStream('1080p')} disabled>1080p (Source Unreliable)</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Download</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleDownload('720p')}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownload('1080p')} disabled>1080p (Coming Soon)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('1080p')} disabled>1080p (Source Unreliable)</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>

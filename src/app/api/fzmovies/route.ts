@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
         });
 
     } catch (err: any) {
+        console.error(`[API /api/fzmovies] Error processing request for query "${req.url.split('?')[1]}":`, err);
         return new Response(JSON.stringify({ error: err.message }), { status: 500 });
     }
 }
