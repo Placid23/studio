@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -115,7 +116,7 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        shimmer: 'shimmer 2s infinite',
+        'shimmer': 'shimmer 2.0s infinite',
         'ping-slow': 'ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite',
         'ping-medium': 'ping-medium 2.5s cubic-bezier(0, 0, 0.2, 1) infinite',
         'ping-fast': 'ping-fast 2s cubic-bezier(0, 0, 0.2, 1) infinite',

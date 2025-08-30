@@ -37,6 +37,7 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
         throw new Error(data.error || "Failed to resolve download link.");
       }
       
+      // Use the proxy for both streaming and downloading
       return `/api/proxy-download?url=${encodeURIComponent(data.finalUrl)}`;
 
     } catch (err: any) {
@@ -62,7 +63,6 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
   const handleDownload = async (quality: '720p' | '1080p') => {
     const resolvedUrl = await resolveAndSetUrl(quality);
     if (resolvedUrl) {
-      // Trigger download by creating a temporary link
       const link = document.createElement('a');
       link.href = resolvedUrl;
       const fileName = mediaName.replace(/ /g, '_') + '.mp4';
@@ -74,18 +74,9 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
   };
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center gap-2 p-4 text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-semibold">Resolving Link...</p>
-            <p className="text-xs text-muted-foreground">Please wait, this may take a moment.</p>
-        </div>
-      );
-    }
     if (error) {
        return (
-        <div className="flex flex-col items-center gap-2 p-4 text-center">
+        <div className="flex flex-col items-center gap-2 p-4 text-center mt-6 bg-card rounded-lg">
             <AlertCircle className="h-8 w-8 text-destructive" />
             <p className="text-sm font-semibold text-destructive">Could Not Get Link</p>
             <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
@@ -102,7 +93,7 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
         />
       );
     }
-    return null; // Initial state, nothing to show
+    return null;
   }
 
   return (
@@ -111,18 +102,27 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button size="lg" disabled={isLoading}>
-                    <PlayCircle className="mr-2 h-6 w-6" />
-                    {isLoading ? 'Loading...' : 'Play / Download'}
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            Resolving...
+                        </>
+                    ) : (
+                        <>
+                            <PlayCircle className="mr-2 h-6 w-6" />
+                            Play / Download
+                        </>
+                    )}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
                 <DropdownMenuLabel>Stream</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleStream('720p')}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStream('1080p')} disabled>1080p (Source Unreliable)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStream('720p')} disabled={isLoading}>720p</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStream('1080p')} disabled>1080p (Unstable)</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Download</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleDownload('720p')}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownload('1080p')} disabled>1080p (Source Unreliable)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('720p')} disabled={isLoading}>720p</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('1080p')} disabled>1080p (Unstable)</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
