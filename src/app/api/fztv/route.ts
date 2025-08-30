@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -11,7 +12,7 @@ const MIRRORS = [
   "https://www.tvseries.video",
 ];
 const SEARCH_PATHS = [
-  (q: string) => `/search.php?search=${encodeURIComponent(q)}&by=series`,
+  (q: string) => `/search.php?search=${encodeURIComponent(q)}&beginsearch=Search&vsearch=&by=series`,
   (q: string) => `/search/?q=${encodeURIComponent(q)}`,
 ];
 
@@ -141,52 +142,48 @@ async function getDownloadLinks(episodeUrl: string) {
     throw new Error(`No download links found. Last error: ${lastError?.message}`);
 }
 
-async function handleAction(action?: string, query?: string, url?: string) {
-  switch (action) {
-    case 'search':
-      if (!query) throw new Error('Missing query');
-      return await searchSeries(query);
-
-    case 'seasons':
-      if (!url) throw new Error('Missing series URL');
-      return await getSeasons(url);
-
-    case 'episodes':
-      if (!url) throw new Error('Missing season URL');
-      return await getEpisodes(url);
-
-    case 'download':
-      if (!url) throw new Error('Missing episode URL');
-      return await getDownloadLinks(url);
-
-    default:
-      throw new Error('Invalid action');
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, query, url } = body;
-    const result = await handleAction(action, query, url);
-    return NextResponse.json(result);
-  } catch (err: any) {
-    console.error(`[API /api/fztv POST] Error:`, err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
-}
 
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const action = searchParams.get('action') || '';
-    const query = searchParams.get('query') || undefined;
-    const url = searchParams.get('url') || undefined;
+    switch (action) {
+      case 'search': {
+        if (!query) return NextResponse.json({ error: 'Missing query' }, { status: 400 });
+        const searchResults = await searchSeries(query);
+        return NextResponse.json(searchResults);
+      }
 
-    const result = await handleAction(action, query, url);
-    return NextResponse.json(result);
+      case 'seasons': {
+        if (!url) return NextResponse.json({ error: 'Missing series URL' }, { status: 400 });
+        const seasons = await getSeasons(url);
+        return NextResponse.json(seasons);
+      }
+
+      case 'episodes': {
+        if (!url) return NextResponse.json({ error: 'Missing season URL' }, { status: 400 });
+        const episodes = await getEpisodes(url);
+        return NextResponse.json(episodes);
+      }
+
+      case 'download': {
+        if (!url) return NextResponse.json({ error: 'Missing episode URL' }, { status: 400 });
+        const downloadLinks = await getDownloadLinks(url);
+
+        const proxied = downloadLinks.map((link: { quality: string; url: string }) => ({
+          quality: link.quality,
+          streamUrl: `/api/proxy-download?url=${encodeURIComponent(link.url)}`,
+          downloadUrl: `/api/proxy-download?url=${encodeURIComponent(link.url)}&download=true`,
+        }));
+
+        return NextResponse.json(proxied);
+      }
+
+      default:
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
   } catch (err: any) {
-    console.error(`[API /api/fztv GET] Error:`, err);
+    console.error(`[API /api/fztv] Error processing request:`, err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

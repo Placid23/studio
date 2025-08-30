@@ -22,7 +22,8 @@ interface Episode {
 }
 interface DownloadLink {
   quality: string;
-  url: string;
+  streamUrl: string;
+  downloadUrl: string;
 }
 
 export function TVStreamer({ showName }: { showName: string }) {
@@ -49,12 +50,14 @@ export function TVStreamer({ showName }: { showName: string }) {
         });
         const data = await res.json();
         if (data.error || data.length === 0) throw new Error(data.error || 'TV show not found.');
-        
-        const bestMatch = data.find((r: SearchResult) => r.title.toLowerCase().includes(showName.toLowerCase())) || data[0];
-        setSearchResult(bestMatch);
-        
-        await fetchSeasons(bestMatch.url);
 
+        const bestMatch =
+          data.find((r: SearchResult) =>
+            r.title.toLowerCase().includes(showName.toLowerCase())
+          ) || data[0];
+
+        setSearchResult(bestMatch);
+        await fetchSeasons(bestMatch.url);
       } catch (err: any) {
         setError(err.message);
         toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -62,14 +65,12 @@ export function TVStreamer({ showName }: { showName: string }) {
         setIsLoading(false);
       }
     };
-    if (showName) {
-      doSearch();
-    }
+
+    if (showName) doSearch();
   }, [showName, toast]);
 
   const fetchSeasons = async (url: string) => {
     setIsLoading('seasons');
-    setError(null);
     try {
       const res = await fetch('/api/fztv', {
         method: 'POST',
@@ -88,15 +89,11 @@ export function TVStreamer({ showName }: { showName: string }) {
   };
 
   const fetchEpisodes = async (url: string) => {
-    if (activeSeasonUrl === url) {
-      return;
-    }
+    if (activeSeasonUrl === url) return;
     setActiveSeasonUrl(url);
-    setActiveEpisodeUrl(null);
     setEpisodes([]);
     setDownloadLinks([]);
     setIsLoading('episodes');
-    setError(null);
     try {
       const res = await fetch('/api/fztv', {
         method: 'POST',
@@ -115,27 +112,25 @@ export function TVStreamer({ showName }: { showName: string }) {
   };
 
   const fetchDownloadLinks = async (url: string) => {
-      setActiveEpisodeUrl(url);
-      setDownloadLinks([]);
-      setIsLoading('links');
-      setError(null);
-      try {
-        const res = await fetch('/api/fztv', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'download', url }),
-        });
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        setDownloadLinks(data);
-      } catch (err: any) {
-        setError(err.message);
-        toast({ title: 'Error', description: `Could not get download links: ${err.message}`, variant: 'destructive' });
-      } finally {
-        setIsLoading(false);
-      }
-  }
+    setActiveEpisodeUrl(url);
+    setDownloadLinks([]);
+    setIsLoading('links');
+    try {
+      const res = await fetch('/api/fztv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'download', url }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setDownloadLinks(data);
+    } catch (err: any) {
+      setError(err.message);
+      toast({ title: 'Error', description: `Could not get download links: ${err.message}`, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading === 'search' || (isLoading === 'seasons' && seasons.length === 0)) {
     return (
@@ -147,13 +142,13 @@ export function TVStreamer({ showName }: { showName: string }) {
   }
 
   if (error && !seasons.length) {
-      return (
-        <div className="flex flex-col items-center gap-2 p-4 text-center bg-card rounded-lg">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-            <p className="text-sm font-semibold text-destructive">Could Not Find Show</p>
-            <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
-        </div>
-      )
+    return (
+      <div className="flex flex-col items-center gap-2 p-4 text-center bg-card rounded-lg">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-sm font-semibold text-destructive">Could Not Find Show</p>
+        <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -162,42 +157,46 @@ export function TVStreamer({ showName }: { showName: string }) {
         {seasons.map((season) => (
           <AccordionItem value={season.url} key={season.url}>
             <AccordionTrigger onClick={() => fetchEpisodes(season.url)}>
-                {season.season}
-                {isLoading === 'episodes' && activeSeasonUrl === season.url && <Loader2 className="animate-spin h-4 w-4 ml-2" />}
+              {season.season}
+              {isLoading === 'episodes' && activeSeasonUrl === season.url && (
+                <Loader2 className="animate-spin h-4 w-4 ml-2" />
+              )}
             </AccordionTrigger>
             <AccordionContent>
               <div className="pl-4 border-l-2 border-primary/20 space-y-2">
                 {episodes.map(ep => (
                   <div key={ep.url} className="flex flex-col p-2 rounded-md hover:bg-card-foreground/5">
-                      <div className="flex items-center justify-between">
-                          <span>{ep.episode}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => fetchDownloadLinks(ep.url)}
-                            disabled={isLoading === 'links' && activeEpisodeUrl === ep.url}
-                          >
-                            {isLoading === 'links' && activeEpisodeUrl === ep.url ? <Loader2 className="animate-spin h-4 w-4" /> : 'Get Links'}
-                          </Button>
-                      </div>
-                      {activeEpisodeUrl === ep.url && downloadLinks.length > 0 && (
-                          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
-                              {downloadLinks.map(link => (
-                                  <div key={link.url} className="flex gap-2">
-                                       <Button size="sm" onClick={() => setVideoUrl(`/api/proxy-download?url=${encodeURIComponent(link.url)}`)}>
-                                            <PlayCircle className="mr-2" />
-                                            Stream {link.quality}
-                                       </Button>
-                                       <Button size="sm" variant="outline" asChild>
-                                           <Link href={`/api/proxy-download?url=${encodeURIComponent(link.url)}&download=true`} target="_blank" download>
-                                                <Download className="mr-2" />
-                                                Download {link.quality}
-                                           </Link>
-                                       </Button>
-                                  </div>
-                              ))}
+                    <div className="flex items-center justify-between">
+                      <span>{ep.episode}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => fetchDownloadLinks(ep.url)}
+                        disabled={isLoading === 'links' && activeEpisodeUrl === ep.url}
+                      >
+                        {isLoading === 'links' && activeEpisodeUrl === ep.url
+                          ? <Loader2 className="animate-spin h-4 w-4" />
+                          : 'Get Links'}
+                      </Button>
+                    </div>
+                    {activeEpisodeUrl === ep.url && downloadLinks.length > 0 && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+                        {downloadLinks.map(link => (
+                          <div key={link.streamUrl} className="flex gap-2">
+                            <Button size="sm" onClick={() => setVideoUrl(link.streamUrl)}>
+                              <PlayCircle className="mr-2" />
+                              Stream {link.quality}
+                            </Button>
+                            <Button size="sm" variant="outline" asChild>
+                              <Link href={link.downloadUrl} target="_blank" download>
+                                <Download className="mr-2" />
+                                Download {link.quality}
+                              </Link>
+                            </Button>
                           </div>
-                      )}
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -205,12 +204,14 @@ export function TVStreamer({ showName }: { showName: string }) {
           </AccordionItem>
         ))}
       </Accordion>
-      
+
       {videoUrl && (
-          <div className="mt-6">
-              <video src={videoUrl} controls autoPlay className="w-full aspect-video rounded-lg bg-black"></video>
-               <Button onClick={() => setVideoUrl(null)} variant="outline" className="mt-2 w-full">Close Player</Button>
-          </div>
+        <div className="mt-6">
+          <video src={videoUrl} controls autoPlay className="w-full aspect-video rounded-lg bg-black"></video>
+          <Button onClick={() => setVideoUrl(null)} variant="outline" className="mt-2 w-full">
+            Close Player
+          </Button>
+        </div>
       )}
     </div>
   );
