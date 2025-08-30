@@ -42,11 +42,7 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('search');
       setError(null);
       try {
-        const res = await fetch('/api/fztv', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'search', query: showName }),
-        });
+        const res = await fetch(`/api/fztv/search?query=${encodeURIComponent(showName)}`);
         const data = await res.json();
         if (data.error || data.length === 0) throw new Error(data.error || 'TV show not found.');
         
@@ -73,11 +69,7 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('seasons');
     setError(null);
     try {
-      const res = await fetch('/api/fztv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'seasons', url }),
-      });
+      const res = await fetch(`/api/fztv/seasons?url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSeasons(data);
@@ -100,11 +92,7 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('episodes');
     setError(null);
     try {
-      const res = await fetch('/api/fztv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'episodes', url }),
-      });
+      const res = await fetch(`/api/fztv/episodes?url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setEpisodes(data);
@@ -122,18 +110,14 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('links');
       setError(null);
       try {
-        const res = await fetch('/api/fztv', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'download', url }),
-        });
+        const res = await fetch(`/api/fztv/download?url=${encodeURIComponent(url)}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
         // Instead of resolving the final link here, we will use the proxy
         const proxiedLinks = data.map((link: DownloadLink) => ({
             ...link,
-            url: `/api/proxy-download?url=${encodeURIComponent(link.url)}`
+            url: link.url // Keep original for download, proxy for stream
         }))
         setDownloadLinks(proxiedLinks);
       } catch (err: any) {
@@ -191,12 +175,12 @@ export function TVStreamer({ showName }: { showName: string }) {
                           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
                               {downloadLinks.map(link => (
                                   <div key={link.url} className="flex gap-2">
-                                       <Button size="sm" onClick={() => setVideoUrl(link.url)}>
+                                       <Button size="sm" onClick={() => setVideoUrl(`/api/proxy-download?url=${encodeURIComponent(link.url)}`)}>
                                             <PlayCircle className="mr-2" />
                                             Stream {link.quality}
                                        </Button>
                                        <Button size="sm" variant="outline" asChild>
-                                           <Link href={link.url} target="_blank">
+                                           <Link href={`/api/proxy-download?url=${encodeURIComponent(link.url)}&download=true`} target="_blank" download>
                                                 <Download className="mr-2" />
                                                 Download {link.quality}
                                            </Link>
