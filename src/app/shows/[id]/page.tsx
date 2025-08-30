@@ -1,7 +1,7 @@
 
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Calendar, PlayCircle } from 'lucide-react';
+import { Star, Calendar } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
@@ -10,20 +10,7 @@ import { getShowDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { EpisodeGuide } from '@/components/media/EpisodeGuide';
-import type { Show } from '@/lib/types';
-import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
-import { addToWatchlistAction } from './actions';
-import { DownloadButton } from '@/components/media/DownloadButton';
-import { createClient } from '@/lib/supabase/server';
-
-async function getLibraryItem(tmdbId: string) {
-    const supabase = createClient();
-    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
-    return data;
-}
+import { TVStreamer } from '@/components/media/TVStreamer';
 
 export default async function ShowDetailPage({ params }: { params: { id: string } }) {
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
@@ -43,8 +30,6 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
   if (!show) {
     notFound();
   }
-
-  const libraryItem = await getLibraryItem(params.id);
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -101,31 +86,13 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
               ))}
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{show.synopsis}</p>
-            <div className="mt-8 flex items-center gap-4 flex-wrap">
-              <Button asChild size="lg">
-                <Link href={`/watch/${show.tmdbId}?season=1&episode=1`}>
-                    <PlayCircle className="mr-2 h-6 w-6" />
-                    Watch Now
-                </Link>
-              </Button>
-              <AddToWatchlistButton media={show} addAction={addToWatchlistAction} />
-              {libraryItem?.file_id && (
-                  <DownloadButton 
-                      filePath={libraryItem.file_id}
-                      bucket="videos"
-                      fileName={`${show.title}.mp4`}
-                  />
-              )}
-            </div>
           </div>
         </div>
         
-        {show.seasons && show.seasons.length > 0 && (
-          <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Episodes</h2>
-            <EpisodeGuide show={show} />
-          </div>
-        )}
+        <div className="mt-12">
+            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Stream & Download</h2>
+            <TVStreamer showName={show.title} />
+        </div>
 
         <div className="mt-12">
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
