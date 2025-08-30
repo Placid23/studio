@@ -2,144 +2,39 @@
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
-import axios from "axios";
-import * as cheerio from "cheerio";
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 const MIRRORS = [
   "https://fztvseries.live",
   "https://fztvseries.mobi",
-  "https://www.tvseries.in",
-  "https://www.tvseries.video",
-];
-const SEARCH_PATHS = [
-  (q: string) => `/search.php?search=${encodeURIComponent(q)}&beginsearch=Search&vsearch=&by=series`,
-  (q: string) => `/search/?q=${encodeURIComponent(q)}`,
 ];
 
-function absUrl(relative: string, base: string) {
-  if (!relative) return "";
-  if (relative.startsWith("http")) return relative;
-  return `${base}${relative.startsWith("/") ? "" : "/"}${relative}`;
+function absUrl(href: string, base: string) {
+  if (!href) return "";
+  if (href.startsWith("http")) return href;
+  return `${base}/${href.replace(/^\//, '')}`;
 }
 
-async function fetchHtml(url: string, base: string) {
-  const res = await axios.get(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
-      "Referer": base,
-    },
-    timeout: 15000,
-  });
-  return res.data;
-}
-
-async function searchSeries(query: string) {
-  for (const base of MIRRORS) {
-    for (const makePath of SEARCH_PATHS) {
-      const url = `${base}${makePath(query)}`;
-      try {
-        const html = await fetchHtml(url, base);
-        const $ = cheerio.load(html);
-        const results = $("a")
-          .map((_, el) => {
-            const href = $(el).attr("href");
-            const text = $(el).text().trim();
-            if (href && href.includes("/series/")) {
-              return { title: text, url: absUrl(href, base) };
-            }
-            return null;
-          })
-          .get()
-          .filter((r): r is { title: string; url: string; } => r !== null);
-        if (results.length > 0) return results;
-      } catch (err) {
-        console.warn(`[searchSeries] Failed at ${url}:`, (err as Error).message);
-      }
-    }
-  }
-  throw new Error(`No series found for "${query}" on any mirror.`);
-}
-
-async function getSeasons(seriesUrl: string) {
-  let lastError: Error | null = null;
+async function fetchWithFallback(path: string): Promise<{ data: string; base: string }> {
+  let lastError: any = null;
   for (const base of MIRRORS) {
     try {
-      const urlToFetch = seriesUrl.includes('://') ? seriesUrl : `${base}${seriesUrl.startsWith('/') ? '' : '/'}${seriesUrl}`;
-      const html = await fetchHtml(urlToFetch, base);
-      const $ = cheerio.load(html);
-      const seasons = $("a")
-        .map((_, el) => {
-          const href = $(el).attr("href");
-          const text = $(el).text().trim();
-          if (href && text.toLowerCase().includes("season")) {
-            return { season: text, url: absUrl(href, base) };
-          }
-          return null;
-        })
-        .get()
-        .filter((r): r is { season: string; url: string; } => r !== null);
-      if (seasons.length > 0) return seasons;
+      const url = path.startsWith("http") ? path : `${base}/${path.replace(/^\//, '')}`;
+      const res = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
+        },
+      });
+      if (res.status === 200) return { data: res.data, base };
     } catch (err) {
-       lastError = err as Error;
-       console.warn(`[getSeasons] Failed for url ${seriesUrl} on base ${base}:`, (err as Error).message);
+      lastError = err;
+      console.warn(`[Mirror failed] ${base}:`, err);
     }
   }
-  throw new Error(`No seasons found. Last error: ${lastError?.message}`);
-}
-
-async function getEpisodes(seasonUrl: string) {
-  let lastError: Error | null = null;
-  for (const base of MIRRORS) {
-    try {
-      const urlToFetch = seasonUrl.includes('://') ? seasonUrl : `${base}${seasonUrl.startsWith('/') ? '' : '/'}${seasonUrl}`;
-      const html = await fetchHtml(urlToFetch, base);
-      const $ = cheerio.load(html);
-      const episodes = $("div.mainbox_L a")
-        .map((_, el) => {
-          const href = $(el).attr("href");
-          const text = $(el).text().trim();
-          if (href && href.includes("/episode/")) {
-            return { episode: text, url: absUrl(href, base) };
-          }
-          return null;
-        })
-        .get()
-        .filter((r): r is { episode: string; url: string; } => r !== null);
-      if (episodes.length > 0) return episodes;
-    } catch (err) {
-      lastError = err as Error;
-      console.warn(`[getEpisodes] Failed for url ${seasonUrl} on base ${base}:`, (err as Error).message);
-    }
-  }
-  throw new Error(`No episodes found. Last error: ${lastError?.message}`);
-}
-
-async function getDownloadLinks(episodeUrl: string) {
-    let lastError: Error | null = null;
-    for (const base of MIRRORS) {
-      try {
-        const urlToFetch = episodeUrl.includes('://') ? episodeUrl : `${base}${episodeUrl.startsWith('/') ? '' : '/'}${episodeUrl}`;
-        const html = await fetchHtml(urlToFetch, base);
-        const $ = cheerio.load(html);
-        const links = $("div.mainbox_L a")
-          .map((_, el) => {
-            const href = $(el).attr("href");
-            const text = $(el).text().trim();
-            if (href && href.includes("/download.php")) {
-              return { quality: text, url: absUrl(href, base) };
-            }
-            return null;
-          })
-          .get()
-          .filter((r): r is { quality: string; url: string; } => r !== null);
-        if (links.length > 0) return links;
-      } catch (err) {
-         lastError = err as Error;
-         console.warn(`[getDownloadLinks] Failed for url ${episodeUrl} on base ${base}:`, (err as Error).message);
-      }
-    }
-    throw new Error(`No download links found. Last error: ${lastError?.message}`);
+  throw new Error("All mirrors failed: " + (lastError?.message || "Unknown error"));
 }
 
 export async function POST(req: NextRequest) {
@@ -148,27 +43,101 @@ export async function POST(req: NextRequest) {
     const { action, query, url } = body;
 
     switch (action) {
-      case 'search': {
-        if (!query) return NextResponse.json({ error: 'Missing query' }, { status: 400 });
-        const searchResults = await searchSeries(query);
-        return NextResponse.json(searchResults);
+      // 🔎 SEARCH
+      case "search": {
+        if (!query) return NextResponse.json({ error: "Missing query" }, { status: 400 });
+
+        const { data, base } = await fetchWithFallback(
+          `search.php?search=${encodeURIComponent(query)}&beginsearch=Search&vsearch=&by=series`
+        );
+        const $ = cheerio.load(data);
+
+        const results: { title: string; url: string }[] = [];
+        $("a").each((_, el) => {
+          const href = $(el).attr("href");
+          const text = $(el).text().trim();
+
+          // ✅ Match both /series/ links and subfolder-*.htm
+          if (href && (href.includes("/series/") || href.includes("subfolder-"))) {
+            results.push({ title: text, url: absUrl(href, base) });
+          }
+        });
+
+        if (results.length === 0) throw new Error(`No series found for "${query}".`);
+        return NextResponse.json(results);
       }
 
-      case 'seasons': {
-        if (!url) return NextResponse.json({ error: 'Missing series URL' }, { status: 400 });
-        const seasons = await getSeasons(url);
+      // 📂 SEASONS
+      case "seasons": {
+        if (!url) return NextResponse.json({ error: "Missing series URL" }, { status: 400 });
+
+        const { data, base } = await fetchWithFallback(url);
+        const $ = cheerio.load(data);
+
+        const seasons: { season: string; url: string }[] = [];
+
+        // Normal multi-season shows
+        $("a").each((_, el) => {
+          const href = $(el).attr("href");
+          const text = $(el).text().trim();
+          if (href && text.toLowerCase().includes("season")) {
+            seasons.push({ season: text, url: absUrl(href, base) });
+          }
+        });
+
+        // 🟢 Single-season fallback
+        if (seasons.length === 0) {
+          // Look for direct episode links on the page
+          const episodeLinks = $("div.mainbox_L a[href*='/episode/']");
+          if (episodeLinks.length > 0) {
+            seasons.push({
+              season: "Season 1",
+              url, // reuse the series page as season URL
+            });
+          }
+        }
+
+        if (seasons.length === 0) throw new Error("No seasons found.");
         return NextResponse.json(seasons);
       }
 
-      case 'episodes': {
-        if (!url) return NextResponse.json({ error: 'Missing season URL' }, { status: 400 });
-        const episodes = await getEpisodes(url);
+      // 🎬 EPISODES
+      case "episodes": {
+        if (!url) return NextResponse.json({ error: "Missing season URL" }, { status: 400 });
+
+        const { data, base } = await fetchWithFallback(url);
+        const $ = cheerio.load(data);
+
+        const episodes: { episode: string; url: string }[] = [];
+        $("div.mainbox_L a").each((_, el) => {
+          const href = $(el).attr("href");
+          const text = $(el).text().trim();
+          if (href && href.includes("/episode/")) {
+            episodes.push({ episode: text, url: absUrl(href, base) });
+          }
+        });
+
+        if (episodes.length === 0) throw new Error("No episodes found.");
         return NextResponse.json(episodes);
       }
 
-      case 'download': {
-        if (!url) return NextResponse.json({ error: 'Missing episode URL' }, { status: 400 });
-        const downloadLinks = await getDownloadLinks(url);
+      // ⬇️ DOWNLOAD LINKS
+      case "download": {
+        if (!url) return NextResponse.json({ error: "Missing episode URL" }, { status: 400 });
+
+        const { data, base } = await fetchWithFallback(url);
+        const $ = cheerio.load(data);
+
+        const downloadLinks: { quality: string; url: string }[] = [];
+        $("div.mainbox_L a").each((_, el) => {
+          const href = $(el).attr("href");
+          const text = $(el).text().trim();
+          if (href && href.includes("download.php")) {
+            downloadLinks.push({ quality: text, url: absUrl(href, base) });
+          }
+        });
+        
+        if (downloadLinks.length === 0) throw new Error("No download links found.");
 
         const proxied = downloadLinks.map((link: { quality: string; url: string }) => ({
           quality: link.quality,
@@ -176,14 +145,15 @@ export async function POST(req: NextRequest) {
           downloadUrl: `/api/proxy-download?url=${encodeURIComponent(link.url)}&download=true`,
         }));
 
+
         return NextResponse.json(proxied);
       }
 
       default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
   } catch (err: any) {
-    console.error(`[API /api/fztv] Error processing request:`, err);
+    console.error(`[API /api/fztv] Error:`, err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
