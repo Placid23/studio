@@ -42,7 +42,7 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('search');
       setError(null);
       try {
-        const res = await fetch(`/api/fztv/search?query=${encodeURIComponent(showName)}`);
+        const res = await fetch(`/api/fztv?action=search&query=${encodeURIComponent(showName)}`);
         const data = await res.json();
         if (data.error || data.length === 0) throw new Error(data.error || 'TV show not found.');
         
@@ -69,7 +69,7 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('seasons');
     setError(null);
     try {
-      const res = await fetch(`/api/fztv/seasons?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`/api/fztv?action=seasons&url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setSeasons(data);
@@ -92,7 +92,7 @@ export function TVStreamer({ showName }: { showName: string }) {
     setIsLoading('episodes');
     setError(null);
     try {
-      const res = await fetch(`/api/fztv/episodes?url=${encodeURIComponent(url)}`);
+      const res = await fetch(`/api/fztv?action=episodes&url=${encodeURIComponent(url)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setEpisodes(data);
@@ -110,7 +110,7 @@ export function TVStreamer({ showName }: { showName: string }) {
       setIsLoading('links');
       setError(null);
       try {
-        const res = await fetch(`/api/fztv/download?url=${encodeURIComponent(url)}`);
+        const res = await fetch(`/api/fztv?action=download&url=${encodeURIComponent(url)}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
