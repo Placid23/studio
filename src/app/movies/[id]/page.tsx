@@ -10,11 +10,11 @@ import { getMovieDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
 import { createClient } from '@/lib/supabase/server';
+import { MediaStreamer } from '@/components/media/MediaStreamer';
 
 async function getLibraryItem(tmdbId: string) {
     const supabase = createClient();
@@ -107,12 +107,7 @@ export default async function MovieDetailPage({ params }: { params: { id: string
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8 flex items-center gap-4 flex-wrap">
-                <Button asChild size="lg">
-                    <Link href={`/watch/${movie.tmdbId}`}>
-                        <PlayCircle className="mr-2 h-6 w-6" />
-                        Watch Now
-                    </Link>
-                </Button>
+                <MediaStreamer mediaName={`${movie.title} ${movie.year}`} />
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
