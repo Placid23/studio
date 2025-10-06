@@ -213,15 +213,25 @@ export async function getSeasonDetails(showId: string, seasonNumber: number): Pr
 }
 
 export async function getSimilarMovies(id: string): Promise<Movie[]> {
+  try {
     const data = await fetchFromTMDB(`/movie/${id}/similar`);
     if (!data?.results) return [];
     return data.results.slice(0, 10).map(mapTmdbToMovie);
+  } catch (error) {
+    console.error(`Could not fetch similar movies for ID ${id}:`, error);
+    return [];
+  }
 }
 
 export async function getSimilarShows(id: string): Promise<Show[]> {
+  try {
     const data = await fetchFromTMDB(`/tv/${id}/similar`);
     if (!data?.results) return [];
     return data.results.slice(0, 10).map(mapTmdbToShow);
+  } catch (error) {
+    console.error(`Could not fetch similar shows for ID ${id}:`, error);
+    return [];
+  }
 }
 
 export async function searchMedia(query: string): Promise<(Movie | Show)[]> {
