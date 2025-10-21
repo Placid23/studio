@@ -64,7 +64,8 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
     const resolvedUrl = await resolveAndSetUrl(quality);
     if (resolvedUrl) {
       const link = document.createElement('a');
-      link.href = resolvedUrl;
+      // Append the download flag for the proxy
+      link.href = `${resolvedUrl}&download=true`;
       const fileName = mediaName.replace(/ /g, '_') + '.mp4';
       link.setAttribute('download', fileName);
       document.body.appendChild(link);

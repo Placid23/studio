@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const q = searchParams.get("q");
-        const quality = searchParams.get("quality") as '720p' | '1080p' | undefined;
+        const quality = searchParams.get("quality") as '720p' | '1080p' | null;
 
         if (!q) {
             return new Response(JSON.stringify({ error: "Missing q parameter" }), { status: 400 });
