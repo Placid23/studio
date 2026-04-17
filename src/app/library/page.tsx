@@ -1,10 +1,8 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { MediaCard } from '@/components/media/MediaCard';
 import type { Movie, Show } from '@/lib/types';
 import { AlertTriangle, Clapperboard } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 
 function SupabaseError() {
   return (
@@ -27,14 +25,12 @@ export default async function LibraryPage() {
   let fetchError: any = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      // The redirect needs to be outside the try/catch or it will be caught.
-      // Next.js throws an error for redirects that we don't want to catch here.
       return redirect('/login?message=You must be logged in to view your library.');
     }
     
@@ -44,7 +40,6 @@ export default async function LibraryPage() {
     fetchError = error;
 
   } catch (e) {
-    // This catches errors during client creation or other unexpected issues.
     return <SupabaseError />;
   }
 

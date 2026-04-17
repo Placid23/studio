@@ -1,4 +1,3 @@
-
 import { createClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
@@ -8,7 +7,7 @@ import { AudioPlayer } from '@/components/media/AudioPlayer';
 import type { Track } from '@/lib/types';
 
 async function getMediaDetails(id: string, searchParams: { [key: string]: string | string[] | undefined }) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { season, episode, type } = searchParams;
 
     let fileId: string | null = null;
@@ -100,10 +99,12 @@ export default async function WatchPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const supabase = createClient();
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -112,8 +113,7 @@ export default async function WatchPage({
     redirect('/login?message=You must be logged in to watch content.');
   }
 
-  const { id } = params;
-  const { fileId, title, mediaType, audioTrack, bucket, error } = await getMediaDetails(id, searchParams);
+  const { fileId, title, mediaType, audioTrack, bucket, error } = await getMediaDetails(id, resolvedSearchParams);
 
   if (!fileId || error) {
     return (

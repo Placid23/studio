@@ -1,4 +1,3 @@
-
 import { deezerGet } from '@/lib/deezer';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -24,7 +23,7 @@ async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: s
 
     let fileId: string | null = null;
     try {
-        const supabase = createClient();
+        const supabase = await createClient();
          const { data: likedSongData } = await supabase
             .from('liked_songs')
             .select('file_id')
@@ -41,8 +40,9 @@ async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: s
     return { track, youtubeId, fileId };
 }
 
-export default async function TrackDetailPage({ params }: { params: { id: string }}) {
-    const { track, youtubeId, fileId } = await getTrackDetails(params.id);
+export default async function TrackDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const { track, youtubeId, fileId } = await getTrackDetails(id);
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -91,7 +91,9 @@ export default async function TrackDetailPage({ params }: { params: { id: string
                     <Music className="w-8 h-8"/>
                     Music Video
                 </h2>
-                <TrailerPlayer posterUrl={track.album.cover_xl} trailerUrl={youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : undefined} />
+                <div className="aspect-video w-full">
+                    <TrailerPlayer posterUrl={track.album.cover_xl} trailerUrl={youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : undefined} />
+                </div>
             </div>
 
             <div className="mt-12">

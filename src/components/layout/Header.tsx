@@ -12,7 +12,7 @@ export async function Header() {
   // Only attempt to get the user if Supabase is configured
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data } = await supabase.auth.getUser();
       user = data.user;
     } catch (e) {

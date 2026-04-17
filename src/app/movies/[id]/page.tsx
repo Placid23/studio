@@ -1,7 +1,6 @@
-
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Clock, Calendar, Film, PlayCircle, Download, Loader2 } from 'lucide-react';
+import { Star, Clock, Calendar } from 'lucide-react';
 import { Suspense } from 'react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
@@ -10,19 +9,20 @@ import { getMovieDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
 import { createClient } from '@/lib/supabase/server';
 import { MediaStreamer } from '@/components/media/MediaStreamer';
 
 async function getLibraryItem(tmdbId: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
     return data;
 }
 
-export default async function MovieDetailPage({ params }: { params: { id: string } }) {
+export default async function MovieDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
@@ -35,13 +35,13 @@ export default async function MovieDetailPage({ params }: { params: { id: string
     );
   }
   
-  const movie = await getMovieDetails(params.id);
+  const movie = await getMovieDetails(id);
 
   if (!movie) {
     notFound();
   }
 
-  const libraryItem = await getLibraryItem(params.id);
+  const libraryItem = await getLibraryItem(id);
 
   return (
     <div className="animate-in fade-in-50 duration-500">

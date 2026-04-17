@@ -28,20 +28,29 @@ export function ThemeProvider({
   storageKey = 'novastream-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (typeof window !== 'undefined' ? (localStorage.getItem(storageKey) as Theme) || defaultTheme : defaultTheme)
-  );
+  // Start with defaultTheme to avoid hydration mismatch
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
+    const savedTheme = localStorage.getItem(storageKey) as Theme;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!hasMounted) return;
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-  }, [theme]);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, hasMounted, storageKey]);
 
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme);
       setTheme(newTheme);
     },
   };

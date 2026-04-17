@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Star, Calendar } from 'lucide-react';
@@ -12,7 +11,9 @@ import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
 import { TVStreamer } from '@/components/media/TVStreamer';
 
-export default async function ShowDetailPage({ params }: { params: { id: string } }) {
+export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
@@ -25,7 +26,7 @@ export default async function ShowDetailPage({ params }: { params: { id: string 
     );
   }
   
-  const show = await getShowDetails(params.id);
+  const show = await getShowDetails(id);
 
   if (!show) {
     notFound();

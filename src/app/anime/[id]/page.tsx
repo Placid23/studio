@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Star, Calendar, PlayCircle } from 'lucide-react';
@@ -20,13 +19,15 @@ import { DownloadButton } from '@/components/media/DownloadButton';
 import { createClient } from '@/lib/supabase/server';
 
 async function getLibraryItem(tmdbId: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
     return data;
 }
 
 
-export default async function AnimeDetailPage({ params }: { params: { id: string } }) {
+export default async function AnimeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return (
       <div className="container mx-auto flex flex-col items-center justify-center h-[calc(100vh-8rem)] text-center p-4">
@@ -39,7 +40,7 @@ export default async function AnimeDetailPage({ params }: { params: { id: string
     );
   }
   
-  const show = await getShowDetails(params.id);
+  const show = await getShowDetails(id);
 
   if (!show) {
     notFound();
@@ -47,7 +48,7 @@ export default async function AnimeDetailPage({ params }: { params: { id: string
 
   // Override the type for UI purposes
   const anime: Show = { ...show, type: 'anime' };
-  const libraryItem = await getLibraryItem(params.id);
+  const libraryItem = await getLibraryItem(id);
 
   return (
     <div className="animate-in fade-in-50 duration-500">

@@ -1,4 +1,3 @@
-
 import { deezerGet } from '@/lib/deezer';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -87,8 +86,8 @@ function renderCard(item: any) {
     );
 }
 
-export default async function SeeAllMusicPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function SeeAllMusicPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   
   if (!(slug in SLUG_MAP)) {
     notFound();
