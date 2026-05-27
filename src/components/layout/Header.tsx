@@ -1,23 +1,27 @@
 import Link from 'next/link';
 import { Clapperboard } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { adminAuth } from '@/lib/firebase/admin';
 import { UserNav } from './UserNav';
 import { MobileNav } from './MobileNav';
 import { DesktopNav } from './DesktopNav';
-import type { User } from '@supabase/supabase-js';
 
 export async function Header() {
-  let user: User | null = null;
-  
-  // Only attempt to get the user if Supabase is configured
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  let user = null;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('firebase-token')?.value;
+
+  if (token) {
     try {
-      const supabase = await createClient();
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
-    } catch (e) {
-        // This can happen if the Supabase URL is not a valid URL.
-        // We'll just ignore it and the user will be treated as logged out.
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      user = {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        displayName: decodedToken.name || decodedToken.email?.split('@')[0],
+        photoURL: decodedToken.picture || null,
+      };
+    } catch (error) {
+      console.error('Firebase token verification failed:', error);
     }
   }
 

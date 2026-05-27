@@ -1,92 +1,72 @@
-
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { cookies } from 'next/headers';
 import type { LikedSong, Track } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
+async function getUserId() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('firebase-token')?.value;
+  if (!token) return null;
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    return decodedToken.uid;
+  } catch (error) {
+    return null;
+  }
+}
+
 export async function getLikedSongsAction(): Promise<LikedSong[]> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const userId = await getUserId();
+  if (!userId) return [];
 
-  if (!user) {
-    return [];
-  }
+  const snapshot = await adminDb
+    .collection('users')
+    .doc(userId)
+    .collection('liked_songs')
+    .orderBy('likedAt', 'desc')
+    .get();
 
-  const { data, error } = await supabase
-    .from('liked_songs')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('liked_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching liked songs:', error);
-    return [];
-  }
-  
-  // Map Supabase data to the correct nested LikedSong type
-  return data.map(item => ({
-      id: item.id,
-      title: item.title,
-      duration: item.duration,
-      preview: item.preview_url || '',
-      artist: { name: item.artist_name },
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: Number(doc.id),
+      title: data.title,
+      duration: data.duration,
+      preview: data.preview_url || '',
+      artist: { name: data.artist_name },
       album: {
-        id: item.album_id,
-        title: item.album_title,
-        cover_xl: item.album_cover_url || ''
+        id: data.album_id,
+        title: data.album_title,
+        cover_xl: data.album_cover_url || ''
       },
       type: 'track',
-      likedAt: new Date(item.liked_at).getTime()
-  }));
+      likedAt: data.likedAt
+    } as LikedSong;
+  });
 }
 
 export async function toggleLikeAction(track: Track): Promise<{ success: boolean; isLiked: boolean; message: string }> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  const userId = await getUserId();
+  if (!userId) {
     return { success: false, isLiked: false, message: 'You must be logged in to like songs.' };
   }
 
-  // Check if the song is already liked
-  const { data: existingLike, error: selectError } = await supabase
-    .from('liked_songs')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('id', track.id)
-    .single();
+  const songRef = adminDb
+    .collection('users')
+    .doc(userId)
+    .collection('liked_songs')
+    .doc(String(track.id));
 
-  if (selectError && selectError.code !== 'PGRST116') { // Ignore "row not found" error
-    console.error('Error checking for existing like:', selectError);
-    return { success: false, isLiked: false, message: 'Could not update your liked songs.' };
-  }
+  const doc = await songRef.get();
 
-  if (existingLike) {
-    // Song is already liked, so unlike it
-    const { error: deleteError } = await supabase
-      .from('liked_songs')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('id', track.id);
-    
-    if (deleteError) {
-      console.error('Error unliking song:', deleteError);
-      return { success: false, isLiked: true, message: `Could not remove "${track.title}"` };
-    }
-    
+  if (doc.exists) {
+    await songRef.delete();
     revalidatePath('/music');
     return { success: true, isLiked: false, message: `Removed "${track.title}" from your liked songs.` };
-
   } else {
-    // Song is not liked, so like it
-    const { error: insertError } = await supabase.from('liked_songs').insert({
-      id: track.id,
-      user_id: user.id,
+    await songRef.set({
       title: track.title,
       duration: track.duration,
       preview_url: track.preview,
@@ -94,36 +74,23 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
       album_id: track.album.id,
       album_title: track.album.title,
       album_cover_url: track.album.cover_xl,
-      // file_id will be updated separately by an admin process
-      // This action only handles "liking" from the public catalog
-      file_id: null, 
+      likedAt: Date.now(),
+      file_id: null,
     });
-
-    if (insertError) {
-        console.error('Error liking song:', insertError);
-        return { success: false, isLiked: false, message: `Could not add "${track.title}"` };
-    }
-
     revalidatePath('/music');
     return { success: true, isLiked: true, message: `Added "${track.title}" to your liked songs.` };
   }
 }
 
-// A simple (and not very reliable) way to search YouTube without an API key.
-// This is suitable for a demo but not for production.
 export async function searchYoutubeVideo(query: string): Promise<string | null> {
     const searchUrl = new URL('https://www.youtube.com/results');
     searchUrl.searchParams.set('search_query', query);
     try {
         const response = await fetch(searchUrl.toString());
-        if (!response.ok) {
-            return null;
-        }
+        if (!response.ok) return null;
         const html = await response.text();
-        // This is a brittle regex to find the first videoId.
         const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
         return match ? match[1] : null;
-
     } catch (error) {
         console.error('Error searching YouTube:', error);
         return null;

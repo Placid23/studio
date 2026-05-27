@@ -1,13 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { adminDb, adminAuth, adminStorage } from '@/lib/firebase/admin';
 import { notFound, redirect } from 'next/navigation';
 import { VideoPlayer } from '@/components/media/VideoPlayer';
 import { BackButton } from '@/components/layout/BackButton';
 import { AlertTriangle } from 'lucide-react';
 import { AudioPlayer } from '@/components/media/AudioPlayer';
+import { cookies } from 'next/headers';
 import type { Track } from '@/lib/types';
 
-async function getMediaDetails(id: string, searchParams: { [key: string]: string | string[] | undefined }) {
-    const supabase = await createClient();
+async function getMediaDetails(id: string, userId: string, searchParams: { [key: string]: string | string[] | undefined }) {
     const { season, episode, type } = searchParams;
 
     let fileId: string | null = null;
@@ -21,62 +21,57 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
         if (type === 'music') {
             mediaType = 'audio';
             bucket = 'songs';
-            const { data: likedSong, error: songError } = await supabase
-                .from('liked_songs')
-                .select('file_id, title, artist_name, album_title, album_cover_url, duration, album_id, id')
-                .eq('id', id)
-                .limit(1)
-                .maybeSingle();
+            const doc = await adminDb.collection('users').doc(userId).collection('liked_songs').doc(id).get();
             
-            if (songError || !likedSong) {
-                throw songError || new Error('This song is not in your liked songs or could not be found.');
+            if (!doc.exists) {
+                throw new Error('This song is not in your liked songs or could not be found.');
             }
             
+            const likedSong = doc.data()!;
             fileId = likedSong.file_id;
             title = likedSong.title;
             audioTrack = {
-                id: likedSong.id,
+                id: Number(id),
                 title: likedSong.title,
                 artist: { name: likedSong.artist_name },
                 album: { id: likedSong.album_id || 0, title: likedSong.album_title || '', cover_xl: likedSong.album_cover_url || ''},
                 duration: likedSong.duration,
-                preview: '', // The full URL will be added later
+                preview: '', 
                 type: 'track'
             };
 
-        } else { // It's a movie or TV show
+        } else {
              mediaType = 'video';
              bucket = 'videos';
 
-             const { data: movieData, error: movieError } = await supabase
-                .from('movies')
-                .select('title, file_id')
-                .eq('tmdb_id', id)
-                .limit(1)
-                .maybeSingle();
+             const doc = await adminDb.collection('users').doc(userId).collection('watchlist').doc(id).get();
 
-            if (movieError || !movieData) {
-                throw movieError || new Error("This title hasn't been added to your library yet.");
+            if (!doc.exists) {
+                throw new Error("This title hasn't been added to your library yet.");
             }
             
+            const movieData = doc.data()!;
             title = movieData.title;
 
-            if (season && episode) { // TV Show Episode
-                 const { data: episodeData, error: episodeError } = await supabase
-                    .from('tv_episodes')
-                    .select('file_id, title, season, episode')
-                    .eq('show_tmdb_id', id)
-                    .eq('season', season)
-                    .eq('episode', episode)
+            if (season && episode) {
+                 const epSnapshot = await adminDb
+                    .collection('users')
+                    .doc(userId)
+                    .collection('watchlist')
+                    .doc(id)
+                    .collection('episodes')
+                    .where('season', '==', Number(season))
+                    .where('episode', '==', Number(episode))
                     .limit(1)
-                    .maybeSingle();
+                    .get();
 
-                if (episodeError || !episodeData?.file_id) {
-                    throw episodeError || new Error(`Episode S${season}E${episode} not found in your library.`);
+                if (epSnapshot.empty || !epSnapshot.docs[0].data().file_id) {
+                    throw new Error(`Episode S${season}E${episode} not found in your library.`);
                 }
+                const episodeData = epSnapshot.docs[0].data();
                 fileId = episodeData.file_id;
                 title = `${movieData.title} S${String(episodeData.season).padStart(2, '0')}E${String(episodeData.episode).padStart(2, '0')}`;
-            } else { // Movie
+            } else {
                  if (!movieData.file_id) {
                     throw new Error("This movie is in your library, but a video file hasn't been linked to it yet.");
                 }
@@ -84,7 +79,6 @@ async function getMediaDetails(id: string, searchParams: { [key: string]: string
             }
         }
     } catch (e: any) {
-        console.error('Error fetching media details:', e.message);
         error = e.message;
     }
     
@@ -104,16 +98,20 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  
+  const cookieStore = await cookies();
+  const token = cookieStore.get('firebase-token')?.value;
+  if (!token) redirect('/login?message=You must be logged in to watch content.');
 
-  if (!user) {
-    redirect('/login?message=You must be logged in to watch content.');
+  let userId;
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    userId = decodedToken.uid;
+  } catch (e) {
+    redirect('/login?message=Session expired. Please login again.');
   }
 
-  const { fileId, title, mediaType, audioTrack, bucket, error } = await getMediaDetails(id, resolvedSearchParams);
+  const { fileId, title, mediaType, audioTrack, bucket, error } = await getMediaDetails(id, userId, resolvedSearchParams);
 
   if (!fileId || error) {
     return (
@@ -132,25 +130,18 @@ export default async function WatchPage({
     );
   }
 
-  // If fileId is a full URL, extract the path. Otherwise, use it as is.
-  let filePath = fileId;
+  // Get signed URL from Firebase Storage
+  let signedUrl;
   try {
-    const url = new URL(fileId);
-    // The path is everything after the bucket name
-    const pathParts = url.pathname.split(`/${bucket}/`);
-    if (pathParts.length > 1) {
-       filePath = decodeURIComponent(pathParts[1]);
-    }
-  } catch (e) {
-    // Not a valid URL, so we assume it's already a file path.
-  }
-  
-  const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(filePath, 60 * 60); // URL is valid for 1 hour
-
-  if (signedUrlError || !signedUrlData) {
-     return (
+    const file = adminStorage.bucket().file(fileId);
+    const [url] = await file.getSignedUrl({
+        version: 'v4',
+        action: 'read',
+        expires: Date.now() + 60 * 60 * 1000, // 1 hour
+    });
+    signedUrl = url;
+  } catch (e: any) {
+    return (
         <div className="bg-background text-foreground min-h-screen h-screen flex flex-col relative">
             <header className="absolute top-0 left-0 p-4 z-20 w-full bg-gradient-to-b from-black/70 to-transparent">
                 <BackButton className="border-border bg-background/20 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm" />
@@ -159,8 +150,7 @@ export default async function WatchPage({
                 <div className="flex flex-col items-center justify-center text-center p-4 h-full">
                 <AlertTriangle className="w-16 h-16 text-destructive mb-4" />
                 <h1 className="text-2xl font-bold">Streaming Error</h1>
-                <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the content. {signedUrlError?.message}</p>
-                <p className="text-sm text-muted-foreground/80 mt-2">Attempted to access: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{filePath}</code> from bucket: <code className="bg-muted px-1 py-0.5 rounded text-destructive">{bucket}</code></p>
+                <p className="text-muted-foreground max-w-md">Could not generate a secure link to play the content. {e.message}</p>
                 </div>
             </main>
         </div>
@@ -168,7 +158,7 @@ export default async function WatchPage({
   }
 
   if (mediaType === 'audio' && audioTrack) {
-    const fullTrack = { ...audioTrack, preview: signedUrlData.signedUrl };
+    const fullTrack = { ...audioTrack, preview: signedUrl };
     return (
         <div className="container mx-auto px-4 py-8">
             <BackButton />
@@ -184,7 +174,7 @@ export default async function WatchPage({
 
   return (
     <div className="bg-black text-white min-h-screen h-screen flex flex-col relative">
-      <VideoPlayer src={signedUrlData.signedUrl} title={title} />
+      <VideoPlayer src={signedUrl} title={title} />
     </div>
   );
 }

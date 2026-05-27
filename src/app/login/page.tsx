@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -10,39 +9,36 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { useTransition } from 'react';
-
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { useState, useTransition } from 'react';
 
 export default function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
-  const signIn = (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     startTransition(async () => {
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-          router.push('/login?message=Supabase is not configured.');
-          return;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const token = await userCredential.user.getIdToken();
+        
+        // Store token in cookie for server-side auth
+        document.cookie = `firebase-token=${token}; path=/; max-age=3600; SameSite=Lax`;
+        
+        router.push('/');
+        router.refresh();
+      } catch (err: any) {
+        setError(err.message);
       }
-
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-      const supabase = createClient();
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        router.push(`/login?message=Could not authenticate user: ${error.message}`);
-        return;
-      }
-
-      router.push('/');
-      router.refresh();
     });
   };
   
@@ -74,7 +70,7 @@ export default function Login() {
             </motion.div>
           </CardHeader>
           <CardContent>
-            <form action={signIn} className="grid gap-4">
+            <form onSubmit={handleSubmit} className="grid gap-4">
               <motion.div variants={itemVariants} custom={2} className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={isPending} />
@@ -84,12 +80,12 @@ export default function Login() {
                 <Input id="password" name="password" type="password" required disabled={isPending} />
               </motion.div>
               
-              {message && (
+              {(message || error) && (
                 <motion.div variants={itemVariants} custom={4}>
                   <Alert variant="destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>{message}</AlertDescription>
+                      <AlertDescription>{message || error}</AlertDescription>
                   </Alert>
                 </motion.div>
               )}
