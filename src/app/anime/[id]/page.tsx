@@ -16,14 +16,23 @@ import type { Show } from '@/lib/types';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
 import { DownloadButton } from '@/components/media/DownloadButton';
-import { createClient } from '@/lib/supabase/server';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { cookies } from 'next/headers';
 
 async function getLibraryItem(tmdbId: string) {
-    const supabase = await createClient();
-    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
-    return data;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-token')?.value;
+    if (!token) return null;
+    
+    try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const userId = decodedToken.uid;
+        const doc = await adminDb.collection('users').doc(userId).collection('watchlist').doc(tmdbId).get();
+        return doc.exists ? doc.data() : null;
+    } catch (e) {
+        return null;
+    }
 }
-
 
 export default async function AnimeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,7 +55,6 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
-  // Override the type for UI purposes
   const anime: Show = { ...show, type: 'anime' };
   const libraryItem = await getLibraryItem(id);
 

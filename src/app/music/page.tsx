@@ -1,4 +1,3 @@
-
 import { deezerGet } from '@/lib/deezer';
 import { MusicCarousel } from '@/components/media/MusicCarousel';
 import { Music } from 'lucide-react';
@@ -6,7 +5,8 @@ import { Suspense } from 'react';
 import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
 import { LikedSongsCarousel } from '@/components/media/LikedSongsCarousel';
 import { getLikedSongsAction } from './actions';
-import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { adminAuth } from '@/lib/firebase/admin';
 import { MusicSearch } from '@/components/media/MusicSearch';
 
 async function MusicData() {
@@ -38,8 +38,17 @@ async function MusicData() {
 }
 
 export default async function MusicPage() {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-token')?.value;
+    
+    let user = null;
+    if (token) {
+        try {
+            user = await adminAuth.verifyIdToken(token);
+        } catch (e) {
+            user = null;
+        }
+    }
 
     // Fetch initial liked songs on the server for faster initial load
     const initialLikedSongs = user ? await getLikedSongsAction() : [];

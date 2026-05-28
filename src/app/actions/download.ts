@@ -1,7 +1,7 @@
 'use server';
 
-import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
+import { adminAuth, adminStorage } from "@/lib/firebase/admin";
+import { cookies } from "next/headers";
 
 interface DownloadResult {
     url?: string;
@@ -9,37 +9,29 @@ interface DownloadResult {
     fileName?: string;
 }
 
-// This function generates a signed URL for downloading a file from a specified bucket.
-export async function downloadFileAction(filePath: string, bucket: 'videos' | 'songs', fileName: string): Promise<DownloadResult> {
-    const supabase = createClient();
+export async function downloadFileAction(filePath: string, bucketName: string, fileName: string): Promise<DownloadResult> {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-token')?.value;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    if (!token) {
         return { error: "You must be logged in to download files." };
     }
-    
-    // Sanitize file path to prevent path traversal
-    let sanitizedPath = filePath;
-    try {
-        const url = new URL(filePath);
-        const pathParts = url.pathname.split(`/${bucket}/`);
-        if (pathParts.length > 1) {
-            sanitizedPath = pathParts[1];
-        }
-    } catch (e) {
-        // Not a URL, assume it's already a path
-    }
 
-    const { data, error } = await supabase.storage
-        .from(bucket)
-        .createSignedUrl(sanitizedPath, 60, { // URL is valid for 60 seconds
-            download: true // This prompts the browser to download the file
+    try {
+        await adminAuth.verifyIdToken(token);
+        
+        const bucket = adminStorage.bucket();
+        const file = bucket.file(filePath);
+        
+        const [url] = await file.getSignedUrl({
+            version: 'v4',
+            action: 'read',
+            expires: Date.now() + 60 * 1000, // 1 minute
         });
 
-    if (error) {
+        return { url, fileName };
+    } catch (error) {
         console.error("Error creating signed download URL:", error);
         return { error: "Could not create download link." };
     }
-
-    return { url: data.signedUrl, fileName };
 }

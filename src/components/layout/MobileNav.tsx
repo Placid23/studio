@@ -12,30 +12,24 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import type { User } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { auth } from '@/lib/firebase/config';
+import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
-
-interface NavLink {
-    href: string;
-    label: string;
-}
-
-export function MobileNav({ user, navLinks }: { user: User | null, navLinks: NavLink[] }) {
+export function MobileNav({ user, navLinks }: { user: any, navLinks: { href: string, label: string }[] }) {
     const pathname = usePathname();
     const router = useRouter();
 
     const handleSignOut = async () => {
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        try {
+            await signOut(auth);
+            // Clear the cookie manually on client side as well
+            document.cookie = 'firebase-token=; path=/; max-age=0; SameSite=Lax';
             router.push('/login');
             router.refresh();
-            return;
+        } catch (error) {
+            console.error('Error signing out:', error);
         }
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        router.push('/login');
-        router.refresh();
     };
 
     return (

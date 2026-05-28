@@ -1,8 +1,5 @@
-import { createBrowserClient } from '@supabase/ssr'
-
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
+// This file is deprecated and replaced by Firebase.
+// Stubbed out to prevent build errors.
+export const createClient = () => {
+    return null as any;
+};

@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Music, PlayCircle } from 'lucide-react';
 import { SimilarSongs } from '@/components/media/SimilarSongs';
-import { createClient } from '@/lib/supabase/server';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { DownloadButton } from '@/components/media/DownloadButton';
+import { cookies } from 'next/headers';
 
 async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: string | null, fileId: string | null }> {
     const trackData = await deezerGet(`track/${id}`);
@@ -23,18 +24,18 @@ async function getTrackDetails(id: string): Promise<{ track: Track, youtubeId: s
 
     let fileId: string | null = null;
     try {
-        const supabase = await createClient();
-         const { data: likedSongData } = await supabase
-            .from('liked_songs')
-            .select('file_id')
-            .eq('id', track.id)
-            .limit(1)
-            .maybeSingle();
-        if (likedSongData && likedSongData.file_id) {
-            fileId = likedSongData.file_id;
+        const cookieStore = await cookies();
+        const token = cookieStore.get('firebase-token')?.value;
+        if (token) {
+            const decodedToken = await adminAuth.verifyIdToken(token);
+            const userId = decodedToken.uid;
+            const doc = await adminDb.collection('users').doc(userId).collection('liked_songs').doc(id).get();
+            if (doc.exists && doc.data()?.file_id) {
+                fileId = doc.data()?.file_id;
+            }
         }
     } catch(e) {
-        // Ignore error if song is not in library, which is expected.
+        // Ignore error
     }
 
     return { track, youtubeId, fileId };

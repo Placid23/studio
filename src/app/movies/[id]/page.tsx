@@ -11,13 +11,23 @@ import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
 import { addToWatchlistAction } from './actions';
-import { createClient } from '@/lib/supabase/server';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { MediaStreamer } from '@/components/media/MediaStreamer';
+import { cookies } from 'next/headers';
 
 async function getLibraryItem(tmdbId: string) {
-    const supabase = await createClient();
-    const { data } = await supabase.from('movies').select('file_id').eq('tmdb_id', tmdbId).limit(1).maybeSingle();
-    return data;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-token')?.value;
+    if (!token) return null;
+    
+    try {
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const userId = decodedToken.uid;
+        const doc = await adminDb.collection('users').doc(userId).collection('watchlist').doc(tmdbId).get();
+        return doc.exists ? doc.data() : null;
+    } catch (e) {
+        return null;
+    }
 }
 
 export default async function MovieDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,8 +50,6 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
   if (!movie) {
     notFound();
   }
-
-  const libraryItem = await getLibraryItem(id);
 
   return (
     <div className="animate-in fade-in-50 duration-500">
