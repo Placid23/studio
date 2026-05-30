@@ -13,6 +13,7 @@ async function getUserId() {
     const decodedToken = await adminAuth.verifyIdToken(token);
     return decodedToken.uid;
   } catch (error) {
+    console.error("Token verification failed in getUserId:", error);
     return null;
   }
 }
@@ -21,30 +22,35 @@ export async function getLikedSongsAction(): Promise<LikedSong[]> {
   const userId = await getUserId();
   if (!userId) return [];
 
-  const snapshot = await adminDb
-    .collection('users')
-    .doc(userId)
-    .collection('liked_songs')
-    .orderBy('likedAt', 'desc')
-    .get();
+  try {
+    const snapshot = await adminDb
+      .collection('users')
+      .doc(userId)
+      .collection('liked_songs')
+      .orderBy('likedAt', 'desc')
+      .get();
 
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
-    return {
-      id: Number(doc.id),
-      title: data.title,
-      duration: data.duration,
-      preview: data.preview_url || '',
-      artist: { name: data.artist_name },
-      album: {
-        id: data.album_id,
-        title: data.album_title,
-        cover_xl: data.album_cover_url || ''
-      },
-      type: 'track',
-      likedAt: data.likedAt
-    } as LikedSong;
-  });
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: Number(doc.id),
+        title: data.title,
+        duration: data.duration,
+        preview: data.preview_url || '',
+        artist: { name: data.artist_name },
+        album: {
+          id: data.album_id,
+          title: data.album_title,
+          cover_xl: data.album_cover_url || ''
+        },
+        type: 'track',
+        likedAt: data.likedAt
+      } as LikedSong;
+    });
+  } catch (e) {
+    console.error("Error fetching liked songs:", e);
+    return [];
+  }
 }
 
 export async function toggleLikeAction(track: Track): Promise<{ success: boolean; isLiked: boolean; message: string }> {
@@ -53,32 +59,37 @@ export async function toggleLikeAction(track: Track): Promise<{ success: boolean
     return { success: false, isLiked: false, message: 'You must be logged in to like songs.' };
   }
 
-  const songRef = adminDb
-    .collection('users')
-    .doc(userId)
-    .collection('liked_songs')
-    .doc(String(track.id));
+  try {
+    const songRef = adminDb
+      .collection('users')
+      .doc(userId)
+      .collection('liked_songs')
+      .doc(String(track.id));
 
-  const doc = await songRef.get();
+    const doc = await songRef.get();
 
-  if (doc.exists) {
-    await songRef.delete();
-    revalidatePath('/music');
-    return { success: true, isLiked: false, message: `Removed "${track.title}" from your liked songs.` };
-  } else {
-    await songRef.set({
-      title: track.title,
-      duration: track.duration,
-      preview_url: track.preview,
-      artist_name: track.artist.name,
-      album_id: track.album.id,
-      album_title: track.album.title,
-      album_cover_url: track.album.cover_xl,
-      likedAt: Date.now(),
-      file_id: null,
-    });
-    revalidatePath('/music');
-    return { success: true, isLiked: true, message: `Added "${track.title}" to your liked songs.` };
+    if (doc.exists) {
+      await songRef.delete();
+      revalidatePath('/music');
+      return { success: true, isLiked: false, message: `Removed "${track.title}" from your liked songs.` };
+    } else {
+      await songRef.set({
+        title: track.title,
+        duration: track.duration,
+        preview_url: track.preview,
+        artist_name: track.artist.name,
+        album_id: track.album.id,
+        album_title: track.album.title,
+        album_cover_url: track.album.cover_xl,
+        likedAt: Date.now(),
+        file_id: null,
+      });
+      revalidatePath('/music');
+      return { success: true, isLiked: true, message: `Added "${track.title}" to your liked songs.` };
+    }
+  } catch (error: any) {
+    console.error("Error toggling like:", error);
+    return { success: false, isLiked: false, message: "An error occurred while updating your favorites." };
   }
 }
 

@@ -25,13 +25,20 @@ export default function Signup() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    setError(null);
+
+    if (password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+    }
+
     startTransition(async () => {
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const token = await userCredential.user.getIdToken();
         
         // Store token in cookie for server-side auth
-        document.cookie = `firebase-token=${token}; path=/; max-age=3600; SameSite=Lax`;
+        document.cookie = `firebase-token=${token}; path=/; max-age=3600; SameSite=Lax; Secure`;
         
         setSuccess(true);
         setTimeout(() => {
@@ -39,7 +46,13 @@ export default function Signup() {
             router.refresh();
         }, 1500);
       } catch (err: any) {
-        setError(err.message);
+        let errorMsg = "Could not create account. Please try again.";
+        if (err.code === 'auth/email-already-in-use') {
+            errorMsg = "This email is already in use.";
+        } else if (err.code === 'auth/invalid-email') {
+            errorMsg = "Please enter a valid email address.";
+        }
+        setError(errorMsg);
       }
     });
   };
@@ -51,24 +64,25 @@ export default function Signup() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-sm"
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Sign Up</CardTitle>
-            <CardDescription>Enter your email below to create an account</CardDescription>
+        <Card className="border-primary/20 shadow-2xl">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-black uppercase tracking-tight text-primary">Sign Up</CardTitle>
+            <CardDescription>Create your NovaStream account to start building your library</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={isPending} />
+                <Input id="email" name="email" type="email" placeholder="name@example.com" required disabled={isPending || success} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required disabled={isPending} />
+                <Input id="password" name="password" type="password" required disabled={isPending || success} />
+                <p className="text-[10px] text-muted-foreground">Must be at least 6 characters.</p>
               </div>
               
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="animate-in fade-in zoom-in duration-200">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
@@ -76,21 +90,21 @@ export default function Signup() {
               )}
 
               {success && (
-                <Alert>
-                    <CheckCircle2 className="h-4 w-4" />
+                <Alert className="border-green-500/50 bg-green-500/10 text-green-500 animate-in fade-in zoom-in duration-200">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
                     <AlertTitle>Success</AlertTitle>
-                    <AlertDescription>Account created! Redirecting...</AlertDescription>
+                    <AlertDescription>Account created! Taking you home...</AlertDescription>
                 </Alert>
               )}
 
-              <Button type="submit" className="w-full" disabled={isPending || success}>
+              <Button type="submit" className="w-full font-bold" disabled={isPending || success}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isPending ? 'Creating Account...' : 'Sign Up'}
               </Button>
             </form>
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/login" className="underline">
+              <Link href="/login" className="underline text-primary hover:text-primary/80 transition-colors">
                 Login
               </Link>
             </div>

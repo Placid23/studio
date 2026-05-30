@@ -26,30 +26,34 @@ export default function Login() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
+    setError(null);
+
     startTransition(async () => {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const token = await userCredential.user.getIdToken();
         
         // Store token in cookie for server-side auth
-        document.cookie = `firebase-token=${token}; path=/; max-age=3600; SameSite=Lax`;
+        // Use a secure, Lax cookie for Next.js 15 compatibility
+        document.cookie = `firebase-token=${token}; path=/; max-age=3600; SameSite=Lax; Secure`;
         
         router.push('/');
         router.refresh();
       } catch (err: any) {
-        setError(err.message);
+        let errorMsg = "Failed to login. Please check your credentials.";
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+            errorMsg = "Invalid email or password.";
+        } else if (err.code === 'auth/too-many-requests') {
+            errorMsg = "Too many failed attempts. Please try again later.";
+        }
+        setError(errorMsg);
       }
     });
   };
   
   const cardVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-  };
-
-  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
   };
 
   return (
@@ -60,49 +64,43 @@ export default function Login() {
         variants={cardVariants}
         className="w-full max-w-sm"
       >
-        <Card>
-          <CardHeader>
-            <motion.div variants={itemVariants} custom={0}>
-                <CardTitle className="text-2xl">Login</CardTitle>
-            </motion.div>
-            <motion.div variants={itemVariants} custom={1}>
-                <CardDescription>Enter your email below to login to your account</CardDescription>
-            </motion.div>
+        <Card className="border-primary/20 shadow-2xl">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-black uppercase tracking-tight text-primary">Login</CardTitle>
+            <CardDescription>Enter your email below to access your account</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">
-              <motion.div variants={itemVariants} custom={2} className="grid gap-2">
+              <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required disabled={isPending} />
-              </motion.div>
-              <motion.div variants={itemVariants} custom={3} className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Input id="email" name="email" type="email" placeholder="name@example.com" required disabled={isPending} />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                </div>
                 <Input id="password" name="password" type="password" required disabled={isPending} />
-              </motion.div>
+              </div>
               
               {(message || error) && (
-                <motion.div variants={itemVariants} custom={4}>
-                  <Alert variant="destructive">
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
-                      <AlertDescription>{message || error}</AlertDescription>
-                  </Alert>
-                </motion.div>
+                <Alert variant="destructive" className="animate-in fade-in zoom-in duration-200">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Notice</AlertTitle>
+                    <AlertDescription>{message || error}</AlertDescription>
+                </Alert>
               )}
 
-              <motion.div variants={itemVariants} custom={5}>
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isPending ? 'Logging in...' : 'Login'}
-                </Button>
-              </motion.div>
+              <Button type="submit" className="w-full font-bold" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? 'Authenticating...' : 'Login'}
+              </Button>
             </form>
-            <motion.div variants={itemVariants} custom={6} className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
+              <Link href="/signup" className="underline text-primary hover:text-primary/80 transition-colors">
                 Sign up
               </Link>
-            </motion.div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
