@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { PlayCircle, Download, Loader2, AlertCircle } from "lucide-react";
+import { PlayCircle, Download, Loader2, AlertCircle, Monitor, Smartphone, Zap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,13 +37,12 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
         throw new Error(data.error || "Failed to resolve download link.");
       }
       
-      // Use the proxy for both streaming and downloading
       return `/api/proxy-download?url=${encodeURIComponent(data.finalUrl)}`;
 
     } catch (err: any) {
       setError(err.message);
       toast({
-        title: "Error",
+        title: "Link Resolution Failed",
         description: err.message,
         variant: "destructive",
       });
@@ -64,9 +63,8 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
     const resolvedUrl = await resolveAndSetUrl(quality);
     if (resolvedUrl) {
       const link = document.createElement('a');
-      // Append the download flag for the proxy
       link.href = `${resolvedUrl}&download=true`;
-      const fileName = mediaName.replace(/ /g, '_') + '.mp4';
+      const fileName = mediaName.replace(/ /g, '_') + `_${quality}.mp4`;
       link.setAttribute('download', fileName);
       document.body.appendChild(link);
       link.click();
@@ -77,21 +75,32 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
   const renderContent = () => {
     if (error) {
        return (
-        <div className="flex flex-col items-center gap-2 p-4 text-center mt-6 bg-card rounded-lg">
+        <div className="flex flex-col items-center gap-2 p-6 text-center mt-6 bg-destructive/5 border border-destructive/20 rounded-2xl">
             <AlertCircle className="h-8 w-8 text-destructive" />
-            <p className="text-sm font-semibold text-destructive">Could Not Get Link</p>
+            <p className="text-sm font-bold text-destructive uppercase tracking-widest">Mirror Link Error</p>
             <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
         </div>
       );
     }
     if (streamUrl) {
       return (
-        <video
-          src={streamUrl}
-          controls
-          autoPlay
-          className="w-full max-w-4xl rounded-lg shadow-2xl aspect-video bg-black"
-        />
+        <div className="relative group mt-8">
+            <div className="absolute inset-0 bg-primary/10 blur-[80px] group-hover:bg-primary/20 transition-all" />
+            <video
+              src={streamUrl}
+              controls
+              autoPlay
+              className="relative w-full max-w-4xl rounded-3xl shadow-2xl border border-white/10 aspect-video bg-black z-10"
+            />
+            <Button 
+                onClick={() => setStreamUrl(null)} 
+                variant="outline" 
+                size="sm" 
+                className="mt-4 w-full rounded-xl border-white/5 hover:bg-white/5 text-muted-foreground uppercase text-[10px] font-black tracking-widest"
+            >
+                Close Stream
+            </Button>
+        </div>
       );
     }
     return null;
@@ -102,11 +111,11 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
       <div className="flex items-center gap-2">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button size="lg" disabled={isLoading}>
+                <Button size="lg" disabled={isLoading} className="rounded-2xl h-14 px-8 shadow-xl shadow-primary/20 hover:scale-105 transition-all active:scale-95">
                     {isLoading ? (
                         <>
                             <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                            Resolving...
+                            Analyzing Mirrors...
                         </>
                     ) : (
                         <>
@@ -116,19 +125,45 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
                     )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuLabel>Stream</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleStream('720p')} disabled={isLoading}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStream('1080p')} disabled>1080p (Unstable)</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Download</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleDownload('720p')} disabled={isLoading}>720p</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownload('1080p')} disabled>1080p (Unstable)</DropdownMenuItem>
+            <DropdownMenuContent className="w-64 rounded-2xl p-2 bg-card/90 backdrop-blur-xl border-white/10">
+                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Stream Quality</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleStream('720p')} className="rounded-xl h-12 flex items-center gap-3 cursor-pointer">
+                    <Smartphone className="w-4 h-4 opacity-70" />
+                    <div className="flex flex-col">
+                        <span className="font-bold">Standard (720p)</span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-black">Best for mobile</span>
+                    </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStream('1080p')} className="rounded-xl h-12 flex items-center gap-3 cursor-pointer">
+                    <Monitor className="w-4 h-4 opacity-70" />
+                    <div className="flex flex-col">
+                        <span className="font-bold">High (1080p)</span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-black">Best for desktop</span>
+                    </div>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator className="bg-white/5 my-2" />
+                
+                <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2">Save Offline</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleDownload('720p')} className="rounded-xl h-12 flex items-center gap-3 cursor-pointer">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <div className="flex flex-col">
+                        <span className="font-bold">Fast Download</span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-black">Smaller file size</span>
+                    </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload('1080p')} className="rounded-xl h-12 flex items-center gap-3 cursor-pointer">
+                    <Download className="w-4 h-4 text-primary" />
+                    <div className="flex flex-col">
+                        <span className="font-bold">Full HD Download</span>
+                        <span className="text-[9px] text-muted-foreground uppercase font-black">Original quality</span>
+                    </div>
+                </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="mt-6 w-full">
+      <div className="w-full">
         {renderContent()}
       </div>
     </div>

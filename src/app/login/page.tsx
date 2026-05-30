@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Loader2, KeyRound } from 'lucide-react';
+import { AlertTriangle, Loader2, KeyRound, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
@@ -68,24 +69,35 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-8rem)] p-4">
+    <div className="relative flex items-center justify-center min-h-[calc(100vh-4rem)] p-4 overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] animate-pulse delay-700" />
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md z-10"
       >
-        <Card className="border-primary/10 shadow-2xl bg-card/50 backdrop-blur-xl rounded-2xl overflow-hidden">
-          <CardHeader className="space-y-1 pb-8">
-            <CardTitle className="text-3xl font-black uppercase tracking-tight text-primary">
-              {showReset ? 'Reset Password' : 'Welcome Back'}
+        <Card className="border-white/10 shadow-2xl bg-card/30 backdrop-blur-2xl rounded-[2rem] overflow-hidden border">
+          <CardHeader className="space-y-2 pb-8 pt-10 px-8 text-center">
+            <motion.div 
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="mx-auto w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/40 mb-4"
+            >
+                <KeyRound className="text-white w-6 h-6" />
+            </motion.div>
+            <CardTitle className="text-4xl font-black uppercase tracking-tighter text-foreground">
+              {showReset ? 'Recovery' : 'Welcome'}
             </CardTitle>
-            <CardDescription className="text-muted-foreground/80">
+            <CardDescription className="text-muted-foreground font-medium">
               {showReset 
-                ? 'Enter your email to receive a recovery link' 
-                : 'Enter your credentials to stream your library'}
+                ? 'Enter email to reset your secret key' 
+                : 'Access your premium media library'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-8 pb-10">
             <AnimatePresence mode="wait">
               {!showReset ? (
                 <motion.form 
@@ -94,10 +106,10 @@ export default function Login() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   onSubmit={handleSubmit} 
-                  className="grid gap-5"
+                  className="grid gap-6"
                 >
                   <div className="grid gap-2">
-                    <Label htmlFor="email" className="font-bold text-xs uppercase tracking-widest opacity-70">Email</Label>
+                    <Label htmlFor="email" className="font-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">Email Address</Label>
                     <Input 
                         id="email" 
                         name="email" 
@@ -105,18 +117,18 @@ export default function Login() {
                         placeholder="name@example.com" 
                         required 
                         disabled={isPending}
-                        className="bg-background/50 h-12 rounded-xl focus-visible:ring-primary/50" 
+                        className="bg-background/40 h-14 rounded-2xl focus-visible:ring-primary/50 border-white/5 transition-all text-lg" 
                     />
                   </div>
                   <div className="grid gap-2">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="password" className="font-bold text-xs uppercase tracking-widest opacity-70">Password</Label>
+                    <div className="flex items-center justify-between ml-1">
+                        <Label htmlFor="password" className="font-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Password</Label>
                         <button 
                             type="button"
                             onClick={() => setShowReset(true)}
-                            className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                            className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
                         >
-                            Forgot?
+                            Forgot Key?
                         </button>
                     </div>
                     <Input 
@@ -125,20 +137,20 @@ export default function Login() {
                         type="password" 
                         required 
                         disabled={isPending}
-                        className="bg-background/50 h-12 rounded-xl focus-visible:ring-primary/50"
+                        className="bg-background/40 h-14 rounded-2xl focus-visible:ring-primary/50 border-white/5 transition-all text-lg"
                     />
                   </div>
                   
                   {(message || error) && (
-                    <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl">
+                    <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-2xl py-3">
                         <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription className="text-xs font-medium">{message || error}</AlertDescription>
+                        <AlertDescription className="text-xs font-bold uppercase tracking-tight">{message || error}</AlertDescription>
                     </Alert>
                   )}
 
-                  <Button type="submit" className="w-full font-bold h-12 rounded-xl shadow-lg shadow-primary/20" disabled={isPending}>
-                    {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {isPending ? 'Authenticating...' : 'Sign In'}
+                  <Button type="submit" className="w-full font-black h-14 rounded-2xl shadow-xl shadow-primary/20 text-lg uppercase tracking-widest group" disabled={isPending}>
+                    {isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                    {isPending ? 'Validating...' : 'Unlock Stream'}
                   </Button>
                 </motion.form>
               ) : (
@@ -148,10 +160,10 @@ export default function Login() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   onSubmit={handleResetPassword} 
-                  className="grid gap-5"
+                  className="grid gap-6"
                 >
                   <div className="grid gap-2">
-                    <Label htmlFor="email" className="font-bold text-xs uppercase tracking-widest opacity-70">Account Email</Label>
+                    <Label htmlFor="email" className="font-bold text-[10px] uppercase tracking-[0.2em] text-muted-foreground ml-1">Account Email</Label>
                     <Input 
                         id="email" 
                         name="email" 
@@ -159,30 +171,30 @@ export default function Login() {
                         placeholder="name@example.com" 
                         required 
                         disabled={isPending}
-                        className="bg-background/50 h-12 rounded-xl" 
+                        className="bg-background/40 h-14 rounded-2xl border-white/5 text-lg" 
                     />
                   </div>
                   
                   {resetSent && (
-                    <Alert className="bg-green-500/10 border-green-500/20 text-green-500 rounded-xl">
+                    <Alert className="bg-green-500/10 border-green-500/20 text-green-500 rounded-2xl">
                         <KeyRound className="h-4 w-4" />
-                        <AlertDescription className="text-xs font-medium">Reset link sent! Check your inbox.</AlertDescription>
+                        <AlertDescription className="text-xs font-bold uppercase">Reset link sent! Check your inbox.</AlertDescription>
                     </Alert>
                   )}
 
                   {error && (
-                    <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-xl">
+                    <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive rounded-2xl">
                         <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription className="text-xs font-medium">{error}</AlertDescription>
+                        <AlertDescription className="text-xs font-bold uppercase">{error}</AlertDescription>
                     </Alert>
                   )}
 
-                  <div className="flex flex-col gap-2">
-                    <Button type="submit" className="w-full font-bold h-12 rounded-xl" disabled={isPending || resetSent}>
-                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Send Reset Link'}
+                  <div className="flex flex-col gap-3">
+                    <Button type="submit" className="w-full font-black h-14 rounded-2xl shadow-lg shadow-primary/20 uppercase tracking-widest" disabled={isPending || resetSent}>
+                        {isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Send Recovery Link'}
                     </Button>
-                    <Button variant="ghost" type="button" onClick={() => setShowReset(false)} className="w-full text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Back to Login
+                    <Button variant="ghost" type="button" onClick={() => setShowReset(false)} className="w-full text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:bg-white/5 rounded-xl">
+                        <ArrowLeft className="mr-2 h-3 w-3" /> Back to Login
                     </Button>
                   </div>
                 </motion.form>
@@ -190,10 +202,10 @@ export default function Login() {
             </AnimatePresence>
             
             {!showReset && (
-                <div className="mt-6 text-center text-sm text-muted-foreground">
-                    New to NovaStream?{' '}
-                    <Link href="/signup" className="font-bold text-primary hover:text-primary/80 transition-colors">
-                        Join now
+                <div className="mt-8 text-center text-sm">
+                    <span className="text-muted-foreground font-medium">New to NovaStream?</span>{' '}
+                    <Link href="/signup" className="font-black text-primary hover:underline transition-all uppercase tracking-tighter ml-1">
+                        Join the crew
                     </Link>
                 </div>
             )}

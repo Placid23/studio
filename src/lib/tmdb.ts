@@ -7,9 +7,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 
 async function fetchFromTMDB(path: string, params: Record<string, string> = {}) {
   if (!API_KEY) {
-    // This check is primarily for server-side logs. Client-side will show the UI error.
     console.error('NEXT_PUBLIC_TMDB_API_KEY environment variable is not set');
-    // In client-side components, we should throw to let react-query handle it.
     if (typeof window !== 'undefined') {
       throw new Error('NEXT_PUBLIC_TMDB_API_KEY is not configured.');
     }
@@ -68,11 +66,11 @@ function mapTmdbToMovie(tmdbMovie: any): Movie {
 
 function mapTmdbToShow(tmdbShow: any): Show {
     const trailer = tmdbShow.videos?.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
-    const type = (tmdbShow.genres?.some((g: any) => g.id === 16)) ? 'anime' : 'tv';
-
+    const isAnime = tmdbShow.genres?.some((g: any) => g.id === 16) && (tmdbShow.origin_country?.includes('JP') || tmdbShow.original_language === 'ja');
+    
     return {
         tmdbId: String(tmdbShow.id),
-        type: type,
+        type: isAnime ? 'anime' : 'tv',
         title: tmdbShow.name,
         year: tmdbShow.first_air_date ? new Date(tmdbShow.first_air_date).getFullYear() : 0,
         genres: tmdbShow.genres?.map((g: any) => g.name) || [],
@@ -94,10 +92,9 @@ function mapTmdbToShow(tmdbShow: any): Show {
 
 export async function getPopularAnime(page: number = 1): Promise<{results: Show[], total_pages: number}> {
     const data = await fetchFromTMDB('/discover/tv', {
-      with_genres: '16', // Animation genre ID
-      with_keywords: '210024|287501', // Japanimation | aniplex
+      with_genres: '16', 
+      with_keywords: '210024|287501', 
       sort_by: 'popularity.desc',
-      'air_date.gte': new Date(new Date().setFullYear(new Date().getFullYear() - 5)).toISOString().split('T')[0], // last 5 years
       page: String(page)
     });
     if (!data?.results) return { results: [], total_pages: 0 };
@@ -107,11 +104,23 @@ export async function getPopularAnime(page: number = 1): Promise<{results: Show[
     };
 }
 
+export async function getKDramas(page: number = 1): Promise<{results: Show[], total_pages: number}> {
+    const data = await fetchFromTMDB('/discover/tv', {
+      with_original_language: 'ko',
+      with_genres: '18,35', // Drama or Comedy
+      sort_by: 'popularity.desc',
+      page: String(page)
+    });
+    if (!data?.results) return { results: [], total_pages: 0 };
+    return {
+        results: data.results.map(mapTmdbToShow),
+        total_pages: data.total_pages
+    };
+}
 
 export async function getTrending(mediaType: 'movie' | 'tv' = 'movie'): Promise<(Movie | Show)[]> {
   const data = await fetchFromTMDB(`/trending/${mediaType}/week`);
   if (!data?.results) return [];
-  // Ensure we only return the correct media type, TMDB search can be fuzzy
   return data.results
     .filter((item: any) => (item.media_type === 'movie' || item.media_type === 'tv'))
     .map((item: any) => {
@@ -133,7 +142,7 @@ export async function getPopularMovies(page: number = 1, region?: string): Promi
 
 export async function getEroticMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
     const data = await fetchFromTMDB('/discover/movie', { 
-        with_keywords: '10194', // "erotic movie" keyword ID
+        with_keywords: '10194',
         include_adult: 'true',
         page: String(page),
         sort_by: 'popularity.desc'
@@ -144,7 +153,6 @@ export async function getEroticMovies(page: number = 1): Promise<{results: Movie
         total_pages: data.total_pages
     };
 }
-
 
 export async function getTopRatedMovies(page: number = 1): Promise<{results: Movie[], total_pages: number}> {
     const data = await fetchFromTMDB('/movie/top_rated', { page: String(page) });
@@ -183,20 +191,24 @@ export async function getTopRatedShows(page: number = 1): Promise<{results: Show
     };
 }
 
-
 export async function getMovieDetails(id: string): Promise<Movie | null> {
-  if (!id || id === 'undefined') {
+  try {
+    const data = await fetchFromTMDB(`/movie/${id}`, { append_to_response: 'videos,credits' });
+    if (!data) return null;
+    return mapTmdbToMovie(data);
+  } catch {
     return null;
   }
-  const data = await fetchFromTMDB(`/movie/${id}`, { append_to_response: 'videos,credits' });
-  if (!data) return null;
-  return mapTmdbToMovie(data);
 }
 
 export async function getShowDetails(id: string): Promise<Show | null> {
-  const data = await fetchFromTMDB(`/tv/${id}`, { append_to_response: 'videos,credits' });
-  if (!data) return null;
-  return mapTmdbToShow(data);
+  try {
+    const data = await fetchFromTMDB(`/tv/${id}`, { append_to_response: 'videos,credits' });
+    if (!data) return null;
+    return mapTmdbToShow(data);
+  } catch {
+    return null;
+  }
 }
 
 export async function getSeasonDetails(showId: string, seasonNumber: number): Promise<Episode[]> {
@@ -217,8 +229,7 @@ export async function getSimilarMovies(id: string): Promise<Movie[]> {
     const data = await fetchFromTMDB(`/movie/${id}/similar`);
     if (!data?.results) return [];
     return data.results.slice(0, 10).map(mapTmdbToMovie);
-  } catch (error) {
-    console.error(`Could not fetch similar movies for ID ${id}:`, error);
+  } catch {
     return [];
   }
 }
@@ -228,8 +239,7 @@ export async function getSimilarShows(id: string): Promise<Show[]> {
     const data = await fetchFromTMDB(`/tv/${id}/similar`);
     if (!data?.results) return [];
     return data.results.slice(0, 10).map(mapTmdbToShow);
-  } catch (error) {
-    console.error(`Could not fetch similar shows for ID ${id}:`, error);
+  } catch {
     return [];
   }
 }

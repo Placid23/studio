@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, PlayCircle, Download } from 'lucide-react';
+import { Loader2, AlertCircle, PlayCircle, Download, MonitorPlay } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
 interface SearchResult {
@@ -49,18 +50,17 @@ export function TVStreamer({ showName }: { showName: string }) {
           body: JSON.stringify({ action: 'search', query: showName }),
         });
         const data = await res.json();
-        if (data.error || data.length === 0) throw new Error(data.error || 'TV show not found.');
-
-        const bestMatch =
-          data.find((r: SearchResult) =>
-            r.title.toLowerCase().includes(showName.toLowerCase())
-          ) || data[0];
+        if (data.error || data.length === 0) throw new Error(data.error || 'Mirror not found.');
+        
+        const bestMatch = data.find((r: SearchResult) =>
+          r.title.toLowerCase().includes(showName.toLowerCase())
+        ) || data[0];
 
         setSearchResult(bestMatch);
         await fetchSeasons(bestMatch.url);
       } catch (err: any) {
         setError(err.message);
-        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+        toast({ title: 'Mirror Error', description: err.message, variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }
@@ -82,7 +82,7 @@ export function TVStreamer({ showName }: { showName: string }) {
       setSeasons(data);
     } catch (err: any) {
       setError(err.message);
-      toast({ title: 'Error', description: `Could not fetch seasons: ${err.message}`, variant: 'destructive' });
+      toast({ title: 'Seasons Unavailable', description: err.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +105,7 @@ export function TVStreamer({ showName }: { showName: string }) {
       setEpisodes(data);
     } catch (err: any) {
       setError(err.message);
-      toast({ title: 'Error', description: `Could not fetch episodes: ${err.message}`, variant: 'destructive' });
+      toast({ title: 'Episodes Offline', description: err.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -123,10 +123,10 @@ export function TVStreamer({ showName }: { showName: string }) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setDownloadLinks(data);
+      setDownloadLinks(data); 
     } catch (err: any) {
       setError(err.message);
-      toast({ title: 'Error', description: `Could not get download links: ${err.message}`, variant: 'destructive' });
+      toast({ title: 'Download Link Error', description: err.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -134,45 +134,59 @@ export function TVStreamer({ showName }: { showName: string }) {
 
   if (isLoading === 'search' || (isLoading === 'seasons' && seasons.length === 0)) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground p-4 bg-card rounded-lg">
-        <Loader2 className="animate-spin h-5 w-5" />
-        Searching for "{showName}"...
+      <div className="flex items-center gap-4 text-muted-foreground p-8 bg-card/30 rounded-3xl border border-white/5">
+        <div className="p-3 bg-primary/10 rounded-2xl">
+            <Loader2 className="animate-spin h-6 w-6 text-primary" />
+        </div>
+        <div className="flex flex-col">
+            <span className="font-black uppercase tracking-widest text-[10px] opacity-60">Scraping Mirrors</span>
+            <span className="font-bold">Locating "{showName}"...</span>
+        </div>
       </div>
     );
   }
 
   if (error && !seasons.length) {
     return (
-      <div className="flex flex-col items-center gap-2 p-4 text-center bg-card rounded-lg">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm font-semibold text-destructive">Could Not Find Show</p>
+      <div className="flex flex-col items-center gap-3 p-8 text-center bg-destructive/5 border border-destructive/20 rounded-3xl">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <p className="text-sm font-black uppercase tracking-[0.2em] text-destructive">Show Not Found</p>
         <p className="text-xs text-muted-foreground max-w-xs">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Accordion type="single" collapsible className="w-full bg-card rounded-lg p-2">
+    <div className="space-y-6">
+      <Accordion type="single" collapsible className="w-full bg-card/30 backdrop-blur-xl rounded-3xl p-4 border border-white/5 shadow-2xl">
         {seasons.map((season) => (
-          <AccordionItem value={season.url} key={season.url}>
-            <AccordionTrigger onClick={() => fetchEpisodes(season.url)}>
-              {season.season}
-              {isLoading === 'episodes' && activeSeasonUrl === season.url && (
-                <Loader2 className="animate-spin h-4 w-4 ml-2" />
-              )}
+          <AccordionItem value={season.url} key={season.url} className="border-white/5 last:border-0">
+            <AccordionTrigger 
+                onClick={() => fetchEpisodes(season.url)}
+                className="hover:no-underline hover:bg-white/5 px-4 rounded-xl py-6 transition-all"
+            >
+              <div className="flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <MonitorPlay className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="text-lg font-black uppercase tracking-tight">{season.season}</span>
+                  {isLoading === 'episodes' && activeSeasonUrl === season.url && (
+                    <Loader2 className="animate-spin h-4 w-4 ml-2 opacity-50" />
+                  )}
+              </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <div className="pl-4 border-l-2 border-primary/20 space-y-2">
+            <AccordionContent className="pt-4">
+              <div className="pl-4 space-y-3">
                 {episodes.map(ep => (
-                  <div key={ep.url} className="flex flex-col p-2 rounded-md hover:bg-card-foreground/5">
+                  <div key={ep.url} className="flex flex-col p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all group">
                     <div className="flex items-center justify-between">
-                      <span>{ep.episode}</span>
+                      <span className="font-bold uppercase tracking-tighter text-sm opacity-80 group-hover:opacity-100">{ep.episode}</span>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => fetchDownloadLinks(ep.url)}
                         disabled={isLoading === 'links' && activeEpisodeUrl === ep.url}
+                        className="rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px] bg-background/50 hover:bg-primary hover:text-white transition-all"
                       >
                         {isLoading === 'links' && activeEpisodeUrl === ep.url
                           ? <Loader2 className="animate-spin h-4 w-4" />
@@ -180,19 +194,24 @@ export function TVStreamer({ showName }: { showName: string }) {
                       </Button>
                     </div>
                     {activeEpisodeUrl === ep.url && downloadLinks.length > 0 && (
-                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
+                      <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-white/5">
                         {downloadLinks.map(link => (
-                          <div key={link.streamUrl} className="flex gap-2">
-                            <Button size="sm" onClick={() => setVideoUrl(link.streamUrl)}>
-                              <PlayCircle className="mr-2" />
-                              Stream {link.quality}
-                            </Button>
-                            <Button size="sm" variant="outline" asChild>
-                              <Link href={link.downloadUrl} target="_blank" download>
-                                <Download className="mr-2" />
-                                Download {link.quality}
-                              </Link>
-                            </Button>
+                          <div key={link.streamUrl} className="flex flex-wrap gap-3 items-center">
+                            <div className="flex-1 flex flex-col">
+                                <Badge variant="secondary" className="w-fit rounded-lg px-2 py-0 text-[9px] font-black uppercase tracking-widest border-primary/20">{link.quality}</Badge>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button size="sm" onClick={() => setVideoUrl(link.streamUrl)} className="rounded-xl h-10 px-4 bg-primary/10 hover:bg-primary text-primary hover:text-white transition-all">
+                                <PlayCircle className="mr-2 h-4 w-4" />
+                                Stream
+                                </Button>
+                                <Button size="sm" variant="outline" asChild className="rounded-xl h-10 px-4 border-white/5 hover:bg-white/5">
+                                <Link href={link.downloadUrl} target="_blank" download>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Save
+                                </Link>
+                                </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -206,10 +225,11 @@ export function TVStreamer({ showName }: { showName: string }) {
       </Accordion>
 
       {videoUrl && (
-        <div className="mt-6">
-          <video src={videoUrl} controls autoPlay className="w-full aspect-video rounded-lg bg-black"></video>
-          <Button onClick={() => setVideoUrl(null)} variant="outline" className="mt-2 w-full">
-            Close Player
+        <div className="mt-8 relative group">
+          <div className="absolute inset-0 bg-primary/10 blur-[100px] animate-pulse" />
+          <video src={videoUrl} controls autoPlay className="relative w-full aspect-video rounded-3xl bg-black shadow-2xl border border-white/10 z-10"></video>
+          <Button onClick={() => setVideoUrl(null)} variant="outline" className="mt-4 w-full rounded-2xl h-14 border-white/5 hover:bg-white/5 text-muted-foreground uppercase font-black tracking-[0.2em] text-xs">
+            Close Media Player
           </Button>
         </div>
       )}
