@@ -1,4 +1,3 @@
-
 'use server';
 
 import fetchOrig from "node-fetch";
@@ -16,7 +15,6 @@ const defaultHeaders = {
   "Referer": siteUrl,
 };
 
-// create a fetch that keeps cookies across requests (like requests.Session())
 function createFetchWithJar() {
   const jar = new tough.CookieJar();
   // @ts-ignore
@@ -52,11 +50,6 @@ async function fetchWithTimeout(fetch: any, url: string, opts = {}, timeout = TI
   }
 }
 
-/**
- * Main auto-run function
- * @param {{query: string, quality?: string}} opts
- * @returns {Promise<{title: string, finalUrl: string, steps: Array<any>}>}
- */
 export async function autoRun({ query, quality = "720p" }: { query: string; quality?: '720p' | '1080p' }) {
   if (!query || typeof query !== "string") {
     throw new Error("Query (string) is required");
@@ -65,7 +58,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const { fetch } = createFetchWithJar();
   const steps: any[] = [];
 
-  // 1) Load homepage
   const homeResp = await fetchWithTimeout(fetch, siteUrl, {
     method: "GET",
     headers: defaultHeaders,
@@ -76,7 +68,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   await homeResp.text();
   steps.push({ step: "home", url: siteUrl });
 
-  // 2) Search
   const searchEndpoint = resolveUrl("/csearch.php", siteUrl);
   const form = new URLSearchParams();
   form.append("searchname", query);
@@ -100,25 +91,35 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const searchHtml = await searchResp.text();
   steps.push({ step: "search", url: searchEndpoint });
 
-  // 3) Parse search results
   const $s = load(searchHtml);
-  let candidateMovie: { title: string, href: string | null } | null = null;
+  let results: { title: string, href: string | null }[] = [];
   $s("a").each((_, el) => {
     const href = $s(el).attr("href") || "";
     const text = ($s(el).text() || "").trim();
-    if (!candidateMovie && /\.htm($|\?)/i.test(href)) {
-      candidateMovie = { title: text || "unknown", href: resolveUrl(href, siteUrl) };
+    if (/\.htm($|\?)/i.test(href) && 
+        text.length > 2 && 
+        !/home|contact|latest|popular|privacy|terms|about|disclaimer/i.test(text)) {
+      results.push({ title: text, href: resolveUrl(href, siteUrl) });
     }
   });
-  if (!candidateMovie) {
+
+  if (results.length === 0) {
     const match = searchHtml.match(/href=["']([^"']+\.htm[^"']*)["']/i);
-    if (match) candidateMovie = { title: query, href: resolveUrl(match[1], siteUrl) };
+    if (match) results.push({ title: query, href: resolveUrl(match[1], siteUrl) });
   }
-  if (!candidateMovie || !candidateMovie.href) throw new Error("No movie results found from search");
+
+  if (results.length === 0) throw new Error("No movie results found from search");
+
+  const queryWords = query.toLowerCase().split(' ').filter(w => w.length > 2);
+  let candidateMovie = results.reduce((best, current) => {
+    const currentScore = queryWords.filter(word => current.title.toLowerCase().includes(word)).length;
+    const bestScore = queryWords.filter(word => best.title.toLowerCase().includes(word)).length;
+    return currentScore > bestScore ? current : best;
+  }, results[0]);
+
   steps.push({ step: "pick_movie", movie: candidateMovie });
 
-  // 4) Fetch movie page
-  const moviePageResp = await fetchWithTimeout(fetch, candidateMovie.href, {
+  const moviePageResp = await fetchWithTimeout(fetch, candidateMovie.href!, {
     method: "GET",
     headers: defaultHeaders,
   });
@@ -128,7 +129,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const movieHtml = await moviePageResp.text();
   steps.push({ step: "movie_page", url: candidateMovie.href });
 
-  // 5) Find download1.php link
   const $m = load(movieHtml);
   let movieFileUrl = null;
   $m("a").each((_, el) => {
@@ -145,7 +145,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   if (!movieFileUrl) throw new Error("Could not find movie file (download1) link on movie page");
   steps.push({ step: "movie_file_link", url: movieFileUrl });
 
-  // 6) Download1 page
   const download1Resp = await fetchWithTimeout(fetch, movieFileUrl, {
     method: "GET",
     headers: defaultHeaders,
@@ -156,19 +155,18 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const download1Html = await download1Resp.text();
   steps.push({ step: "download1_page", url: movieFileUrl });
 
-  // 7) Parse download.php links
   const $d1 = load(download1Html);
   let downloadLinks: { href: string | null; text: string }[] = [];
   $d1("a").each((_, el) => {
     const href = $d1(el).attr("href") || "";
     const text = ($d1(el).text() || "").trim();
     if (href.includes("download.php?downloadkey")) {
-      downloadLinks.push({ href: resolveUrl(href, movieFileUrl), text });
+      downloadLinks.push({ href: resolveUrl(href, movieFileUrl!), text });
     }
   });
   if (!downloadLinks.length) {
     const allMatches = [...download1Html.matchAll(/href=["']([^"']*download\.php\?downloadkey=[^"']*)["']/ig)];
-    allMatches.forEach(m => downloadLinks.push({ href: resolveUrl(m[1], movieFileUrl), text: m[1] }));
+    allMatches.forEach(m => downloadLinks.push({ href: resolveUrl(m[1], movieFileUrl!), text: m[1] }));
   }
   if (!downloadLinks.length) throw new Error("No download.php links found on download1 page");
 
@@ -182,7 +180,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   if (!chosenDownloadPage) throw new Error('Could not choose a download page link');
   steps.push({ step: "choose_download_page", candidates: downloadLinks, chosen: chosenDownloadPage });
 
-  // 8) Fetch download.php page
   const downloadPageResp = await fetchWithTimeout(fetch, chosenDownloadPage, {
     method: "GET",
     headers: defaultHeaders,
@@ -193,7 +190,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const downloadPageHtml = await downloadPageResp.text();
   steps.push({ step: "download_page", url: chosenDownloadPage });
 
-  // 9) Find dlink.php
   const $dl = load(downloadPageHtml);
   let dlinkCandidates: { href: string | null, text: string }[] = [];
   $dl("a").each((_, el) => {
@@ -212,7 +208,6 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   if (!chosenDlink) throw new Error('Could not choose a dlink page');
   steps.push({ step: "choose_dlink", candidates: dlinkCandidates, chosen: chosenDlink });
 
-  // 10) Final dlink page
   const finalResp = await fetchWithTimeout(fetch, chosenDlink, {
     method: "GET",
     headers: defaultHeaders,
@@ -223,13 +218,12 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   const finalHtml = await finalResp.text();
   steps.push({ step: "final_page", url: chosenDlink });
 
-  // 11) Extract final URL
   const $f = load(finalHtml);
   let finalUrl = null;
 
   $f("a").each((_, el) => {
     const href = $f(el).attr("href") || "";
-    if (/^https?:\/\//i.test(href)) {
+    if (/^https?:\/\//i.test(href) && !href.includes('fzmovies.live') && !href.includes('google.com')) {
       finalUrl = href;
       return false;
     }
@@ -242,7 +236,7 @@ export async function autoRun({ query, quality = "720p" }: { query: string; qual
   }
 
   if (!finalUrl) {
-    const m2 = finalHtml.match(/https?:\/\/[^\s'"]{10,}/i);
+    const m2 = finalHtml.match(/https?:\/\/[^\s'"]{10,}\.mp4[^\s'"]*/i);
     if (m2) finalUrl = m2[0];
   }
 

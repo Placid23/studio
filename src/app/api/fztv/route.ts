@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -43,7 +42,6 @@ export async function POST(req: NextRequest) {
     const { action, query, url } = body;
 
     switch (action) {
-      // 🔎 SEARCH
       case "search": {
         if (!query) return NextResponse.json({ error: "Missing query" }, { status: 400 });
 
@@ -53,21 +51,31 @@ export async function POST(req: NextRequest) {
         const $ = cheerio.load(data);
 
         const results: { title: string; url: string }[] = [];
+        const queryWords = query.toLowerCase().split(' ').filter(w => w.length > 2);
+
         $("a").each((_, el) => {
           const href = $(el).attr("href");
           const text = $(el).text().trim();
 
-          // ✅ Match both /series/ links and subfolder-*.htm
           if (href && (href.includes("/series/") || href.includes("subfolder-"))) {
-            results.push({ title: text, url: absUrl(href, base) });
+             if (!/home|contact|latest|popular|privacy/i.test(text)) {
+                results.push({ title: text, url: absUrl(href, base) });
+             }
           }
         });
 
         if (results.length === 0) throw new Error(`No series found for "${query}".`);
+
+        // Sort results by relevance
+        results.sort((a, b) => {
+          const aScore = queryWords.filter(w => a.title.toLowerCase().includes(w)).length;
+          const bScore = queryWords.filter(w => b.title.toLowerCase().includes(w)).length;
+          return bScore - aScore;
+        });
+
         return NextResponse.json(results);
       }
 
-      // 📂 SEASONS
       case "seasons": {
         if (!url) return NextResponse.json({ error: "Missing series URL" }, { status: 400 });
 
@@ -76,7 +84,6 @@ export async function POST(req: NextRequest) {
 
         const seasons: { season: string; url: string }[] = [];
 
-        // Normal multi-season shows
         $("a").each((_, el) => {
           const href = $(el).attr("href");
           const text = $(el).text().trim();
@@ -85,14 +92,12 @@ export async function POST(req: NextRequest) {
           }
         });
 
-        // 🟢 Single-season fallback
         if (seasons.length === 0) {
-          // Look for direct episode links on the page
           const episodeLinks = $("div.mainbox_L a[href*='/episode/']");
           if (episodeLinks.length > 0) {
             seasons.push({
               season: "Season 1",
-              url, // reuse the series page as season URL
+              url,
             });
           }
         }
@@ -101,7 +106,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(seasons);
       }
 
-      // 🎬 EPISODES
       case "episodes": {
         if (!url) return NextResponse.json({ error: "Missing season URL" }, { status: 400 });
 
@@ -121,7 +125,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(episodes);
       }
 
-      // ⬇️ DOWNLOAD LINKS
       case "download": {
         if (!url) return NextResponse.json({ error: "Missing episode URL" }, { status: 400 });
 
