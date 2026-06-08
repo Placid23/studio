@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -77,13 +76,6 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             
-            <div 
-              onClick={handlePlayClick}
-              className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] cursor-pointer"
-            >
-              <PlayCircle className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
-            </div>
-
             <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/80 to-transparent">
               <h3 className="text-base font-bold drop-shadow-lg truncate">{media.title}</h3>
               {media.rating > 0 && (
@@ -95,8 +87,17 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
             </div>
           </div>
         </Link>
+
+        {/* Play Overlay - Moved outside Link to avoid nested interactive content hydration errors */}
+        <div 
+          onClick={handlePlayClick}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] cursor-pointer rounded-lg"
+        >
+          <PlayCircle className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
+        </div>
+
         {onRemove && (
-          <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} />
+          <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-20" />
         )}
         {showAddButton && (
           <Button 
@@ -104,7 +105,7 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
               disabled={isPending}
               variant="outline" 
               size="sm" 
-              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90"
+              className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90"
           >
               <PlusCircle className="mr-2 h-4 w-4" /> {isPending ? 'Adding...' : 'Add'}
           </Button>
