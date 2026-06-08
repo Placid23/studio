@@ -1,4 +1,3 @@
-
 'use client';
 
 /**
@@ -35,13 +34,21 @@ export async function fetchOptions(
   title: string,
   type: "movie" | "series" | "auto" = "auto"
 ): Promise<OptionsResponse> {
-  const res = await fetch(`${API_URL}/options`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, type }),
-  });
-  if (!res.ok) throw new Error(`Options failed: ${res.status}`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/options`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, type }),
+    });
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    return await res.json();
+  } catch (error: any) {
+    console.error(`[Flask API] Error reaching ${API_URL}/options:`, error);
+    throw new Error(error.message === 'Failed to fetch' 
+      ? `Could not reach the streaming server at ${API_URL}. Please ensure it is running.`
+      : error.message
+    );
+  }
 }
 
 /**
@@ -51,13 +58,18 @@ export async function fetchEpisodes(
   title: string,
   season: string
 ): Promise<{ episodes: string[]; error?: string }> {
-  const res = await fetch(`${API_URL}/episodes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, season }),
-  });
-  if (!res.ok) throw new Error(`Episodes failed: ${res.status}`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/episodes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, season }),
+    });
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    return await res.json();
+  } catch (error: any) {
+    console.error(`[Flask API] Error reaching ${API_URL}/episodes:`, error);
+    throw new Error(`Connection to episode server failed.`);
+  }
 }
 
 /**
@@ -70,13 +82,18 @@ export async function resolveDownload(params: {
   season?: string;
   episode?: string;
 }): Promise<ResolveResponse> {
-  const res = await fetch(`${API_URL}/resolve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) throw new Error(`Resolve failed: ${res.status}`);
-  return res.json();
+  try {
+    const res = await fetch(`${API_URL}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    return await res.json();
+  } catch (error: any) {
+    console.error(`[Flask API] Error reaching ${API_URL}/resolve:`, error);
+    throw new Error(`Failed to resolve download link.`);
+  }
 }
 
 /**

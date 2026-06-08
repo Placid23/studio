@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   fetchOptions,
   fetchEpisodes,
@@ -16,8 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlayCircle, Download, AlertTriangle, ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, PlayCircle, Download, AlertTriangle, ChevronRight, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -41,19 +39,7 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
   const [streamUrl, setStreamUrl] = useState("");
   const [dlUrl, setDlUrl] = useState("");
 
-  // Auto-start when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      handleStart();
-    } else {
-      // Reset state on close
-      setStep("idle");
-      setEpisode("");
-      setSeason("");
-    }
-  }, [isOpen]);
-
-  async function handleStart() {
+  const handleStart = useCallback(async () => {
     setStep("loading");
     setError("");
     try {
@@ -69,11 +55,24 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       }
       setStep("options");
     } catch (e: any) {
-      console.error(e);
+      console.error("[VideoModal] Initialization error:", e);
       setError(e.message || "Failed to connect to stream server.");
       setStep("error");
     }
-  }
+  }, [title, type]);
+
+  // Auto-start when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      handleStart();
+    } else {
+      // Reset state on close
+      setStep("idle");
+      setEpisode("");
+      setSeason("");
+      setError("");
+    }
+  }, [isOpen, handleStart]);
 
   async function handleSeasonChange(s: string) {
     setSeason(s);
@@ -114,12 +113,12 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 text-white p-0 overflow-hidden rounded-[2rem]">
+      <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 text-white p-0 overflow-hidden rounded-[2rem] shadow-2xl">
         <div className="p-8">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-primary flex items-center gap-2">
-              <PlayCircle className="w-8 h-8" />
-              {title}
+          <DialogHeader className="mb-6 relative">
+            <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-primary flex items-center gap-2 pr-8">
+              <PlayCircle className="w-8 h-8 shrink-0" />
+              <span className="truncate">{title}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -130,7 +129,7 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
                 <Loader2 className="w-12 h-12 text-primary animate-spin relative z-10" />
               </div>
-              <p className="text-zinc-400 font-bold uppercase tracking-widest text-xs">
+              <p className="text-zinc-400 font-bold uppercase tracking-widest text-[10px]">
                 {step === "loading" ? "Initializing Stream Engine..." : "Resolving High-Speed Mirror..."}
               </p>
             </div>
