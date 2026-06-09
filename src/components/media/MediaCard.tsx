@@ -9,7 +9,6 @@ import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { addMediaToLibraryAction } from '@/app/search/actions';
 import { useState, useTransition, useEffect } from 'react';
-import { VideoModal } from './VideoModal';
 
 interface MediaCardProps {
   media: Movie | Show;
@@ -20,11 +19,10 @@ interface MediaCardProps {
 
 export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAddButton = false }: MediaCardProps) {
   const [mounted, setMounted] = useState(false);
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  // Handle hydration mismatch by waiting for mount before rendering interactive elements
+  // Handle hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -59,12 +57,6 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
     });
   };
 
-  const handlePlayClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsVideoModalOpen(true);
-  };
-
   return (
     <div className="group relative w-full flex-shrink-0">
       <Link href={href} className="block w-full">
@@ -78,7 +70,14 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
             sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
             data-ai-hint={hint}
           />
+          
+          {/* Visual Overlays inside the Link */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+          {/* Hover Play Icon - Purely Visual, click bubbles to the Link */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] rounded-lg">
+            <PlayCircle className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
+          </div>
 
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/80 to-transparent">
             <h3 className="text-base font-bold drop-shadow-lg truncate">{media.title}</h3>
@@ -92,16 +91,9 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
         </div>
       </Link>
 
-      {/* Only render interactive overlays after hydration to prevent mismatches */}
+      {/* Interactive controls outside the main navigation link */}
       {mounted && (
         <>
-          <div
-            onClick={handlePlayClick}
-            className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] cursor-pointer rounded-lg"
-          >
-            <PlayCircle className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
-          </div>
-
           {onRemove && (
             <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-20" />
           )}
@@ -117,13 +109,6 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
               <PlusCircle className="mr-2 h-4 w-4" /> {isPending ? 'Adding...' : 'Add'}
             </Button>
           )}
-
-          <VideoModal
-            title={media.title}
-            type={media.type === 'movie' ? 'movie' : 'series'}
-            isOpen={isVideoModalOpen}
-            onClose={() => setIsVideoModalOpen(false)}
-          />
         </>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Calendar, PlayCircle } from 'lucide-react';
+import { Star, Calendar } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
@@ -9,8 +9,6 @@ import { getShowDetails } from '@/lib/tmdb';
 import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { EpisodeGuide } from '@/components/media/EpisodeGuide';
 import type { Show } from '@/lib/types';
 import { AddToWatchlistButton } from '@/components/media/AddToWatchlistButton';
@@ -18,6 +16,7 @@ import { addToWatchlistAction } from './actions';
 import { DownloadButton } from '@/components/media/DownloadButton';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
+import { TVStreamer } from '@/components/media/TVStreamer';
 
 async function getLibraryItem(tmdbId: string) {
     const cookieStore = await cookies();
@@ -114,12 +113,7 @@ export default async function AnimeDetailPage({ params }: { params: Promise<{ id
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{anime.synopsis}</p>
             <div className="mt-8 flex items-center gap-4 flex-wrap">
-              <Button asChild size="lg">
-                <Link href={`/watch/${anime.tmdbId}?season=1&episode=1`}>
-                    <PlayCircle className="mr-2 h-6 w-6" />
-                    Watch Now
-                </Link>
-              </Button>
+              <TVStreamer showName={anime.title} />
               <AddToWatchlistButton media={anime} addAction={addToWatchlistAction} />
               {libraryItem?.file_id && (
                   <DownloadButton 
