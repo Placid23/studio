@@ -1,4 +1,3 @@
-
 import { getTrending } from '@/lib/tmdb';
 import { MediaCarousels } from '@/components/media/MediaCarousels';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
@@ -16,7 +15,9 @@ async function getHeroMedia() {
         if (trendingData.length === 0) {
             return { error: 'Could not load trending media.' };
         }
-        const heroMedia = trendingData[Math.floor(Math.random() * Math.min(trendingData.length, 10))];
+        // Use a deterministic selection (the top trending item) to avoid hydration mismatches
+        // between server and client rendering.
+        const heroMedia = trendingData[0];
         return { heroMedia };
     } catch (e) {
         console.error(e);

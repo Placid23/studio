@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { Movie, Show } from '@/lib/types';
-import { Star, PlayCircle, PlusCircle } from 'lucide-react';
+import { Star, CirclePlay, PlusCircle } from 'lucide-react';
 import { ImageLoader } from './ImageLoader';
 import { HoldToDeleteButton } from './HoldToDeleteButton';
 import { Button } from '../ui/button';
@@ -22,7 +22,7 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  // Handle hydration mismatch
+  // Handle hydration mismatch by deferring interactive elements
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -71,13 +71,17 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
             data-ai-hint={hint}
           />
           
-          {/* Visual Overlays inside the Link */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {/* Visual Overlays wrapped in mounted check to prevent hydration mismatch */}
+          {mounted && (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          {/* Hover Play Icon - Purely Visual, click bubbles to the Link */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] rounded-lg">
-            <PlayCircle className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
-          </div>
+              {/* Hover Play Icon - Purely Visual, click bubbles to the Link */}
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] rounded-lg">
+                <CirclePlay className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
+              </div>
+            </>
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/80 to-transparent">
             <h3 className="text-base font-bold drop-shadow-lg truncate">{media.title}</h3>

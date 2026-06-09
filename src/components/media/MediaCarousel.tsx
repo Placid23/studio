@@ -40,7 +40,7 @@ export function MediaCarousel({ title, media, onRemoveItem }: MediaCarouselProps
           className="scrollbar-hide -mx-4 flex space-x-4 overflow-x-auto px-4 py-2 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         >
           {media.map((item, index) => (
-            <div key={`${item.tmdbId}-${index}`} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
+            <div key={`carousel-${title}-${item.tmdbId}-${index}`} className="w-40 flex-shrink-0 sm:w-48 md:w-56">
               <MediaCard media={item} onRemove={onRemoveItem} />
             </div>
           ))}
