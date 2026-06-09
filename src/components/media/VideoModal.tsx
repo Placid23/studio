@@ -6,6 +6,7 @@ import {
   fetchEpisodes,
   resolveDownload,
   getStreamUrl,
+  getPlaywrightStreamUrl,
   type Quality,
 } from "@/lib/flask-api";
 import {
@@ -15,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, PlayCircle, Download, AlertTriangle, ChevronRight, X } from "lucide-react";
+import { Loader2, PlayCircle, Download, AlertTriangle, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -38,10 +39,12 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
   const [episode, setEpisode] = useState("");
   const [streamUrl, setStreamUrl] = useState("");
   const [dlUrl, setDlUrl] = useState("");
+  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
   const handleStart = useCallback(async () => {
     setStep("loading");
     setError("");
+    setIsUsingFallback(false);
     try {
       const data = await fetchOptions(title, type);
       if (data.error) throw new Error(data.error);
@@ -61,16 +64,15 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
     }
   }, [title, type]);
 
-  // Auto-start when modal opens
   useEffect(() => {
     if (isOpen) {
       handleStart();
     } else {
-      // Reset state on close
       setStep("idle");
       setEpisode("");
       setSeason("");
       setError("");
+      setIsUsingFallback(false);
     }
   }, [isOpen, handleStart]);
 
@@ -101,13 +103,28 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       });
       if (data.error) throw new Error(data.error);
       setDlUrl(data.url);
-      setStreamUrl(getStreamUrl(data.url));
+      
+      // Determine referer from headers if provided by the backend
+      const referer = data.headers?.Referer || data.headers?.referer;
+      setStreamUrl(getStreamUrl(data.url, referer));
+      
       setStep("playing");
     } catch (e: any) {
       setError(e.message);
       setStep("error");
     }
   }
+
+  const handleStreamError = () => {
+    if (!isUsingFallback && dlUrl) {
+      console.warn("[VideoModal] Initial stream failed, attempting Playwright fallback...");
+      setIsUsingFallback(true);
+      setStreamUrl(getPlaywrightStreamUrl(dlUrl));
+    } else {
+      // If even fallback fails, offer the direct link as a last resort
+      window.open(dlUrl, "_blank");
+    }
+  };
 
   const showQualities = type === "movie" || (type === "series" && episode !== "");
 
@@ -122,7 +139,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
             </DialogTitle>
           </DialogHeader>
 
-          {/* LOADING STATE */}
           {(step === "loading" || step === "resolving") && (
             <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <div className="relative">
@@ -135,10 +151,8 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
             </div>
           )}
 
-          {/* OPTIONS STEP */}
           {step === "options" && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Season Selection */}
               {type === "series" && seasons.length > 0 && (
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3 block ml-1">Select Season</label>
@@ -160,7 +174,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
                 </div>
               )}
 
-              {/* Episode Selection */}
               {type === "series" && episodes.length > 0 && (
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3 block ml-1">Select Episode</label>
@@ -185,7 +198,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
                 </div>
               )}
 
-              {/* Quality Selection */}
               {showQualities && (
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3 block ml-1">Select Stream Quality</label>
@@ -219,7 +231,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
             </div>
           )}
 
-          {/* PLAYING STEP */}
           {step === "playing" && (
             <div className="space-y-6 animate-in zoom-in-95 duration-500">
               <div className="relative group overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-black aspect-video">
@@ -229,15 +240,20 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
                   controls
                   autoPlay
                   className="relative z-10 w-full h-full"
-                  onError={() => window.open(dlUrl, "_blank")}
+                  onError={handleStreamError}
                 />
+                {isUsingFallback && (
+                  <div className="absolute top-4 left-4 z-20 bg-primary/80 text-white text-[9px] font-bold uppercase px-2 py-1 rounded-md backdrop-blur-md animate-pulse">
+                    Session Link Active
+                  </div>
+                )}
               </div>
               
               <div className="flex flex-col gap-3">
                 <Button asChild variant="outline" className="h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs">
                   <a href={dlUrl} download>
                     <Download className="mr-2 w-5 h-5" />
-                    Download File ({qualities.find(q => streamUrl.includes(q.resolution))?.size || 'Direct'})
+                    Download File
                   </a>
                 </Button>
                 <Button onClick={() => setStep("options")} variant="ghost" className="text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.3em]">
@@ -247,7 +263,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
             </div>
           )}
 
-          {/* ERROR STEP */}
           {step === "error" && (
             <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in shake-1">
               <div className="p-4 bg-destructive/10 rounded-full">

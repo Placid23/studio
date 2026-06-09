@@ -24,6 +24,7 @@ export interface OptionsResponse {
 export interface ResolveResponse {
   url: string;
   quality: string;
+  headers?: Record<string, string>;
   error?: string;
 }
 
@@ -98,7 +99,17 @@ export async function resolveDownload(params: {
 
 /**
  * Get a proxied stream URL for a video file.
+ * Now supports passing a referrer to bypass simple hotlink protection.
  */
-export function getStreamUrl(downloadUrl: string): string {
-  return `${API_URL}/stream?url=${encodeURIComponent(downloadUrl)}`;
+export function getStreamUrl(downloadUrl: string, referer?: string): string {
+  const ref = referer || "https://videodownloader.site/";
+  return `${API_URL}/stream?url=${encodeURIComponent(downloadUrl)}&ref=${encodeURIComponent(ref)}`;
+}
+
+/**
+ * Get a Playwright-based stream URL for session-locked files.
+ * This is used as a fallback when standard proxying fails.
+ */
+export function getPlaywrightStreamUrl(downloadUrl: string): string {
+  return `${API_URL}/playwright-stream?url=${encodeURIComponent(downloadUrl)}`;
 }
