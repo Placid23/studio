@@ -41,7 +41,10 @@ export async function fetchOptions(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, type }),
     });
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with ${res.status}`);
+    }
     return await res.json();
   } catch (error: any) {
     console.error(`[Flask API] Error reaching ${API_URL}/options:`, error);
@@ -65,11 +68,14 @@ export async function fetchEpisodes(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, season }),
     });
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Episodes failed: ${res.status}`);
+    }
     return await res.json();
   } catch (error: any) {
     console.error(`[Flask API] Error reaching ${API_URL}/episodes:`, error);
-    throw new Error(`Connection to episode server failed.`);
+    throw new Error(error.message || `Connection to episode server failed.`);
   }
 }
 
@@ -89,11 +95,14 @@ export async function resolveDownload(params: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
-    if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error ${res.status} during resolution.`);
+    }
     return await res.json();
   } catch (error: any) {
     console.error(`[Flask API] Error reaching ${API_URL}/resolve:`, error);
-    throw new Error(`Failed to resolve download link.`);
+    throw new Error(error.message || `Failed to resolve download link.`);
   }
 }
 
@@ -104,6 +113,23 @@ export async function resolveDownload(params: {
 export function getStreamUrl(downloadUrl: string, referer?: string): string {
   const ref = referer || "https://videodownloader.site/";
   return `${API_URL}/stream?url=${encodeURIComponent(downloadUrl)}&ref=${encodeURIComponent(ref)}`;
+}
+
+/**
+ * Get a proxied download URL that forces the browser to save the file.
+ */
+export function getDownloadUrl(
+  downloadUrl: string,
+  filename: string,
+  referer?: string
+): string {
+  const ref = referer ?? "https://videodownloader.site/";
+  return (
+    `${API_URL}/download` +
+    `?url=${encodeURIComponent(downloadUrl)}` +
+    `&filename=${encodeURIComponent(filename)}` +
+    `&ref=${encodeURIComponent(ref)}`
+  );
 }
 
 /**

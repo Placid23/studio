@@ -6,6 +6,7 @@ import {
   fetchEpisodes,
   resolveDownload,
   getStreamUrl,
+  getDownloadUrl,
   getPlaywrightStreamUrl,
   type Quality,
 } from "@/lib/flask-api";
@@ -40,6 +41,16 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
   const [streamUrl, setStreamUrl] = useState("");
   const [dlUrl, setDlUrl] = useState("");
   const [isUsingFallback, setIsUsingFallback] = useState(false);
+
+  const buildFilename = useCallback(() => {
+    const safe = title.replace(/[^a-zA-Z0-9 _-]/g, "").trim();
+    if (type === "series" && season && episode) {
+      const sNum = season.match(/\d+/)?.[0]?.padStart(2, "0") ?? "01";
+      const eNum = episode.replace(/\D/g, '').padStart(2, "0") || "01";
+      return `${safe}_S${sNum}E${eNum}.mp4`;
+    }
+    return `${safe}.mp4`;
+  }, [title, type, season, episode]);
 
   const handleStart = useCallback(async () => {
     setStep("loading");
@@ -104,7 +115,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       if (data.error) throw new Error(data.error);
       setDlUrl(data.url);
       
-      // Determine referer from headers if provided by the backend
       const referer = data.headers?.Referer || data.headers?.referer;
       setStreamUrl(getStreamUrl(data.url, referer));
       
@@ -121,7 +131,6 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       setIsUsingFallback(true);
       setStreamUrl(getPlaywrightStreamUrl(dlUrl));
     } else {
-      // If even fallback fails, offer the direct link as a last resort
       window.open(dlUrl, "_blank");
     }
   };
@@ -251,9 +260,9 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
               
               <div className="flex flex-col gap-3">
                 <Button asChild variant="outline" className="h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs">
-                  <a href={dlUrl} download>
+                  <a href={getDownloadUrl(dlUrl, buildFilename())}>
                     <Download className="mr-2 w-5 h-5" />
-                    Download File
+                    Download {buildFilename()}
                   </a>
                 </Button>
                 <Button onClick={() => setStep("options")} variant="ghost" className="text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.3em]">
