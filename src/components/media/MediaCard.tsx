@@ -8,7 +8,7 @@ import { HoldToDeleteButton } from './HoldToDeleteButton';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { addMediaToLibraryAction } from '@/app/search/actions';
-import { useState, useTransition, useEffect } from 'react';
+import { useTransition } from 'react';
 
 interface MediaCardProps {
   media: Movie | Show;
@@ -18,14 +18,8 @@ interface MediaCardProps {
 }
 
 export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAddButton = false }: MediaCardProps) {
-  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
-
-  // Handle hydration mismatch by deferring interactive elements
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   let href = '';
   let hint = '';
@@ -71,17 +65,13 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
             data-ai-hint={hint}
           />
           
-          {/* Visual Overlays wrapped in mounted check to prevent hydration mismatch */}
-          {mounted && (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {/* Visual Overlays - No longer conditionally rendered to prevent hydration mismatch */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-              {/* Hover Play Icon - Purely Visual, click bubbles to the Link */}
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] rounded-lg">
-                <CirclePlay className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
-              </div>
-            </>
-          )}
+          {/* Hover Play Icon - Purely Visual, click bubbles to the Link */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px] rounded-lg">
+            <CirclePlay className="h-20 w-20 text-white/90 drop-shadow-lg transform transition-transform group-hover:scale-110" />
+          </div>
 
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/80 to-transparent">
             <h3 className="text-base font-bold drop-shadow-lg truncate">{media.title}</h3>
@@ -96,24 +86,20 @@ export function MediaCard({ media, onRemove, watchHref: customWatchHref, showAdd
       </Link>
 
       {/* Interactive controls outside the main navigation link */}
-      {mounted && (
-        <>
-          {onRemove && (
-            <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-20" />
-          )}
+      {onRemove && (
+        <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-20" />
+      )}
 
-          {showAddButton && (
-            <Button
-              onClick={handleAdd}
-              disabled={isPending}
-              variant="outline"
-              size="sm"
-              className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> {isPending ? 'Adding...' : 'Add'}
-            </Button>
-          )}
-        </>
+      {showAddButton && (
+        <Button
+          onClick={handleAdd}
+          disabled={isPending}
+          variant="outline"
+          size="sm"
+          className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" /> {isPending ? 'Adding...' : 'Add'}
+        </Button>
       )}
     </div>
   );
