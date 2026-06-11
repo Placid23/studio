@@ -1,5 +1,15 @@
 import { getTrending } from '@/lib/tmdb';
-import { MediaCarousels } from '@/components/media/MediaCarousels';
+import { 
+  UpcomingMoviesSection, 
+  PopularMoviesSection, 
+  KDramasSection, 
+  PopularShowsSection, 
+  TopRatedMoviesSection, 
+  PopularAnimeSection, 
+  TopTracksSection, 
+  ChristianMusicSection, 
+  AdultMoviesSection 
+} from '@/components/media/MediaCarousels';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 import { Suspense } from 'react';
 import { MediaCarouselSkeleton } from '@/components/media/MediaCarousel';
@@ -16,7 +26,6 @@ async function getHeroMedia() {
             return { error: 'Could not load trending media.' };
         }
         // Use a deterministic selection (the top trending item) to avoid hydration mismatches
-        // between server and client rendering.
         const heroMedia = trendingData[0];
         return { heroMedia };
     } catch (e) {
@@ -44,14 +53,41 @@ export default async function Home() {
         <HomePageClient heroMedia={heroMedia}>
             <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
                 <ContinueWatchingCarousel />
-                <Suspense fallback={<>
-                    <MediaCarouselSkeleton />
-                    <MediaCarouselSkeleton />
-                    <MediaCarouselSkeleton />
-                    <MediaCarouselSkeleton />
-                    <MediaCarouselSkeleton />
-                </>}>
-                    <MediaCarousels />
+                
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <UpcomingMoviesSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <PopularMoviesSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <KDramasSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <PopularShowsSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <TopTracksSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <TopRatedMoviesSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <PopularAnimeSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <ChristianMusicSection />
+                </Suspense>
+
+                <Suspense fallback={<MediaCarouselSkeleton />}>
+                    <AdultMoviesSection />
                 </Suspense>
             </div>
         </HomePageClient>
