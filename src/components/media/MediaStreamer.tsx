@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from "react";
@@ -8,9 +7,10 @@ import { VideoModal } from "./VideoModal";
 
 interface MediaStreamerProps {
   mediaName: string;
+  isLoggedIn?: boolean;
 }
 
-export function MediaStreamer({ mediaName }: MediaStreamerProps) {
+export function MediaStreamer({ mediaName, isLoggedIn = false }: MediaStreamerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -31,6 +31,7 @@ export function MediaStreamer({ mediaName }: MediaStreamerProps) {
         type="movie"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        isLoggedIn={isLoggedIn}
       />
     </div>
   );

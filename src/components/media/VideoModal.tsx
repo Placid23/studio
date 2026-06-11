@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   fetchOptions,
   fetchEpisodes,
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, PlayCircle, Download, AlertTriangle, ChevronRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 type Step = "idle" | "loading" | "options" | "resolving" | "playing" | "error";
 
@@ -28,9 +29,10 @@ interface VideoModalProps {
   type: "movie" | "series";
   isOpen: boolean;
   onClose: () => void;
+  isLoggedIn?: boolean;
 }
 
-export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
+export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }: VideoModalProps) {
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState("");
   const [seasons, setSeasons] = useState<string[]>([]);
@@ -41,6 +43,10 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
   const [streamUrl, setStreamUrl] = useState("");
   const [dlUrl, setDlUrl] = useState("");
   const [isUsingFallback, setIsUsingFallback] = useState(false);
+  
+  // Progress Simulation
+  const [progress, setProgress] = useState(0);
+  const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
   const buildFilename = useCallback(() => {
     const safe = title.replace(/[^a-zA-Z0-9 _-]/g, "").trim();
@@ -52,10 +58,29 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
     return `${safe}.mp4`;
   }, [title, type, season, episode]);
 
+  const startProgress = () => {
+    setProgress(10);
+    if (progressInterval.current) clearInterval(progressInterval.current);
+    progressInterval.current = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return 95;
+        return prev + Math.floor(Math.random() * 5) + 1;
+      });
+    }, 400);
+  };
+
+  const stopProgress = () => {
+    if (progressInterval.current) clearInterval(progressInterval.current);
+    setProgress(100);
+    setTimeout(() => setProgress(0), 500);
+  };
+
   const handleStart = useCallback(async () => {
     setStep("loading");
     setError("");
     setIsUsingFallback(false);
+    startProgress();
+    
     try {
       const data = await fetchOptions(title, type);
       if (data.error) throw new Error(data.error);
@@ -69,9 +94,10 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       }
       setStep("options");
     } catch (e: any) {
-      console.error("[VideoModal] Initialization error:", e);
       setError(e.message || "Failed to connect to stream server.");
       setStep("error");
+    } finally {
+      stopProgress();
     }
   }, [title, type]);
 
@@ -84,13 +110,18 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
       setSeason("");
       setError("");
       setIsUsingFallback(false);
+      setProgress(0);
     }
+    return () => {
+        if (progressInterval.current) clearInterval(progressInterval.current);
+    };
   }, [isOpen, handleStart]);
 
   async function handleSeasonChange(s: string) {
     setSeason(s);
     setEpisode("");
     setStep("loading");
+    startProgress();
     try {
       const data = await fetchEpisodes(title, s);
       setEpisodes(data.episodes);
@@ -98,12 +129,15 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
     } catch (e: any) {
       setError(e.message);
       setStep("error");
+    } finally {
+      stopProgress();
     }
   }
 
   async function handleQualityPick(q: Quality) {
     setStep("resolving");
     setError("");
+    startProgress();
     try {
       const data = await resolveDownload({
         title,
@@ -122,12 +156,13 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
     } catch (e: any) {
       setError(e.message);
       setStep("error");
+    } finally {
+      stopProgress();
     }
   }
 
   const handleStreamError = () => {
     if (!isUsingFallback && dlUrl) {
-      console.warn("[VideoModal] Initial stream failed, attempting Playwright fallback...");
       setIsUsingFallback(true);
       setStreamUrl(getPlaywrightStreamUrl(dlUrl));
     } else {
@@ -139,7 +174,7 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 text-white p-0 overflow-hidden rounded-[2rem] shadow-2xl">
+      <DialogContent className="max-w-2xl bg-zinc-950 border-white/10 text-white p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
         <div className="p-8">
           <DialogHeader className="mb-6 relative">
             <DialogTitle className="text-3xl font-black uppercase tracking-tighter text-primary flex items-center gap-2 pr-8">
@@ -149,14 +184,18 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
           </DialogHeader>
 
           {(step === "loading" || step === "resolving") && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="flex flex-col items-center justify-center py-12 space-y-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
-                <Loader2 className="w-12 h-12 text-primary animate-spin relative z-10" />
+                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full animate-pulse" />
+                <Loader2 className="w-16 h-16 text-primary animate-spin relative z-10" />
               </div>
-              <p className="text-zinc-400 font-bold uppercase tracking-widest text-[10px]">
-                {step === "loading" ? "Initializing Stream Engine..." : "Resolving High-Speed Mirror..."}
-              </p>
+              <div className="w-full max-w-xs space-y-2">
+                <Progress value={progress} className="h-1 bg-white/5" />
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    <span>{step === "loading" ? "Initializing Engine" : "Resolving Mirror"}</span>
+                    <span>{progress}%</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -242,7 +281,7 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
 
           {step === "playing" && (
             <div className="space-y-6 animate-in zoom-in-95 duration-500">
-              <div className="relative group overflow-hidden rounded-3xl border border-white/10 shadow-2xl bg-black aspect-video">
+              <div className="relative group overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl bg-black aspect-video">
                  <div className="absolute inset-0 bg-primary/5 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity" />
                 <video
                   src={streamUrl}
@@ -259,12 +298,20 @@ export function VideoModal({ title, type, isOpen, onClose }: VideoModalProps) {
               </div>
               
               <div className="flex flex-col gap-3">
-                <Button asChild variant="outline" className="h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs">
-                  <a href={getDownloadUrl(dlUrl, buildFilename())}>
-                    <Download className="mr-2 w-5 h-5" />
-                    Download {buildFilename()}
-                  </a>
-                </Button>
+                {isLoggedIn ? (
+                    <Button asChild variant="outline" className="h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs">
+                        <a href={getDownloadUrl(dlUrl, buildFilename())}>
+                            <Download className="mr-2 w-5 h-5" />
+                            Download {buildFilename()}
+                        </a>
+                    </Button>
+                ) : (
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Download Restricted</p>
+                        <p className="text-xs text-zinc-400 mt-1">Please sign in to unlock high-speed downloads.</p>
+                    </div>
+                )}
+                
                 <Button onClick={() => setStep("options")} variant="ghost" className="text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-[0.3em]">
                   Switch Quality / Episode
                 </Button>

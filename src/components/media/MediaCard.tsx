@@ -13,7 +13,6 @@ import { useTransition, useState, useEffect } from 'react';
 interface MediaCardProps {
   media: Movie | Show;
   onRemove?: (id: string) => void;
-  watchHref?: string;
   showAddButton?: boolean;
 }
 
@@ -22,6 +21,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
 
+  // Set mounted to true after the first render to handle client-only interactive elements
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -61,7 +61,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
   return (
     <div className="group relative w-full flex-shrink-0">
       <Link href={href} className="block w-full">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg border-2 border-transparent shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl img-container">
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-xl border-2 border-transparent shadow-xl transition-all duration-300 group-hover:scale-105 group-hover:border-primary group-hover:shadow-primary/20 group-hover:shadow-2xl img-container">
           <ImageLoader
             src={media.posterUrl!}
             alt={media.title}
@@ -72,7 +72,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
             data-ai-hint={hint}
           />
           
-          {/* Static Overlay (Server-safe) */}
+          {/* Constant Background Overlay for Text Readability */}
           <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20">
             <h3 className="text-sm font-bold drop-shadow-lg truncate leading-tight">{media.title}</h3>
             {media.rating > 0 && (
@@ -83,7 +83,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
             )}
           </div>
 
-          {/* Interactive Elements (Client-only to prevent hydration mismatch) */}
+          {/* Client-Only Interactive Overlays */}
           {mounted && (
             <>
               {/* Overlay Layer 1: Enhanced Hover Gradient */}
@@ -98,7 +98,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
         </div>
       </Link>
 
-      {/* Control Buttons (Client-only) */}
+      {/* Action Buttons (Client-only) */}
       {mounted && (
         <>
           {onRemove && (

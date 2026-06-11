@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PlayCircle } from 'lucide-react';
 import { VideoModal } from './VideoModal';
 
-export function TVStreamer({ showName }: { showName: string }) {
+export function TVStreamer({ showName, isLoggedIn = false }: { showName: string, isLoggedIn?: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -27,6 +26,7 @@ export function TVStreamer({ showName }: { showName: string }) {
         type="series"
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        isLoggedIn={isLoggedIn}
       />
     </div>
   );

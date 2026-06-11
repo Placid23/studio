@@ -10,6 +10,7 @@ import { TrailerPlayer } from '@/components/media/TrailerPlayer';
 import { SimilarMedia } from '@/components/media/SimilarMedia';
 import { AlertTriangle } from 'lucide-react';
 import { TVStreamer } from '@/components/media/TVStreamer';
+import { cookies } from 'next/headers';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,6 +32,10 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   if (!show) {
     notFound();
   }
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get('firebase-token')?.value;
+  const isLoggedIn = !!token;
 
   return (
     <div className="animate-in fade-in-50 duration-500">
@@ -92,7 +97,7 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
         
         <div className="mt-12">
             <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Stream & Download</h2>
-            <TVStreamer showName={show.title} />
+            <TVStreamer showName={show.title} isLoggedIn={isLoggedIn} />
         </div>
 
         <div className="mt-12">

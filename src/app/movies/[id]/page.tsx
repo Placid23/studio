@@ -51,6 +51,10 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
     notFound();
   }
 
+  const cookieStore = await cookies();
+  const token = cookieStore.get('firebase-token')?.value;
+  const isLoggedIn = !!token;
+
   return (
     <div className="animate-in fade-in-50 duration-500">
       <WatchHistoryTracker media={movie} />
@@ -115,7 +119,10 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
             </div>
             <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
             <div className="mt-8 flex items-center gap-4 flex-wrap">
-                <MediaStreamer mediaName={`${movie.title} ${movie.year}`} />
+                <MediaStreamer 
+                  mediaName={`${movie.title} ${movie.year}`} 
+                  isLoggedIn={isLoggedIn}
+                />
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
           </div>
