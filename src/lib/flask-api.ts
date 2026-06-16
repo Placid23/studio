@@ -97,7 +97,7 @@ export async function resolveDownload(params: {
     });
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error ${res.status} during resolution.`);
+        throw new Error(errorData.error || `Server responded with ${res.status}`);
     }
     return await res.json();
   } catch (error: any) {
@@ -108,7 +108,6 @@ export async function resolveDownload(params: {
 
 /**
  * Get a proxied stream URL for a video file.
- * Now supports passing a referrer to bypass simple hotlink protection.
  */
 export function getStreamUrl(downloadUrl: string, referer?: string): string {
   const ref = referer || "https://videodownloader.site/";
@@ -134,7 +133,6 @@ export function getDownloadUrl(
 
 /**
  * Get a Playwright-based stream URL for session-locked files.
- * This is used as a fallback when standard proxying fails.
  */
 export function getPlaywrightStreamUrl(downloadUrl: string): string {
   return `${API_URL}/playwright-stream?url=${encodeURIComponent(downloadUrl)}`;

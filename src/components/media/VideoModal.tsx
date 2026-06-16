@@ -166,7 +166,7 @@ export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }:
       setIsUsingFallback(true);
       setStreamUrl(getPlaywrightStreamUrl(dlUrl));
     } else {
-      window.open(dlUrl, "_blank");
+      // Logic for total failure could be added here
     }
   };
 

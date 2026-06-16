@@ -25,7 +25,7 @@ async function getHeroMedia() {
         if (trendingData.length === 0) {
             return { error: 'Could not load trending media.' };
         }
-        // Use a deterministic selection (the top trending item) to avoid hydration mismatches
+        // Always pick the top trending item for hydration stability
         const heroMedia = trendingData[0];
         return { heroMedia };
     } catch (e) {

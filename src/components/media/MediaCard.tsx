@@ -71,18 +71,18 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
             data-ai-hint={hint}
           />
           
-          {/* We hide dynamic overlays until mounted to prevent hydration mismatches */}
+          {/* Static Gradients - Safe for SSR */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-10" />
+
+          {/* Interactive elements are only injected after mounting to prevent hydration errors */}
           {mounted && (
             <>
-              {/* Overlay Layer 1: Enhanced Hover Gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 z-10" />
-
-              {/* Overlay Layer 2: Play Icon */}
+              {/* Overlay Layer: Play Icon */}
               <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[2px]">
                 <CirclePlay className="h-16 w-16 text-white/90 drop-shadow-2xl transform transition-transform group-hover:scale-110" />
               </div>
 
-              {/* Overlay Layer 3: Title & Rating Bar */}
+              {/* Overlay Layer: Title & Rating Bar */}
               <div className="absolute bottom-0 left-0 right-0 p-3 text-white bg-gradient-to-t from-black/90 via-black/40 to-transparent z-20">
                 <h3 className="text-sm font-bold drop-shadow-lg truncate leading-tight">{media.title}</h3>
                 {media.rating > 0 && (
@@ -92,31 +92,26 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
                   </div>
                 )}
               </div>
+
+              {onRemove && (
+                <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-30" />
+              )}
+
+              {showAddButton && (
+                <Button
+                  onClick={handleAdd}
+                  disabled={isPending}
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90 h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider border-white/10"
+                >
+                  {isPending ? '...' : <><PlusCircle className="mr-1 h-3.5 w-3.5" /> Add</>}
+                </Button>
+              )}
             </>
           )}
         </div>
       </Link>
-
-      {/* Action Buttons - Only rendered after mounting */}
-      {mounted && (
-        <>
-          {onRemove && (
-            <HoldToDeleteButton onDelete={() => onRemove(media.tmdbId)} className="z-30" />
-          )}
-
-          {showAddButton && (
-            <Button
-              onClick={handleAdd}
-              disabled={isPending}
-              variant="outline"
-              size="sm"
-              className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity bg-background/70 hover:bg-background/90 h-8 rounded-lg text-[10px] font-bold uppercase tracking-wider border-white/10"
-            >
-              {isPending ? '...' : <><PlusCircle className="mr-1 h-3.5 w-3.5" /> Add</>}
-            </Button>
-          )}
-        </>
-      )}
     </div>
   );
 }
