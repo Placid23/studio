@@ -12,11 +12,20 @@ export async function getAvailableGenres(mediaType: 'movie' | 'tv' = 'movie'): P
 
 export async function searchMedia(
   searchTerm: string,
-  filters: { genre: string; }
+  filters: { genre: string; year: string; }
 ): Promise<(Movie | Show)[]> {
   
-  const results = await searchTmdb(searchTerm);
+  // If we have a query, use multi-search
+  let results: (Movie | Show)[] = [];
+  if (searchTerm) {
+    results = await searchTmdb(searchTerm);
+  } else {
+    // If no search term but filters exist, we could implement a discover-based fetch
+    // For MVP, we'll return empty if no term is provided yet, or fetch trending
+    return [];
+  }
 
+  // Client-side filtering on results (since multi-search doesn't support easy genre/year filters in a single call)
   if (filters.genre && filters.genre !== 'all') {
     const movieGenres = await getGenresFromApi('movie');
     const tvGenres = await getGenresFromApi('tv');
@@ -24,14 +33,20 @@ export async function searchMedia(
     const genreName = allGenres.find(g => String(g.id) === filters.genre)?.name;
     
     if (genreName) {
-      return results.filter(item => item.genres.includes(genreName));
+      results = results.filter(item => item.genres.includes(genreName));
     }
+  }
+
+  if (filters.year && filters.year !== 'all') {
+      const yearInt = parseInt(filters.year);
+      results = results.filter(item => item.year === yearInt);
   }
 
   const uniqueResults = new Map<string, Movie | Show>();
   for (const item of results) {
-    if (!uniqueResults.has(item.title)) {
-      uniqueResults.set(item.title, item);
+    const key = `${item.type}-${item.tmdbId}`;
+    if (!uniqueResults.has(key)) {
+      uniqueResults.set(key, item);
     }
   }
 

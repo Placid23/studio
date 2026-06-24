@@ -44,18 +44,18 @@ export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }:
   const [dlUrl, setDlUrl] = useState("");
   const [isUsingFallback, setIsUsingFallback] = useState(false);
   
-  // Progress Simulation
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
   const buildFilename = useCallback(() => {
-    const safe = title.replace(/[^a-zA-Z0-9 _-]/g, "").trim();
+    // Aggressive cleanup for clean filenames
+    const safeTitle = title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_").trim();
     if (type === "series" && season && episode) {
       const sNum = season.match(/\d+/)?.[0]?.padStart(2, "0") ?? "01";
       const eNum = episode.replace(/\D/g, '').padStart(2, "0") || "01";
-      return `${safe}_S${sNum}E${eNum}.mp4`;
+      return `${safeTitle}_S${sNum}E${eNum}.mp4`;
     }
-    return `${safe}.mp4`;
+    return `${safeTitle}.mp4`;
   }, [title, type, season, episode]);
 
   const startProgress = () => {
@@ -165,8 +165,6 @@ export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }:
     if (!isUsingFallback && dlUrl) {
       setIsUsingFallback(true);
       setStreamUrl(getPlaywrightStreamUrl(dlUrl));
-    } else {
-      // Logic for total failure could be added here
     }
   };
 
@@ -290,17 +288,15 @@ export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }:
                   className="relative z-10 w-full h-full"
                   onError={handleStreamError}
                 />
-                {isUsingFallback && (
-                  <div className="absolute top-4 left-4 z-20 bg-primary/80 text-white text-[9px] font-bold uppercase px-2 py-1 rounded-md backdrop-blur-md animate-pulse">
-                    Session Link Active
-                  </div>
-                )}
               </div>
               
               <div className="flex flex-col gap-3">
                 {isLoggedIn ? (
                     <Button asChild variant="outline" className="h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest text-xs">
-                        <a href={getDownloadUrl(dlUrl, buildFilename())}>
+                        <a 
+                            href={getDownloadUrl(dlUrl, buildFilename())} 
+                            download={buildFilename()}
+                        >
                             <Download className="mr-2 w-5 h-5" />
                             Download {buildFilename()}
                         </a>
@@ -308,7 +304,7 @@ export function VideoModal({ title, type, isOpen, onClose, isLoggedIn = false }:
                 ) : (
                     <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Download Restricted</p>
-                        <p className="text-xs text-zinc-400 mt-1">Please sign in to unlock high-speed downloads.</p>
+                        <p className="text-xs text-zinc-400 mt-1">Sign in to unlock high-speed downloads with original names.</p>
                     </div>
                 )}
                 
