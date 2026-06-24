@@ -11,8 +11,11 @@ interface RatingData {
 
 export async function getMediaRating(mediaId: string): Promise<RatingData> {
     try {
-        const doc = await adminDb.collection('media_ratings').doc(mediaId).get();
-        if (!doc.exists) {
+        // Guard against admin SDK initialization issues
+        if (!adminDb) return { averageRating: 0, totalRatings: 0 };
+        
+        const doc = await adminDb.collection('media_ratings').doc(mediaId).get().catch(() => null);
+        if (!doc || !doc.exists) {
             return { averageRating: 0, totalRatings: 0 };
         }
         const data = doc.data()!;
@@ -21,7 +24,7 @@ export async function getMediaRating(mediaId: string): Promise<RatingData> {
             totalRatings: data.totalRatings || 0
         };
     } catch (error) {
-        console.error("Error fetching media rating:", error);
+        console.warn(`[getMediaRating] Silently handled error for ${mediaId}:`, error);
         return { averageRating: 0, totalRatings: 0 };
     }
 }
@@ -29,13 +32,13 @@ export async function getMediaRating(mediaId: string): Promise<RatingData> {
 export async function getUserRating(mediaId: string): Promise<number> {
     const cookieStore = await cookies();
     const token = cookieStore.get('firebase-token')?.value;
-    if (!token) return 0;
+    if (!token || !adminAuth || !adminDb) return 0;
 
     try {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const userId = decodedToken.uid;
-        const doc = await adminDb.collection('users').doc(userId).collection('user_ratings').doc(mediaId).get();
-        return doc.exists ? doc.data()?.rating || 0 : 0;
+        const doc = await adminDb.collection('users').doc(userId).collection('user_ratings').doc(mediaId).get().catch(() => null);
+        return (doc && doc.exists) ? doc.data()?.rating || 0 : 0;
     } catch (error) {
         return 0;
     }

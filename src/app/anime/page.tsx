@@ -1,11 +1,6 @@
-
-import { MediaCard } from '@/components/media/MediaCard';
-import type { Show } from '@/lib/types';
 import { getPopularAnime } from '@/lib/tmdb';
-import { AlertTriangle, Clapperboard } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { AnimeInfiniteScroll } from '@/components/media/AnimeInfiniteScroll';
 import { AnimeSearch } from '@/components/media/AnimeSearch';
 
 function TmdbError() {
@@ -20,82 +15,30 @@ function TmdbError() {
   )
 }
 
-function PaginationControls({ currentPage, totalPages, basePath }: { currentPage: number, totalPages: number, basePath: string }) {
-    const prevPage = currentPage > 1 ? currentPage - 1 : null;
-    const nextPage = currentPage < totalPages ? currentPage + 1 : null;
-
-    return (
-        <div className="flex items-center justify-center gap-4 mt-8">
-            {prevPage ? (
-                 <Button asChild variant="outline">
-                    <Link href={`${basePath}?page=${prevPage}`}>
-                        <ChevronLeft />
-                        Previous
-                    </Link>
-                </Button>
-            ) : <Button variant="outline" disabled><ChevronLeft /> Previous</Button>}
-           
-            <span className="text-sm text-muted-foreground">Page {currentPage} of {totalPages > 500 ? 500 : totalPages}</span>
-
-            {nextPage && (currentPage < 500) ? (
-                 <Button asChild variant="outline">
-                    <Link href={`${basePath}?page=${nextPage}`}>
-                        Next
-                        <ChevronRight />
-                    </Link>
-                </Button>
-            ) : <Button variant="outline" disabled>Next <ChevronRight /></Button>}
-        </div>
-    )
-}
-
-export default async function AnimePage({ searchParams }: { searchParams: { page?: string, query?: string } }) {
+export default async function AnimePage() {
   if (!process.env.NEXT_PUBLIC_TMDB_API_KEY) {
     return <TmdbError />;
   }
 
-  const currentPage = Number(searchParams?.page) || 1;
-  let anime: Show[] = [];
-  let totalPages = 0;
-  let fetchError: string | null = null;
-  
-  const hasSearchQuery = !!searchParams?.query;
-
-  if (!hasSearchQuery) {
-    try {
-        const popularAnime = await getPopularAnime(currentPage);
-        anime = popularAnime.results;
-        totalPages = popularAnime.total_pages;
-    } catch (e: any) {
-        fetchError = e.message || "An unknown error occurred.";
-    }
+  let initialAnime = [];
+  try {
+    const popularAnime = await getPopularAnime(1);
+    initialAnime = popularAnime.results;
+  } catch (e: any) {
+    console.error("Initial anime load error", e);
   }
 
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-black text-primary uppercase tracking-wider mb-8">
-        Discover Anime
-      </h1>
+    <div className="container mx-auto px-4 py-16">
+      <div className="mb-12">
+          <h1 className="text-5xl md:text-8xl font-black text-primary uppercase tracking-tighter italic mb-4">
+            Anime
+          </h1>
+          <div className="h-1.5 w-32 bg-primary rounded-full shadow-[0_0_15px_rgba(225,29,72,0.4)]"></div>
+      </div>
       
       <AnimeSearch>
-        {fetchError && <p className="text-destructive">Error loading anime: {fetchError}</p>}
-        {!hasSearchQuery && anime.length > 0 ? (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-8">
-              {anime.map((show) => (
-                <MediaCard key={show.tmdbId} media={show} />
-              ))}
-            </div>
-            <PaginationControls currentPage={currentPage} totalPages={totalPages} basePath="/anime" />
-          </>
-        ) : !hasSearchQuery && (
-          <div className="flex flex-col items-center justify-center text-center py-20 bg-card/50 rounded-xl mt-8">
-            <Clapperboard className="w-16 h-16 text-muted-foreground/50" />
-            <h2 className="mt-6 text-2xl font-bold">No Anime Found</h2>
-            <p className="mt-2 text-muted-foreground">Could not fetch anime from TMDB.</p>
-          </div>
-        )}
+         <AnimeInfiniteScroll initialAnime={initialAnime} />
       </AnimeSearch>
     </div>
   );

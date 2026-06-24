@@ -21,7 +21,7 @@ export default function RootLayout({
         <meta name="description" content="Stream your personal library of movies, TV shows, and music with NovaStream." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#E11D48" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,7 +30,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="https://placehold.co/192x192/E11D48/ffffff?text=NS" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
-      <body className="font-body antialiased bg-background">
+      <body className="font-body antialiased bg-background overflow-x-hidden">
         <ThemeProvider
           defaultTheme="dark"
           storageKey="novastream-theme"

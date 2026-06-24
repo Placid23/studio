@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Star, Calendar } from 'lucide-react';
+import { Star, Calendar, Clock, Users, PlaySquare } from 'lucide-react';
 import { BackButton } from '@/components/layout/BackButton';
 import { ImageLoader } from '@/components/media/ImageLoader';
 import { WatchHistoryTracker } from '@/components/media/WatchHistoryTracker';
@@ -31,8 +31,8 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   
   const [show, platformRatingData, userRating] = await Promise.all([
     getShowDetails(id),
-    getMediaRating(id),
-    getUserRating(id)
+    getMediaRating(id).catch(() => ({ averageRating: 0, totalRatings: 0 })),
+    getUserRating(id).catch(() => 0)
   ]);
 
   if (!show) {
@@ -46,83 +46,128 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="animate-in fade-in-50 duration-500">
       <WatchHistoryTracker media={show} />
-      <div className="relative h-[45vh] md:h-[65vh] w-full img-container">
+      
+      {/* Background Section */}
+      <div className="relative h-[60vh] md:h-[85vh] w-full">
         <ImageLoader
           src={show.backdropUrl!}
-          alt={`Backdrop for ${show.title}`}
+          alt={show.title}
           fill
           style={{ objectFit: 'cover' }}
-          className="opacity-50"
+          className="opacity-40"
           priority
           data-ai-hint="tv show backdrop"
         />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
       </div>
 
-      <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
-        <BackButton />
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 lg:w-1/4 img-container rounded-3xl shadow-2xl border border-white/5 overflow-hidden">
-            <ImageLoader
-              src={show.posterUrl!}
-              alt={`Poster for ${show.title}`}
-              width={500}
-              height={750}
-              className="rounded-3xl"
-              data-ai-hint="tv show poster"
-            />
-          </div>
-          <div className="w-full md:w-2/3 lg:w-3/4 text-foreground pt-8 md:pt-16">
-            <h1 className="text-4xl md:text-7xl font-black text-primary uppercase tracking-tighter leading-tight">{show.title}</h1>
-            <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-6 text-muted-foreground">
-              {show.rating > 0 && (
-                <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                  <span className="font-black text-xl text-foreground">{show.rating.toFixed(1)}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Global TMDB</span>
-                </div>
-              )}
-              {show.year > 0 && (
-                <>
-                   {show.rating > 0 && <span className="text-muted-foreground/30">/</span>}
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    <span className="font-bold">{show.year}</span>
-                  </div>
-                </>
-              )}
+      <div className="container mx-auto -mt-[35vh] md:-mt-[45vh] relative z-10 px-4 md:px-12 pb-16">
+        <BackButton className="mb-12 border-white/10 bg-black/20 hover:bg-white/5 text-white backdrop-blur-xl rounded-2xl h-12 px-6" />
+        
+        <div className="flex flex-col lg:flex-row gap-12 lg:items-start">
+          {/* Poster Card */}
+          <div className="w-full max-w-[320px] mx-auto lg:mx-0 shrink-0">
+            <div className="img-container rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 overflow-hidden ring-4 ring-primary/10">
+                <ImageLoader
+                src={show.posterUrl!}
+                alt={show.title}
+                width={500}
+                height={750}
+                className="rounded-[2.5rem]"
+                data-ai-hint="tv show poster"
+                />
             </div>
-            
-            <div className="flex flex-wrap gap-2 mt-6">
-              {show.genres.map((genre) => (
-                <Badge key={genre} variant="secondary" className="rounded-lg px-4 py-1.5 font-bold uppercase tracking-widest text-[10px]">{genre}</Badge>
-              ))}
+          </div>
+
+          {/* Info Section */}
+          <div className="flex-1 text-foreground pt-8 md:pt-16">
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {show.genres.map((genre) => (
+                    <Badge key={genre} variant="secondary" className="rounded-full px-5 py-1.5 font-bold uppercase tracking-widest text-[9px] bg-white/5 border-white/5 text-primary">
+                    {genre}
+                    </Badge>
+                ))}
+              </div>
+              <h1 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
+                {show.title}
+              </h1>
             </div>
 
-            <p className="mt-8 max-w-3xl text-lg text-foreground/80 leading-relaxed font-medium">{show.synopsis}</p>
+            <div className="flex items-center flex-wrap gap-x-8 gap-y-4 mt-10 text-muted-foreground border-y border-white/5 py-8">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-yellow-400/10 rounded-2xl">
+                  <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                </div>
+                <div>
+                  <div className="text-white font-black text-2xl leading-none">{show.rating.toFixed(1)}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest mt-1">TMDB Global</div>
+                </div>
+              </div>
+              
+              {show.year > 0 && (
+                <div className="flex items-center gap-3">
+                   <div className="p-3 bg-primary/10 rounded-2xl">
+                    <Calendar className="w-6 h-6 text-primary" />
+                   </div>
+                   <div>
+                       <div className="text-white font-black text-2xl leading-none">{show.year}</div>
+                       <div className="text-[10px] font-bold uppercase tracking-widest mt-1">Premiere</div>
+                   </div>
+                </div>
+              )}
+
+              {show.seasons && (
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-zinc-500/10 rounded-2xl">
+                        <PlaySquare className="w-6 h-6 text-zinc-400" />
+                    </div>
+                    <div>
+                        <div className="text-white font-black text-2xl leading-none">{show.seasons.length}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest mt-1">Seasons</div>
+                    </div>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-10 max-w-4xl text-xl text-foreground/70 leading-relaxed font-medium">
+              {show.synopsis}
+            </p>
             
-            <div className="mt-10 flex items-center gap-4 flex-wrap">
+            <div className="mt-12 flex items-center gap-4 flex-wrap bg-white/5 p-6 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
                 <TVStreamer showName={show.title} isLoggedIn={isLoggedIn} />
             </div>
 
-            <div className="mt-12 max-w-xl">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
                 <RatingSystem 
                     mediaId={show.tmdbId} 
                     initialUserRating={userRating}
                     platformRating={platformRatingData.averageRating}
                     totalRatings={platformRatingData.totalRatings}
                 />
+                
+                {show.cast && show.cast.length > 0 && (
+                    <div className="bg-card/40 backdrop-blur-md p-8 rounded-[2rem] border border-white/5">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Leading Roles</h3>
+                        <div className="flex flex-wrap gap-2">
+                             {show.cast.slice(0, 6).map(name => (
+                                 <span key={name} className="text-sm font-bold text-white/80 bg-white/5 px-4 py-2 rounded-xl">{name}</span>
+                             ))}
+                        </div>
+                    </div>
+                )}
             </div>
           </div>
         </div>
         
-        <div className="mt-16">
-            <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter flex items-center gap-3">
-                <span className="w-8 h-1 bg-primary rounded-full"></span>
-                Official Trailer
+        <div className="mt-32">
+            <h2 className="text-3xl font-black mb-10 uppercase tracking-tighter flex items-center gap-4">
+                <span className="w-12 h-1.5 bg-primary rounded-full"></span>
+                Official Cinematic Trailer
             </h2>
-            <TrailerPlayer posterUrl={show.backdropUrl!} trailerUrl={show.trailerUrl} />
+            <div className="rounded-[3rem] overflow-hidden border-8 border-white/5 shadow-2xl">
+                <TrailerPlayer posterUrl={show.backdropUrl!} trailerUrl={show.trailerUrl} />
+            </div>
         </div>
         
         <Suspense fallback={null}>
