@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDVnc5GUNBKn2_a15D1CDKtWhJl4XmxYWk",
-  authDomain: "aetherassist-naysg.firebaseapp.com",
-  projectId: "aetherassist-naysg",
-  storageBucket: "aetherassist-naysg.firebasestorage.app",
-  messagingSenderId: "1070438516617",
-  appId: "1:1070438516617:web:de026dac934f2332310358"
+  apiKey: "AIzaSyBz1q7xDvA2LwMonS6r_yGBQO5oNWM_iiY",
+  authDomain: "novastream-qkr40.firebaseapp.com",
+  projectId: "novastream-qkr40",
+  storageBucket: "novastream-qkr40.firebasestorage.app",
+  messagingSenderId: "962930465000",
+  appId: "1:962930465000:web:5e629a6740b4e8fcf9915d"
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

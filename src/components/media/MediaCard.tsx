@@ -21,6 +21,7 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
 
+  // Set mounted state to true after initial hydration
   useEffect(() => {
     setMounted(true);
   }, []);
