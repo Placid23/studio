@@ -58,32 +58,32 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
   };
 
   return (
-    <div className="group relative w-full flex-shrink-0 transition-all duration-500 hover:z-10">
+    <div className="group relative w-full flex-shrink-0 transition-all duration-500 hover:z-20">
       <Link href={href} className="block w-full">
-        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[2rem] border-2 border-transparent shadow-xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.08] group-hover:border-primary group-hover:shadow-primary/30 img-container bg-card">
+        <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[2.5rem] border-2 border-white/5 shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.1] group-hover:border-primary/50 group-hover:shadow-[0_0_30px_rgba(225,29,72,0.3)] img-container bg-card/40">
           <ImageLoader
             src={media.posterUrl!}
             alt={media.title}
             fill
             style={{ objectFit: "cover" }}
-            className="transition-opacity duration-300"
+            className="transition-all duration-700 group-hover:blur-[2px] group-hover:scale-110"
             sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
             data-ai-hint={hint}
           />
           
-          {/* Static UI - Safe for SSR to prevent hydration flickering */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent transition-opacity duration-300 group-hover:via-black/40 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent transition-opacity duration-500 group-hover:via-black/60 z-10" />
 
-          {/* Overlays - Use pure CSS opacity to avoid hydration mismatches */}
-          <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:backdrop-blur-[4px]">
-            <CirclePlay className="h-16 w-16 text-white/90 drop-shadow-2xl transform transition-transform duration-500 group-hover:scale-110" />
+          <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-all duration-500 group-hover:opacity-100">
+            <div className="p-4 bg-primary rounded-full shadow-[0_0_20px_rgba(225,29,72,0.6)] transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                <CirclePlay className="h-10 w-10 text-white" />
+            </div>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-20 transform transition-transform duration-300 translate-y-2 group-hover:translate-y-0">
-            <h3 className="text-sm font-black drop-shadow-lg truncate leading-none uppercase tracking-tighter mb-1">{media.title}</h3>
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-white z-20 transform transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+            <h3 className="text-sm font-black drop-shadow-lg truncate leading-tight uppercase tracking-tighter mb-1.5">{media.title}</h3>
             {media.rating > 0 && (
-              <div className="flex items-center gap-1 opacity-80">
-                <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+              <div className="flex items-center gap-1 opacity-90">
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]" />
                 <span className="text-[10px] font-black tracking-widest">{media.rating.toFixed(1)}</span>
               </div>
             )}
@@ -101,9 +101,9 @@ export function MediaCard({ media, onRemove, showAddButton = false }: MediaCardP
                   disabled={isPending}
                   variant="outline"
                   size="sm"
-                  className="absolute top-3 right-3 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-background/60 hover:bg-primary hover:text-white h-9 rounded-xl text-[10px] font-black uppercase tracking-widest border-white/10 backdrop-blur-md"
+                  className="absolute top-4 right-4 z-30 opacity-0 group-hover:opacity-100 transition-all duration-500 bg-black/40 hover:bg-primary hover:text-white h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest border-white/10 backdrop-blur-xl"
                 >
-                  {isPending ? '...' : <><PlusCircle className="mr-1.5 h-3.5 w-3.5" /> ADD</>}
+                  {isPending ? '...' : <><PlusCircle className="mr-1.5 h-4 w-4" /> ADD</>}
                 </Button>
               )}
             </>

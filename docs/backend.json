@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Extended user information stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "description": "The user's legal or preferred name." },
+        "country": { "type": "string", "description": "The user's country of residence." },
+        "email": { "type": "string", "format": "email", "description": "User account email." },
+        "createdAt": { "type": "number", "description": "Timestamp when account was created." },
+        "location": { "type": "string", "enum": ["precise", "manual"], "description": "Whether location was detected or set manually." }
+      },
+      "required": ["fullName", "email"]
+    },
+    "MediaFeedback": {
+      "title": "MediaFeedback",
+      "description": "User reviews and ratings for specific media items.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user who provided feedback." },
+        "mediaId": { "type": "string", "description": "TMDB ID of the media item." },
+        "rating": { "type": "number", "description": "Star rating out of 5." },
+        "comment": { "type": "string", "description": "Written feedback about the movie or show." },
+        "timestamp": { "type": "number", "description": "When the feedback was submitted." }
+      },
+      "required": ["userId", "mediaId", "rating"]
+    }
+  },
+  "auth": {
+    "providers": ["email", "google"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile settings and membership data."
+    },
+    "/media_ratings/{mediaId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "averageRating": { "type": "number" },
+          "totalRatings": { "type": "number" }
+        }
+      },
+      "description": "Aggregated platform ratings for each media title."
+    },
+    "/media_feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/MediaFeedback" },
+      "description": "Individual user reviews for media."
+    }
+  }
+}

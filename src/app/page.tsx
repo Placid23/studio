@@ -6,9 +6,7 @@ import {
   PopularShowsSection, 
   TopRatedMoviesSection, 
   PopularAnimeSection, 
-  TopTracksSection, 
-  ChristianMusicSection, 
-  AdultMoviesSection 
+  TopTracksSection 
 } from '@/components/media/MediaCarousels';
 import { ContinueWatchingCarousel } from '@/components/media/ContinueWatchingCarousel';
 import { Suspense } from 'react';
@@ -25,7 +23,6 @@ async function getHeroMedia() {
         if (trendingData.length === 0) {
             return { error: 'Could not load trending media.' };
         }
-        // Always pick the top trending item for hydration stability
         const heroMedia = trendingData[0];
         return { heroMedia };
     } catch (e) {
@@ -51,7 +48,7 @@ export default async function Home() {
     
     return (
         <HomePageClient heroMedia={heroMedia}>
-            <div className="flex flex-col gap-12 md:gap-16 py-8 lg:py-12 px-4 md:px-16 -mt-16 md:-mt-24 relative z-10">
+            <div className="flex flex-col gap-12 md:gap-20 py-8 lg:py-16 px-4 md:px-16 -mt-16 md:-mt-32 relative z-10">
                 <ContinueWatchingCarousel />
                 
                 <Suspense fallback={<MediaCarouselSkeleton />}>
@@ -80,14 +77,6 @@ export default async function Home() {
 
                 <Suspense fallback={<MediaCarouselSkeleton />}>
                     <PopularAnimeSection />
-                </Suspense>
-
-                <Suspense fallback={<MediaCarouselSkeleton />}>
-                    <ChristianMusicSection />
-                </Suspense>
-
-                <Suspense fallback={<MediaCarouselSkeleton />}>
-                    <AdultMoviesSection />
                 </Suspense>
             </div>
         </HomePageClient>
