@@ -14,6 +14,8 @@ import { addToWatchlistAction } from './actions';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { MediaStreamer } from '@/components/media/MediaStreamer';
 import { cookies } from 'next/headers';
+import { RatingSystem } from '@/components/media/RatingSystem';
+import { getMediaRating, getUserRating } from '@/app/actions/ratings';
 
 async function getLibraryItem(tmdbId: string) {
     const cookieStore = await cookies();
@@ -45,7 +47,11 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
     );
   }
   
-  const movie = await getMovieDetails(id);
+  const [movie, platformRatingData, userRating] = await Promise.all([
+    getMovieDetails(id),
+    getMediaRating(id),
+    getUserRating(id)
+  ]);
 
   if (!movie) {
     notFound();
@@ -75,61 +81,77 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
       <div className="container mx-auto -mt-32 md:-mt-48 relative z-10 px-4 md:px-8 pb-16">
         <BackButton />
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 lg:w-1/4 img-container rounded-lg shadow-2xl">
+          <div className="w-full md:w-1/3 lg:w-1/4 img-container rounded-3xl shadow-2xl border border-white/5 overflow-hidden">
             <ImageLoader
               src={movie.posterUrl!}
               alt={`Poster for ${movie.title}`}
               width={500}
               height={750}
-              className="rounded-lg"
+              className="rounded-3xl"
               data-ai-hint="movie poster"
             />
           </div>
           <div className="w-full md:w-2/3 lg:w-3/4 text-foreground pt-8 md:pt-16">
-            <h1 className="text-4xl md:text-6xl font-black text-primary uppercase tracking-wide">{movie.title}</h1>
-            <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-4 text-muted-foreground">
+            <h1 className="text-4xl md:text-7xl font-black text-primary uppercase tracking-tighter leading-tight">{movie.title}</h1>
+            <div className="flex items-center flex-wrap gap-x-6 gap-y-2 mt-6 text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400" />
-                <span className="font-bold text-lg text-foreground">{movie.rating.toFixed(1)}</span>
+                <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                <span className="font-black text-xl text-foreground">{movie.rating.toFixed(1)}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Global TMDB</span>
               </div>
               
               {movie.year > 0 && (
                 <>
-                  <span className="text-muted-foreground/50">|</span>
+                  <span className="text-muted-foreground/30">/</span>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    <span>{movie.year}</span>
+                    <span className="font-bold">{movie.year}</span>
                   </div>
                 </>
               )}
               {movie.duration > 0 && (
                 <>
-                  <span className="text-muted-foreground/50">|</span>
+                  <span className="text-muted-foreground/30">/</span>
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5" />
-                    <span>{movie.duration} min</span>
+                    <span className="font-bold">{movie.duration} min</span>
                   </div>
                 </>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 mt-4">
+            
+            <div className="flex flex-wrap gap-2 mt-6">
               {movie.genres.map((genre) => (
-                <Badge key={genre} variant="secondary">{genre}</Badge>
+                <Badge key={genre} variant="secondary" className="rounded-lg px-4 py-1.5 font-bold uppercase tracking-widest text-[10px]">{genre}</Badge>
               ))}
             </div>
-            <p className="mt-6 max-w-3xl text-lg text-foreground/90">{movie.synopsis}</p>
-            <div className="mt-8 flex items-center gap-4 flex-wrap">
+
+            <p className="mt-8 max-w-3xl text-lg text-foreground/80 leading-relaxed font-medium">{movie.synopsis}</p>
+            
+            <div className="mt-10 flex items-center gap-4 flex-wrap">
                 <MediaStreamer 
                   mediaName={`${movie.title} ${movie.year}`} 
                   isLoggedIn={isLoggedIn}
                 />
                 <AddToWatchlistButton media={movie} addAction={addToWatchlistAction} />
             </div>
+
+            <div className="mt-12 max-w-xl">
+                <RatingSystem 
+                    mediaId={movie.tmdbId} 
+                    initialUserRating={userRating}
+                    platformRating={platformRatingData.averageRating}
+                    totalRatings={platformRatingData.totalRatings}
+                />
+            </div>
           </div>
         </div>
         
-        <div className="mt-12">
-            <h2 className="text-3xl font-bold mb-4 uppercase tracking-wider">Trailer</h2>
+        <div className="mt-16">
+            <h2 className="text-3xl font-black mb-6 uppercase tracking-tighter flex items-center gap-3">
+                <span className="w-8 h-1 bg-primary rounded-full"></span>
+                Official Trailer
+            </h2>
             <TrailerPlayer posterUrl={movie.backdropUrl!} trailerUrl={movie.trailerUrl} />
         </div>
 
