@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { Clapperboard } from 'lucide-react';
+import { Clapperboard, Search } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { adminAuth } from '@/lib/firebase/admin';
 import { UserNav } from './UserNav';
 import { MobileNav } from './MobileNav';
 import { DesktopNav } from './DesktopNav';
+import { Button } from '@/components/ui/button';
 
 export async function Header() {
   let user = null;
@@ -25,6 +26,7 @@ export async function Header() {
     }
   }
 
+  // General navigation links (Search removed from here to be more prominent elsewhere)
   const navLinks = [
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
@@ -32,7 +34,6 @@ export async function Header() {
     { href: '/anime', label: 'Anime' },
     { href: '/music', label: 'Music' },
     { href: '/library', label: 'My Library' },
-    { href: '/search', label: 'Search' },
   ];
 
   return (
@@ -49,9 +50,24 @@ export async function Header() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
+            {/* Highly Noticeable Search Button */}
+            <Button 
+              asChild 
+              variant="ghost" 
+              size="icon" 
+              className="relative h-10 w-10 md:w-auto md:px-4 rounded-xl border border-white/5 bg-white/5 hover:bg-primary hover:text-white transition-all duration-300 group shadow-lg"
+            >
+              <Link href="/search">
+                <Search className="h-5 w-5 md:mr-2 group-hover:scale-110 transition-transform" />
+                <span className="hidden md:inline text-[10px] font-black uppercase tracking-widest">Search</span>
+                <div className="absolute -top-1 -right-1 h-2 w-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(225,29,72,0.8)] md:hidden"></div>
+              </Link>
+            </Button>
+
             <UserNav user={user} />
+            
             <div className="md:hidden">
-                <MobileNav user={user} navLinks={navLinks} />
+                <MobileNav user={user} navLinks={[...navLinks, { href: '/search', label: 'Search' }]} />
             </div>
         </div>
       </div>

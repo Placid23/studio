@@ -1,12 +1,10 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Smartphone, Sparkles } from 'lucide-react';
 
-// Define the event type, as it's not standard in all TS lib versions.
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -22,11 +20,17 @@ export function PwaInstallPrompt() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
+      // Prevent the default browser mini-infobar from appearing on mobile
       event.preventDefault();
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      if (isStandalone || (window.navigator as any).standalone) {
+      
+      // Check if already in standalone mode
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      
+      if (isStandalone) {
         return;
       }
+
+      // Stash the event so it can be triggered later.
       setInstallPromptEvent(event as BeforeInstallPromptEvent);
     };
 
@@ -40,33 +44,36 @@ export function PwaInstallPrompt() {
   useEffect(() => {
     if (installPromptEvent) {
       const toastId = 'pwa-install-toast';
+      
       toast({
         id: toastId,
-        title: 'Install NovaStream App',
-        description: 'Get a full-screen experience with background audio.',
-        duration: Infinity, // Keep the toast visible until dismissed or action is taken
+        title: 'NovaStream for Mobile',
+        description: 'Install the app for a cinematic full-screen experience and background streaming.',
+        duration: 30000, // Show for 30 seconds
         action: (
           <Button
+            className="rounded-xl font-black uppercase tracking-widest text-[10px] bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
             onClick={async () => {
               if (!installPromptEvent) return;
               
               installPromptEvent.prompt();
               const { outcome } = await installPromptEvent.userChoice;
+              
               if (outcome === 'accepted') {
                 console.log('User accepted the PWA installation');
-              } else {
-                console.log('User dismissed the PWA installation');
               }
+              
               setInstallPromptEvent(null);
               dismiss(toastId);
             }}
           >
-            <Download className="mr-2" /> Install
+            <Smartphone className="mr-2 h-3 w-3" /> 
+            Get App
           </Button>
         ),
       });
     }
   }, [installPromptEvent, toast, dismiss]);
 
-  return null; // This component doesn't render anything itself
+  return null;
 }
