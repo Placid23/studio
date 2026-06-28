@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: novastream-api
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    # Health check — Render pings /health after deploy; must respond within 180s
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      # Tell Playwright where chromium is (installed by 'playwright install chromium')
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /root/.cache/ms-playwright
